@@ -29,6 +29,7 @@ export interface Event {
   location: string;
   venue: string;
   highlights: string[];
+  tagline: string;
   stats: {
     attendees: string;
     speakers: string;

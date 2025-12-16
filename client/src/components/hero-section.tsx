@@ -159,7 +159,7 @@ export function HeroSection() {
                 <div className="w-1 h-1 rounded-full bg-white/40 hidden sm:block" />
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-secondary" />
-                  <span data-testid="text-event-duration">{getDayCount(event.date, event.endDate)} Days of Excellence</span>
+                  <span data-testid="text-event-duration">{getDayCount(event.date, event.endDate)} {event.tagline}</span>
                 </div>
               </div>
 

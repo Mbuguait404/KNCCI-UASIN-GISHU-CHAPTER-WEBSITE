@@ -103,6 +103,7 @@ export class MemStorage implements IStorage {
         "Exhibition and trade fair",
         "Policy discussions and roundtables",
       ],
+      tagline: "Days of Excellence",
       stats: {
         attendees: "500+",
         speakers: "50+",
