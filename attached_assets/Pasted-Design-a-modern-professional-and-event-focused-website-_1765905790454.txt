@@ -1,0 +1,154 @@
+Design a modern, professional, and event-focused website UI for the Kenya National Chamber of Commerce and Industry (KNCCI). The website should closely resemble the look, structure, and user experience of [https://softwaresummit.go.ke/](https://softwaresummit.go.ke/), but with KNCCI branding and a broader institutional, national-business feel.
+
+Branding and color system:
+
+* Primary KNCCI colors:
+
+  * #88807e (neutral gray, for backgrounds and secondary text)
+  * #ec252c (primary accent, calls to action, highlights)
+  * #0e783d (secondary accent, success states, emphasis)
+  * #000000 (primary text and strong contrasts)
+* Use these colors consistently across buttons, headings, dividers, icons, and highlights
+* Maintain strong contrast and professional balance
+
+Overall design style:
+
+* Clean, professional, and authoritative
+* Corporate but modern
+* Strong use of white space
+* Consistent typography and spacing
+* Kenya-inspired visual identity aligned with KNCCI
+* Mobile-first and fully responsive
+* Smooth animations and micro-interactions throughout
+* Premium feel suitable for a national chamber of commerce
+
+Component and UI framework guidance:
+
+* Use shadcn/ui components where appropriate for consistency and accessibility
+* Use Cult UI components for enhanced visuals and interactions
+* Navigation bar should use Cult UI’s distorted glass (glassmorphism) effect
+* Components should feel modular and reusable (React / Next.js friendly)
+* Prefer subtle motion over heavy animation
+
+Primary goal of the website:
+
+* Promote KNCCI-organized events
+* Provide complete and clear event information
+* Allow users to register for events
+* Showcase KNCCI credibility, scale, and impact
+
+Header and navigation:
+
+* Sticky navigation bar with distorted glass effect (Cult UI style)
+* KNCCI logo on the left
+* Navigation links: Home, About KNCCI, Events, Speakers, Program, Venue, Gallery, Partners, Contact
+* Prominent “Register Now” call-to-action button styled with #ec252c
+* On scroll, navbar slightly reduces height and increases background blur
+* Smooth hover and active link animations
+
+Hero section:
+
+* Full-width hero section
+* Background image or subtle animated gradient related to business, trade, and industry
+* All generated imagery must feature Black characters only
+* Event name as the main headline
+* Short descriptive subtitle explaining the event purpose
+* Event date and location clearly displayed
+* Countdown timer showing days, hours, minutes, and seconds until the event
+* Countdown automatically stops and switches to “Event Ongoing” or “Event Concluded” on the event date
+* Primary call-to-action button: Register for Event
+* Secondary button: View Program
+* Animated entrance for text and buttons on page load
+
+About the event section:
+
+* Clear section title: About the Event
+* Short overview describing the event’s goals, target audience, and impact
+* Bullet highlights such as networking, keynote sessions, exhibitions, and policy discussions
+* Optional embedded video or curated image collage
+* Images should reflect Kenyan and African business environments
+
+Key speakers section:
+
+* Grid layout with speaker cards
+* Speaker photo, name, title, and organization
+* All speaker images should feature Black professionals
+* Hover effects revealing short bios
+* Click opens a modal or drawer with full speaker profile
+* Smooth hover and modal animations
+
+Event program / schedule:
+
+* Program calendar displayed as tabs or accordion components (shadcn/ui style)
+* Sessions grouped by day
+* Each session shows time, topic, speaker, and session type
+* Icons for keynote, panel, workshop, and networking
+* Clean, readable, and scannable layout
+
+Venue section:
+
+* Venue name and address
+* Embedded map placeholder
+* Venue images featuring real-world Kenyan locations
+* Information on accessibility, parking, and nearby hotels
+* Two-column responsive layout with subtle animations on scroll
+
+Registration section:
+
+* Visually distinct section with soft background contrast
+* Persuasive copy encouraging early registration
+* Event value highlights
+* Prominent “Register Now” button (UI only for now)
+* Trust indicators such as partner logos or attendance statistics
+
+Partners and sponsors:
+
+* Logos displayed in a clean grid or carousel
+* Categorized by sponsor tier if applicable
+* Grayscale logos that transition to full color on hover
+* Smooth sliding or fade animations
+
+Gallery of previous events:
+
+* Masonry or responsive grid layout
+* High-quality images from previous KNCCI events
+* All images should feature Black attendees and speakers
+* Hover overlay showing event name and year
+* Click opens a lightbox gallery with smooth transitions
+
+Testimonials section (optional but recommended):
+
+* Quotes from past attendees, partners, or government stakeholders
+* Name, title, and organization
+* Clean card layout with subtle elevation and motion
+
+Footer:
+
+* KNCCI logo and short mission statement
+* Quick navigation links
+* Contact information
+* Social media icons
+* Newsletter subscription UI
+* Copyright notice
+
+UI interactions and animations:
+
+* Smooth scrolling
+* Button hover and press animations
+* Fade-in, slide-up, and scale animations on section entry
+* Countdown timer updates every second with subtle motion
+* Motion should feel refined, not flashy
+
+Accessibility considerations:
+
+* High contrast text using #000000
+* Clear and readable font sizes
+* Keyboard-friendly navigation
+* Accessible color combinations and focus states
+
+Deliverables:
+
+* High-fidelity UI screens for desktop, tablet, and mobile
+* Component-based design system using shadcn/ui and Cult UI patterns
+* Reusable components for events, speakers, schedules, and galleries
+* Design ready for frontend implementation with React and Next.js
