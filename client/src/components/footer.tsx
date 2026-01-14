@@ -128,7 +128,7 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="font-semibold text-lg mb-6">Contact Us</h4>
+            <h4 className="font-semibold text-lg mb-6">Contact us</h4>
             <p className="text-white/60 text-sm mb-4">
               For inquiries, partnerships, and sponsorships:
             </p>
