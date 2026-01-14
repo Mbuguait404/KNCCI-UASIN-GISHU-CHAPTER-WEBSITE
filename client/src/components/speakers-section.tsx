@@ -1,9 +1,8 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { staticSpeakers } from "@/data/static-data";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Linkedin, Twitter, Globe } from "lucide-react";
 import type { Speaker } from "@shared/schema";
 
@@ -39,25 +38,11 @@ function SpeakerCard({ speaker, onClick }: { speaker: Speaker; onClick: () => vo
   );
 }
 
-function SpeakerSkeleton() {
-  return (
-    <Card className="p-6 border border-border bg-card">
-      <div className="flex flex-col items-center text-center">
-        <Skeleton className="w-24 h-24 rounded-full mb-4" />
-        <Skeleton className="h-5 w-32 mb-2" />
-        <Skeleton className="h-4 w-24 mb-1" />
-        <Skeleton className="h-4 w-28" />
-      </div>
-    </Card>
-  );
-}
 
 export function SpeakersSection() {
   const [selectedSpeaker, setSelectedSpeaker] = useState<Speaker | null>(null);
 
-  const { data: speakers = [], isLoading, isError } = useQuery<Speaker[]>({
-    queryKey: ["/api/speakers"],
-  });
+  const speakers = staticSpeakers;
 
   return (
     <section
@@ -79,27 +64,15 @@ export function SpeakersSection() {
           </p>
         </div>
 
-        {isLoading ? (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <SpeakerSkeleton key={i} />
-            ))}
-          </div>
-        ) : isError ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">Unable to load speakers. Please try again later.</p>
-          </div>
-        ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-            {speakers.map((speaker) => (
-              <SpeakerCard
-                key={speaker.id}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+          {speakers.map((speaker) => (
+            <SpeakerCard
+              key={speaker.id}
                 speaker={speaker}
                 onClick={() => setSelectedSpeaker(speaker)}
               />
             ))}
-          </div>
-        )}
+        </div>
 
         <Dialog open={!!selectedSpeaker} onOpenChange={() => setSelectedSpeaker(null)}>
           <DialogContent className="max-w-lg">

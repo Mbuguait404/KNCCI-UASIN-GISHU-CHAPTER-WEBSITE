@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { staticTestimonials } from "@/data/static-data";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Quote, ChevronLeft, ChevronRight } from "lucide-react";
 import type { Testimonial } from "@shared/schema";
 
@@ -11,9 +10,7 @@ export function TestimonialsSection() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
-  const { data: testimonials = [], isLoading, isError } = useQuery<Testimonial[]>({
-    queryKey: ["/api/testimonials"],
-  });
+  const testimonials = staticTestimonials;
 
   useEffect(() => {
     if (!isAutoPlaying || testimonials.length === 0) return;
@@ -58,21 +55,7 @@ export function TestimonialsSection() {
         </div>
 
         <div className="max-w-4xl mx-auto">
-          {isLoading ? (
-            <Card className="p-8 sm:p-12 border border-border bg-card">
-              <div className="flex flex-col items-center">
-                <Skeleton className="h-24 w-3/4 mb-8" />
-                <Skeleton className="w-16 h-16 rounded-full mb-4" />
-                <Skeleton className="h-5 w-32 mb-2" />
-                <Skeleton className="h-4 w-24 mb-1" />
-                <Skeleton className="h-4 w-28" />
-              </div>
-            </Card>
-          ) : isError ? (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">Unable to load testimonials. Please try again later.</p>
-            </div>
-          ) : currentTestimonial ? (
+          {currentTestimonial && (
             <Card className="p-8 sm:p-12 border border-border bg-card relative overflow-visible">
               <Quote className="absolute top-6 left-6 w-12 h-12 text-primary/10" />
               
@@ -137,7 +120,7 @@ export function TestimonialsSection() {
                 </Button>
               </div>
             </Card>
-          ) : null}
+          )}
         </div>
       </div>
     </section>

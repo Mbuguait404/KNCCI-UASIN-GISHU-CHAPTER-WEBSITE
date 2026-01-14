@@ -1,8 +1,7 @@
-import { useQuery } from "@tanstack/react-query";
+import { staticSchedule } from "@/data/static-data";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Mic2, Users, Wrench, Coffee, HandshakeIcon } from "lucide-react";
 import type { Session } from "@shared/schema";
 
@@ -55,33 +54,9 @@ function SessionCard({ session }: { session: Session }) {
   );
 }
 
-function SessionSkeleton() {
-  return (
-    <Card className="p-4 border border-border bg-card">
-      <div className="flex gap-4">
-        <div className="flex-shrink-0 w-20">
-          <Skeleton className="h-4 w-12 mb-1" />
-          <Skeleton className="h-3 w-10" />
-        </div>
-        <div className="flex-grow">
-          <div className="flex items-start gap-3">
-            <Skeleton className="w-8 h-8 rounded-md" />
-            <div className="flex-grow">
-              <Skeleton className="h-5 w-3/4 mb-2" />
-              <Skeleton className="h-4 w-1/2" />
-            </div>
-            <Skeleton className="h-5 w-16" />
-          </div>
-        </div>
-      </div>
-    </Card>
-  );
-}
 
 export function ProgramSection() {
-  const { data: schedule = [], isLoading, isError } = useQuery<Session[]>({
-    queryKey: ["/api/schedule"],
-  });
+  const schedule = staticSchedule;
 
   const days = [1, 2, 3];
   const dayLabels = ["Day 1 - April 23", "Day 2 - April 24", "Day 3 - April 25"];
@@ -117,18 +92,7 @@ export function ProgramSection() {
           ))}
         </div>
 
-        {isLoading ? (
-          <div className="max-w-4xl mx-auto space-y-4">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <SessionSkeleton key={i} />
-            ))}
-          </div>
-        ) : isError ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">Unable to load schedule. Please try again later.</p>
-          </div>
-        ) : (
-          <Tabs defaultValue="1" className="max-w-4xl mx-auto">
+        <Tabs defaultValue="1" className="max-w-4xl mx-auto">
             <TabsList className="grid w-full grid-cols-3 mb-8">
               {days.map((day, index) => (
                 <TabsTrigger key={day} value={day.toString()} data-testid={`tab-day-${day}`}>
@@ -146,8 +110,7 @@ export function ProgramSection() {
                   ))}
               </TabsContent>
             ))}
-          </Tabs>
-        )}
+        </Tabs>
       </div>
     </section>
   );

@@ -1,9 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar, MapPin } from "lucide-react";
-import type { Event } from "@shared/schema";
+import { staticEvent } from "@/data/static-data";
 
 interface CountdownValues {
   days: number;
@@ -46,9 +44,7 @@ function CountdownBlock({ value, label }: { value: number; label: string }) {
 }
 
 export function HeroSection() {
-  const { data: event, isLoading, isError } = useQuery<Event>({
-    queryKey: ["/api/event"],
-  });
+  const event = staticEvent;
 
   const eventDate = useMemo(() => {
     if (!event?.date) return null;
@@ -117,33 +113,7 @@ export function HeroSection() {
 
       <div className="relative z-10 container mx-auto px-4 text-center h-full flex flex-col justify-center">
         <div className="max-w-4xl mx-auto w-full space-y-3 sm:space-y-4 animate-fade-in-up">
-          {isLoading ? (
-            <>
-              <Skeleton className="h-6 sm:h-8 w-40 sm:w-48 mx-auto bg-white/10" />
-              <Skeleton className="h-10 sm:h-12 md:h-14 w-full max-w-2xl mx-auto bg-white/10" />
-              <Skeleton className="h-5 sm:h-6 md:h-7 w-3/4 mx-auto bg-white/10" />
-              <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
-                <Skeleton className="h-4 sm:h-5 w-32 sm:w-40 bg-white/10" />
-                <Skeleton className="h-4 sm:h-5 w-32 sm:w-40 bg-white/10" />
-              </div>
-              <div className="pt-2 sm:pt-3">
-                <Skeleton className="h-3 sm:h-4 w-28 sm:w-32 mx-auto mb-2 sm:mb-3 bg-white/10" />
-                <div className="flex justify-center gap-2 sm:gap-3 md:gap-4">
-                  {[1, 2, 3, 4].map((i) => (
-                    <div key={i} className="flex flex-col items-center">
-                      <Skeleton className="h-12 sm:h-14 md:h-16 w-12 sm:w-14 md:w-16 rounded-lg bg-white/10" />
-                      <Skeleton className="h-2.5 sm:h-3 w-10 sm:w-12 mt-1 bg-white/10" />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </>
-          ) : isError ? (
-            <div className="text-white text-center">
-              <p className="text-xl">Unable to load event information.</p>
-              <p className="text-white/60 mt-2">Please try again later.</p>
-            </div>
-          ) : event ? (
+          {event && (
             <>
               <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-3 py-1.5 text-white/90 text-xs sm:text-sm">
                 <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -212,22 +182,16 @@ export function HeroSection() {
                       Event Starts In
                     </p>
                     <div className="flex justify-center gap-2 sm:gap-3 md:gap-4">
-                      {[1, 2, 3, 4].map((i) => (
-                        <div key={i} className="flex flex-col items-center">
-                          <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg p-2 sm:p-3 min-w-[50px] sm:min-w-[60px]">
-                            <Skeleton className="h-6 sm:h-8 md:h-10 w-10 sm:w-12 md:w-16 bg-white/20" />
-                          </div>
-                          <span className="text-[10px] sm:text-xs text-white/80 mt-1 uppercase tracking-wider">
-                            {['Days', 'Hours', 'Minutes', 'Seconds'][i - 1]}
-                          </span>
-                        </div>
-                      ))}
+                      <CountdownBlock value={0} label="Days" />
+                      <CountdownBlock value={0} label="Hours" />
+                      <CountdownBlock value={0} label="Minutes" />
+                      <CountdownBlock value={0} label="Seconds" />
                     </div>
                   </div>
                 )
               )}
             </>
-          ) : null}
+          )}
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4 sm:pt-5">
             <Button
