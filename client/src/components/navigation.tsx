@@ -90,7 +90,11 @@ export function Navigation() {
             <button
               key={link.href}
               onClick={() => handleNavClick(link.href)}
-              className="px-3 py-2 text-sm font-medium text-foreground/80 hover:text-foreground transition-colors rounded-md hover-elevate"
+              className={`px-3 py-2 text-sm font-medium transition-colors rounded-md hover-elevate ${
+                isScrolled || !isHomePage
+                  ? "text-foreground/80 hover:text-foreground"
+                  : "text-white/90 hover:text-white"
+              }`}
               data-testid={`link-nav-${link.label.toLowerCase()}`}
             >
               {link.label}
@@ -103,7 +107,11 @@ export function Navigation() {
             size="icon"
             variant="ghost"
             onClick={toggleTheme}
-            className="hidden sm:flex"
+            className={`hidden sm:flex ${
+              isScrolled || !isHomePage
+                ? "text-foreground"
+                : "text-white hover:bg-white/20"
+            }`}
             data-testid="button-theme-toggle"
           >
             {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
@@ -117,7 +125,11 @@ export function Navigation() {
               window.location.href = "/partnership";
             }}
             variant="outline"
-            className="hidden sm:flex border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+            className={`hidden sm:flex ${
+              isScrolled || !isHomePage
+                ? "border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                : "border-white/30 text-white hover:bg-white/20 hover:text-white"
+            }`}
             data-testid="button-become-partner-nav"
           >
             Become a Partner
@@ -125,7 +137,11 @@ export function Navigation() {
 
           <Button
             onClick={() => scrollToSection("#registration")}
-            className="hidden sm:flex bg-primary text-primary-foreground"
+            className={`hidden sm:flex ${
+              isScrolled || !isHomePage
+                ? "bg-primary text-primary-foreground"
+                : "bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 border border-white/20"
+            }`}
             data-testid="button-register-nav"
           >
             Register Now
@@ -136,7 +152,11 @@ export function Navigation() {
               <Button
                 size="icon"
                 variant="ghost"
-                className="lg:hidden"
+                className={`lg:hidden ${
+                  isScrolled || !isHomePage
+                    ? "text-foreground"
+                    : "text-white hover:bg-white/20"
+                }`}
                 data-testid="button-mobile-menu"
               >
                 <Menu className="h-5 w-5" />

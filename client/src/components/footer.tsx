@@ -77,15 +77,18 @@ export function Footer() {
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-12">
           <div className="lg:col-span-2">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 rounded-lg bg-primary flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-xl">K</span>
-              </div>
-              <div>
+              <img 
+                src="/kncci_logo-removebg-preview.png" 
+                alt="KNCCI - Kenya National Chamber of Commerce and Industry" 
+                className="h-12 sm:h-14 w-auto object-contain"
+                data-testid="footer-logo-image"
+              />
+              {/* <div>
                 <span className="font-bold text-xl" data-testid="text-footer-logo">KNCCI</span>
                 <span className="text-xs block text-white/60 -mt-0.5">
                   Kenya National Chamber of Commerce and Industry
                 </span>
-              </div>
+              </div> */}
             </div>
             <p className="text-white/70 mb-6 max-w-md leading-relaxed" data-testid="text-footer-description">
               The Kenya National Chamber of Commerce and Industry is the voice of business 
