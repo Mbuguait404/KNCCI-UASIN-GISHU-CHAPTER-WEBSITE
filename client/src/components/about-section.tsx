@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Check, Star } from "lucide-react";
+import { Check, Star, Building2, Mic, Users, Handshake, UtensilsCrossed, GraduationCap } from "lucide-react";
 import type { Event } from "@shared/schema";
 
 export function AboutSection() {
@@ -85,6 +85,91 @@ export function AboutSection() {
           </div>
         ) : null}
 
+        <div className="mt-16 max-w-6xl mx-auto">
+          <div className="text-center mb-12">
+            <span className="text-primary font-semibold text-sm uppercase tracking-wider">
+              Event Activities
+            </span>
+            <h3 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mt-4 mb-6">
+              What to Expect
+            </h3>
+          </div>
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <Card className="p-6 border border-border bg-card hover-elevate">
+              <div className="flex gap-4">
+                <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Building2 className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <h4 className="text-lg font-semibold text-foreground mb-2">Business Exhibitions</h4>
+                  <p className="text-sm text-muted-foreground">Showcasing innovative products and solutions.</p>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-6 border border-border bg-card hover-elevate">
+              <div className="flex gap-4">
+                <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-secondary/10 flex items-center justify-center">
+                  <Mic className="w-6 h-6 text-secondary" />
+                </div>
+                <div>
+                  <h4 className="text-lg font-semibold text-foreground mb-2">Keynote Speeches</h4>
+                  <p className="text-sm text-muted-foreground">Insights from industry leaders on emerging trends.</p>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-6 border border-border bg-card hover-elevate">
+              <div className="flex gap-4">
+                <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-chart-4/10 flex items-center justify-center">
+                  <Users className="w-6 h-6 text-chart-4" />
+                </div>
+                <div>
+                  <h4 className="text-lg font-semibold text-foreground mb-2">Panel Discussions</h4>
+                  <p className="text-sm text-muted-foreground">Interactive sessions on Agribusiness, Sports, Tourism, and Healthcare.</p>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-6 border border-border bg-card hover-elevate">
+              <div className="flex gap-4">
+                <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-chart-3/10 flex items-center justify-center">
+                  <Handshake className="w-6 h-6 text-chart-3" />
+                </div>
+                <div>
+                  <h4 className="text-lg font-semibold text-foreground mb-2">Networking Sessions</h4>
+                  <p className="text-sm text-muted-foreground">Opportunities to forge collaborations.</p>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-6 border border-border bg-card hover-elevate">
+              <div className="flex gap-4">
+                <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-chart-1/10 flex items-center justify-center">
+                  <UtensilsCrossed className="w-6 h-6 text-chart-1" />
+                </div>
+                <div>
+                  <h4 className="text-lg font-semibold text-foreground mb-2">Gala Networking Dinner</h4>
+                  <p className="text-sm text-muted-foreground">A high-level dinner for stakeholders.</p>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-6 border border-border bg-card hover-elevate">
+              <div className="flex gap-4">
+                <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <GraduationCap className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <h4 className="text-lg font-semibold text-foreground mb-2">Skill Development Sessions</h4>
+                  <p className="text-sm text-muted-foreground">Practical workshops on innovation and planning.</p>
+                </div>
+              </div>
+            </Card>
+          </div>
+        </div>
+
         <div className="mt-16 max-w-4xl mx-auto">
           <Card className="p-8 bg-gradient-to-br from-card to-accent/30 border border-border">
             <div className="grid md:grid-cols-2 gap-8 items-center">
@@ -118,20 +203,45 @@ export function AboutSection() {
                 {isLoading ? (
                   <Skeleton className="aspect-video rounded-lg" />
                 ) : event?.stats ? (
-                  <div className="aspect-video rounded-lg bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center border border-border">
-                    <div className="text-center p-6">
-                      <div className="text-4xl font-bold text-foreground" data-testid="stat-attendees">{event.stats.attendees}</div>
-                      <div className="text-muted-foreground">Expected Attendees</div>
-                      <div className="mt-4 grid grid-cols-2 gap-4 text-center">
-                        <div>
-                          <div className="text-2xl font-bold text-primary" data-testid="stat-speakers">{event.stats.speakers}</div>
-                          <div className="text-xs text-muted-foreground">Speakers</div>
+                  <div className="rounded-lg bg-gradient-to-br from-primary/20 to-secondary/20 border border-border p-6">
+                    <h4 className="text-lg font-semibold text-foreground mb-4 text-center">Key Statistics & Targets</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      {event.stats.visitors && (
+                        <div className="text-center">
+                          <div className="text-2xl sm:text-3xl font-bold text-foreground" data-testid="stat-visitors">{event.stats.visitors}</div>
+                          <div className="text-xs sm:text-sm text-muted-foreground mt-1">Visitors</div>
                         </div>
-                        <div>
-                          <div className="text-2xl font-bold text-secondary" data-testid="stat-sessions">{event.stats.sessions}</div>
-                          <div className="text-xs text-muted-foreground">Sessions</div>
+                      )}
+                      {event.stats.exhibitors && (
+                        <div className="text-center">
+                          <div className="text-2xl sm:text-3xl font-bold text-primary" data-testid="stat-exhibitors">{event.stats.exhibitors}</div>
+                          <div className="text-xs sm:text-sm text-muted-foreground mt-1">Exhibitors</div>
                         </div>
-                      </div>
+                      )}
+                      {event.stats.delegates && (
+                        <div className="text-center">
+                          <div className="text-2xl sm:text-3xl font-bold text-secondary" data-testid="stat-delegates">{event.stats.delegates}</div>
+                          <div className="text-xs sm:text-sm text-muted-foreground mt-1">Delegates</div>
+                        </div>
+                      )}
+                      {event.stats.participatingNations && (
+                        <div className="text-center">
+                          <div className="text-2xl sm:text-3xl font-bold text-chart-4" data-testid="stat-nations">{event.stats.participatingNations}</div>
+                          <div className="text-xs sm:text-sm text-muted-foreground mt-1">Participating Nations</div>
+                        </div>
+                      )}
+                      {event.stats.speakers && (
+                        <div className="text-center">
+                          <div className="text-2xl sm:text-3xl font-bold text-chart-3" data-testid="stat-speakers">{event.stats.speakers}</div>
+                          <div className="text-xs sm:text-sm text-muted-foreground mt-1">Speakers</div>
+                        </div>
+                      )}
+                      {event.stats.sessions && (
+                        <div className="text-center">
+                          <div className="text-2xl sm:text-3xl font-bold text-chart-1" data-testid="stat-sessions">{event.stats.sessions}</div>
+                          <div className="text-xs sm:text-sm text-muted-foreground mt-1">Sessions</div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ) : null}

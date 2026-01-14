@@ -52,6 +52,7 @@ async function buildAll() {
     bundle: true,
     format: "cjs",
     outfile: "dist/index.cjs",
+    tsconfig: "tsconfig.json",
     define: {
       "process.env.NODE_ENV": '"production"',
     },

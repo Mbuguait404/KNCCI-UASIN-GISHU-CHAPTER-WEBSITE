@@ -84,7 +84,7 @@ export function ProgramSection() {
   });
 
   const days = [1, 2, 3];
-  const dayLabels = ["Day 1 - March 15", "Day 2 - March 16", "Day 3 - March 17"];
+  const dayLabels = ["Day 1 - April 23", "Day 2 - April 24", "Day 3 - April 25"];
 
   return (
     <section

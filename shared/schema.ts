@@ -31,9 +31,13 @@ export interface Event {
   highlights: string[];
   tagline: string;
   stats: {
-    attendees: string;
+    attendees?: string;
     speakers: string;
     sessions: string;
+    visitors?: string;
+    exhibitors?: string;
+    delegates?: string;
+    participatingNations?: string;
   };
 }
 

@@ -88,14 +88,14 @@ export class MemStorage implements IStorage {
 
   getEvent(): Event {
     return {
-      id: "kenya-business-summit-2025",
-      name: "Kenya Business Summit 2025",
-      subtitle: "Shaping the Future of Trade and Commerce",
-      description: "The Kenya Business Summit 2025 is the flagship event organized by the Kenya National Chamber of Commerce and Industry (KNCCI). This three-day summit brings together the nation's brightest minds in business, government, and civil society to drive economic growth and foster international partnerships.",
-      date: "2025-03-15",
-      endDate: "2025-03-17",
-      location: "Nairobi, Kenya",
-      venue: "Kenyatta International Convention Centre",
+      id: "eldoret-international-business-summit-2026",
+      name: "The Eldoret International Business Summit 2026",
+      subtitle: "Eldoret City: Gateway to Africa's Trade and Economic Future",
+      description: "Eldoret is a thriving business hub in the North Rift and a key gateway to East and Central Africa. Following the success of the previous summit (which attracted over 10,000 attendees and 200+ exhibitors), the 2026 edition aims to unite key stakeholders to explore innovative strategies for sustainable business growth. The Eldoret International Business Summit 2026 is the flagship event organized by the Kenya National Chamber of Commerce and Industry (KNCCI) Uasin Gishu Chapter. This three-day summit brings together the nation's brightest minds in business, government, and civil society to drive economic growth and foster international partnerships. Join us in Eldoret, The City of Champions, as we explore Africa's trade and economic future.",
+      date: "2026-04-23",
+      endDate: "2026-04-25",
+      location: "Eldoret, Uasin Gishu County (The City of Champions)",
+      venue: "Rupaz center",
       highlights: [
         "Networking with 500+ business leaders",
         "50+ industry speakers",
@@ -105,7 +105,10 @@ export class MemStorage implements IStorage {
       ],
       tagline: "Days of Excellence",
       stats: {
-        attendees: "500+",
+        visitors: "10,000+",
+        exhibitors: "200+",
+        delegates: "700+",
+        participatingNations: "10+",
         speakers: "50+",
         sessions: "30+",
       },
@@ -167,28 +170,28 @@ export class MemStorage implements IStorage {
 
   getSchedule(): Session[] {
     return [
-      { id: "1", day: 1, dayLabel: "Day 1 - March 15", time: "08:00 - 09:00", title: "Registration & Networking Breakfast", speaker: "", type: "networking" },
-      { id: "2", day: 1, dayLabel: "Day 1 - March 15", time: "09:00 - 09:30", title: "Opening Ceremony & Welcome Address", speaker: "Michael Otieno", type: "keynote" },
-      { id: "3", day: 1, dayLabel: "Day 1 - March 15", time: "09:30 - 10:30", title: "Keynote: The Future of African Trade", speaker: "Hon. Grace Muthoni", type: "keynote" },
-      { id: "4", day: 1, dayLabel: "Day 1 - March 15", time: "10:30 - 11:00", title: "Coffee Break & Exhibition Tour", speaker: "", type: "break" },
-      { id: "5", day: 1, dayLabel: "Day 1 - March 15", time: "11:00 - 12:30", title: "Panel: Digital Transformation in Business", speaker: "Dr. Amina Wanjiku, James Omondi", type: "panel" },
-      { id: "6", day: 1, dayLabel: "Day 1 - March 15", time: "12:30 - 14:00", title: "Networking Lunch", speaker: "", type: "networking" },
-      { id: "7", day: 1, dayLabel: "Day 1 - March 15", time: "14:00 - 15:30", title: "Workshop: Export Readiness", speaker: "Sarah Njeri", type: "workshop" },
-      { id: "8", day: 1, dayLabel: "Day 1 - March 15", time: "15:30 - 17:00", title: "Panel: Access to Finance for SMEs", speaker: "James Omondi, Prof. David Kamau", type: "panel" },
-      { id: "9", day: 2, dayLabel: "Day 2 - March 16", time: "08:30 - 09:00", title: "Morning Networking Coffee", speaker: "", type: "networking" },
-      { id: "10", day: 2, dayLabel: "Day 2 - March 16", time: "09:00 - 10:00", title: "Keynote: Building Sustainable Enterprises", speaker: "Prof. David Kamau", type: "keynote" },
-      { id: "11", day: 2, dayLabel: "Day 2 - March 16", time: "10:00 - 11:30", title: "Panel: Women in Business Leadership", speaker: "Dr. Amina Wanjiku, Sarah Njeri", type: "panel" },
-      { id: "12", day: 2, dayLabel: "Day 2 - March 16", time: "11:30 - 12:00", title: "Coffee Break", speaker: "", type: "break" },
-      { id: "13", day: 2, dayLabel: "Day 2 - March 16", time: "12:00 - 13:00", title: "Workshop: Investment Pitch Masterclass", speaker: "James Omondi", type: "workshop" },
-      { id: "14", day: 2, dayLabel: "Day 2 - March 16", time: "13:00 - 14:30", title: "Networking Lunch & Exhibition", speaker: "", type: "networking" },
-      { id: "15", day: 2, dayLabel: "Day 2 - March 16", time: "14:30 - 16:00", title: "Panel: Infrastructure Development", speaker: "Hon. Grace Muthoni, Michael Otieno", type: "panel" },
-      { id: "16", day: 2, dayLabel: "Day 2 - March 16", time: "16:00 - 17:30", title: "Workshop: E-commerce Strategies", speaker: "Dr. Amina Wanjiku", type: "workshop" },
-      { id: "17", day: 3, dayLabel: "Day 3 - March 17", time: "08:30 - 09:00", title: "Morning Coffee", speaker: "", type: "networking" },
-      { id: "18", day: 3, dayLabel: "Day 3 - March 17", time: "09:00 - 10:00", title: "Keynote: Regional Trade Integration", speaker: "Sarah Njeri", type: "keynote" },
-      { id: "19", day: 3, dayLabel: "Day 3 - March 17", time: "10:00 - 11:30", title: "Panel: Youth Entrepreneurship", speaker: "Dr. Amina Wanjiku, Prof. David Kamau", type: "panel" },
-      { id: "20", day: 3, dayLabel: "Day 3 - March 17", time: "11:30 - 12:00", title: "Coffee Break", speaker: "", type: "break" },
-      { id: "21", day: 3, dayLabel: "Day 3 - March 17", time: "12:00 - 13:30", title: "Workshop: Business Continuity Planning", speaker: "James Omondi", type: "workshop" },
-      { id: "22", day: 3, dayLabel: "Day 3 - March 17", time: "13:30 - 15:00", title: "Closing Lunch & Awards Ceremony", speaker: "Michael Otieno", type: "keynote" },
+      { id: "1", day: 1, dayLabel: "Day 1 - April 23", time: "08:00 - 09:00", title: "Registration & Networking Breakfast", speaker: "", type: "networking" },
+      { id: "2", day: 1, dayLabel: "Day 1 - April 23", time: "09:00 - 09:30", title: "Opening Ceremony & Welcome Address", speaker: "Michael Otieno", type: "keynote" },
+      { id: "3", day: 1, dayLabel: "Day 1 - April 23", time: "09:30 - 10:30", title: "Keynote: The Future of African Trade", speaker: "Hon. Grace Muthoni", type: "keynote" },
+      { id: "4", day: 1, dayLabel: "Day 1 - April 23", time: "10:30 - 11:00", title: "Coffee Break & Exhibition Tour", speaker: "", type: "break" },
+      { id: "5", day: 1, dayLabel: "Day 1 - April 23", time: "11:00 - 12:30", title: "Panel: Digital Transformation in Business", speaker: "Dr. Amina Wanjiku, James Omondi", type: "panel" },
+      { id: "6", day: 1, dayLabel: "Day 1 - April 23", time: "12:30 - 14:00", title: "Networking Lunch", speaker: "", type: "networking" },
+      { id: "7", day: 1, dayLabel: "Day 1 - April 23", time: "14:00 - 15:30", title: "Workshop: Export Readiness", speaker: "Sarah Njeri", type: "workshop" },
+      { id: "8", day: 1, dayLabel: "Day 1 - April 23", time: "15:30 - 17:00", title: "Panel: Access to Finance for SMEs", speaker: "James Omondi, Prof. David Kamau", type: "panel" },
+      { id: "9", day: 2, dayLabel: "Day 2 - April 24", time: "08:30 - 09:00", title: "Morning Networking Coffee", speaker: "", type: "networking" },
+      { id: "10", day: 2, dayLabel: "Day 2 - April 24", time: "09:00 - 10:00", title: "Keynote: Building Sustainable Enterprises", speaker: "Prof. David Kamau", type: "keynote" },
+      { id: "11", day: 2, dayLabel: "Day 2 - April 24", time: "10:00 - 11:30", title: "Panel: Women in Business Leadership", speaker: "Dr. Amina Wanjiku, Sarah Njeri", type: "panel" },
+      { id: "12", day: 2, dayLabel: "Day 2 - April 24", time: "11:30 - 12:00", title: "Coffee Break", speaker: "", type: "break" },
+      { id: "13", day: 2, dayLabel: "Day 2 - April 24", time: "12:00 - 13:00", title: "Workshop: Investment Pitch Masterclass", speaker: "James Omondi", type: "workshop" },
+      { id: "14", day: 2, dayLabel: "Day 2 - April 24", time: "13:00 - 14:30", title: "Networking Lunch & Exhibition", speaker: "", type: "networking" },
+      { id: "15", day: 2, dayLabel: "Day 2 - April 24", time: "14:30 - 16:00", title: "Panel: Infrastructure Development", speaker: "Hon. Grace Muthoni, Michael Otieno", type: "panel" },
+      { id: "16", day: 2, dayLabel: "Day 2 - April 24", time: "16:00 - 17:30", title: "Workshop: E-commerce Strategies", speaker: "Dr. Amina Wanjiku", type: "workshop" },
+      { id: "17", day: 3, dayLabel: "Day 3 - April 25", time: "08:30 - 09:00", title: "Morning Coffee", speaker: "", type: "networking" },
+      { id: "18", day: 3, dayLabel: "Day 3 - April 25", time: "09:00 - 10:00", title: "Keynote: Regional Trade Integration", speaker: "Sarah Njeri", type: "keynote" },
+      { id: "19", day: 3, dayLabel: "Day 3 - April 25", time: "10:00 - 11:30", title: "Panel: Youth Entrepreneurship", speaker: "Dr. Amina Wanjiku, Prof. David Kamau", type: "panel" },
+      { id: "20", day: 3, dayLabel: "Day 3 - April 25", time: "11:30 - 12:00", title: "Coffee Break", speaker: "", type: "break" },
+      { id: "21", day: 3, dayLabel: "Day 3 - April 25", time: "12:00 - 13:30", title: "Workshop: Business Continuity Planning", speaker: "James Omondi", type: "workshop" },
+      { id: "22", day: 3, dayLabel: "Day 3 - April 25", time: "13:30 - 15:00", title: "Closing Lunch & Awards Ceremony", speaker: "Michael Otieno", type: "keynote" },
     ];
   }
 
@@ -226,7 +229,7 @@ export class MemStorage implements IStorage {
     return [
       {
         id: "1",
-        quote: "The Kenya Business Summit was transformative for our company. We secured three major partnerships and gained invaluable insights into market trends.",
+        quote: "The Eldoret International Business Summit was transformative for our company. We secured three major partnerships and gained invaluable insights into market trends.",
         name: "Elizabeth Wangari",
         title: "Managing Director",
         organization: "TechStart Africa",
@@ -257,12 +260,12 @@ export class MemStorage implements IStorage {
 
   getVenue(): Venue {
     return {
-      name: "Kenyatta International Convention Centre",
-      address: "Harambee Avenue",
-      city: "Nairobi",
-      description: "Join us at Kenya's iconic Kenyatta International Convention Centre, a symbol of national progress and the perfect venue for this landmark event. The KICC offers world-class facilities and is located in the heart of Nairobi's Central Business District.",
-      mapUrl: "https://maps.google.com/?q=KICC+Nairobi",
-      mapEmbedUrl: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3988.8191048431687!2d36.81859231475393!3d-1.2863899990667556!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x182f10d22f42bf35%3A0x8c9e7d9d9a4a7d48!2sKenyatta%20International%20Convention%20Centre!5e0!3m2!1sen!2ske!4v1640000000000!5m2!1sen!2ske",
+      name: "Rupa's Mall Eldoret",
+      address: "Malaba Road",
+      city: "Eldoret",
+      description: "Join us at Rupa's Mall Eldoret, a premier shopping and event destination in The City of Champions. This modern mall facility offers excellent amenities, spacious event halls, and is perfectly located on Malaba Road in the heart of Eldoret, making it the ideal setting for this landmark international business summit.",
+      mapUrl: "https://maps.google.com/?q=Rupa%27s+Mall+Eldoret",
+      mapEmbedUrl: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3989.5!2d35.2923!3d0.5134!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMCDQsDMwJzQ4LjIiTiAzNcKwMTcnMzIuMyJF!5e0!3m2!1sen!2ske!4v1640000000000!5m2!1sen!2ske",
       imageUrl: "",
       accessibility: [
         "Wheelchair accessible entrances and lifts",
@@ -270,12 +273,12 @@ export class MemStorage implements IStorage {
         "Sign language interpreters available on request",
         "Reserved seating for persons with disabilities",
       ],
-      parking: "Ample parking available at KICC underground parking facility. Additional parking at nearby City Hall Annex and KPLC. Valet parking service available for VIP attendees.",
+      parking: "Ample parking available at Rupa's Mall. Additional parking facilities nearby. Valet parking service available for VIP attendees.",
       nearbyHotels: [
-        "Intercontinental Hotel Nairobi",
-        "Sarova Stanley Hotel",
-        "The Nairobi Serena Hotel",
-        "Hilton Nairobi",
+        "Eka Hotel Eldoret",
+        "Boma Inn Eldoret",
+        "The Noble Hotel",
+        "The Sirikwa Hotel",
       ],
     };
   }

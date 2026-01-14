@@ -2,6 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Leaflet Map Custom Styles */
+.leaflet-popup-content-wrapper {
+  border-radius: 0.5rem;
+  padding: 0;
+}
+
+.leaflet-popup-content {
+  margin: 0;
+  padding: 0;
+}
+
+.leaflet-popup-tip {
+  background: white;
+}
+
+.custom-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
 /* LIGHT MODE - KNCCI Branding */
 /* KNCCI Colors: #88807e (gray), #ec252c (red accent), #0e783d (green), #000000 (text) */
 :root {

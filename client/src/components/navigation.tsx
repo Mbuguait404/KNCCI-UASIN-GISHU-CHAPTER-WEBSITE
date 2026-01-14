@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useTheme } from "@/components/theme-provider";
+import { useLocation } from "wouter";
 import { Menu, X, Sun, Moon } from "lucide-react";
 
 const navLinks = [
@@ -19,6 +20,8 @@ export function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
+  const [location] = useLocation();
+  const isHomePage = location === "/";
 
   useEffect(() => {
     const handleScroll = () => {
@@ -30,9 +33,22 @@ export function Navigation() {
 
   const scrollToSection = (href: string) => {
     setMobileOpen(false);
+    if (!isHomePage && href.startsWith("#")) {
+      // If not on home page, navigate to home first, then scroll
+      window.location.href = `/${href}`;
+      return;
+    }
     const element = document.querySelector(href);
     if (element) {
       element.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
+  const handleNavClick = (href: string) => {
+    if (isHomePage) {
+      scrollToSection(href);
+    } else {
+      window.location.href = `/${href}`;
     }
   };
 
@@ -47,28 +63,33 @@ export function Navigation() {
     >
       <div className="container mx-auto px-4 flex items-center justify-between gap-4">
         <a
-          href="#home"
+          href="/"
           onClick={(e) => {
             e.preventDefault();
-            scrollToSection("#home");
+            if (isHomePage) {
+              scrollToSection("#home");
+            } else {
+              window.location.href = "/";
+            }
           }}
           className="flex items-center gap-2"
           data-testid="link-logo"
         >
-          <div className="w-10 h-10 rounded-md bg-primary flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-lg">K</span>
-          </div>
-          <div className="hidden sm:block">
-            <span className="font-bold text-lg text-foreground">KNCCI</span>
-            <span className="text-xs block text-muted-foreground -mt-1">Chamber of Commerce</span>
-          </div>
+          {/* Upload your logo image to client/public/ directory */}
+          {/* Update the src path below to match your logo filename */}
+          {/* Example: /kncci-logo.png or /kncci-logo.svg */}
+          <img 
+            src="/kncci_logo-removebg-preview.png" 
+            alt="KNCCI - Kenya National Chamber of Commerce and Industry" 
+            className="h-10 sm:h-12 w-auto object-contain"
+          />
         </a>
 
         <div className="hidden lg:flex items-center gap-1">
           {navLinks.map((link) => (
             <button
               key={link.href}
-              onClick={() => scrollToSection(link.href)}
+              onClick={() => handleNavClick(link.href)}
               className="px-3 py-2 text-sm font-medium text-foreground/80 hover:text-foreground transition-colors rounded-md hover-elevate"
               data-testid={`link-nav-${link.label.toLowerCase()}`}
             >
@@ -86,6 +107,20 @@ export function Navigation() {
             data-testid="button-theme-toggle"
           >
             {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+          </Button>
+
+          <Button
+            onClick={() => {
+              if (location === "/partnership") {
+                return; // Already on partnership page
+              }
+              window.location.href = "/partnership";
+            }}
+            variant="outline"
+            className="hidden sm:flex border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+            data-testid="button-become-partner-nav"
+          >
+            Become a Partner
           </Button>
 
           <Button
@@ -112,7 +147,7 @@ export function Navigation() {
                 {navLinks.map((link) => (
                   <button
                     key={link.href}
-                    onClick={() => scrollToSection(link.href)}
+                    onClick={() => handleNavClick(link.href)}
                     className="text-left px-4 py-3 text-lg font-medium text-foreground hover:bg-accent rounded-md transition-colors"
                     data-testid={`link-mobile-${link.label.toLowerCase()}`}
                   >
@@ -120,6 +155,19 @@ export function Navigation() {
                   </button>
                 ))}
                 <div className="border-t border-border my-4" />
+                <Button
+                  onClick={() => {
+                    setMobileOpen(false);
+                    if (location !== "/partnership") {
+                      window.location.href = "/partnership";
+                    }
+                  }}
+                  variant="outline"
+                  className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                  data-testid="button-become-partner-mobile"
+                >
+                  Become a Partner
+                </Button>
                 <Button
                   onClick={() => scrollToSection("#registration")}
                   className="w-full bg-primary text-primary-foreground"

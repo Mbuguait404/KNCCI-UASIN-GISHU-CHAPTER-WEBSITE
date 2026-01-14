@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { insertNewsletterSchema, type InsertNewsletter } from "@shared/schema";
-import { Mail, Phone, MapPin, Loader2, Facebook, Twitter, Linkedin, Instagram, Youtube } from "lucide-react";
+import { Mail, Phone, MapPin, Loader2, Facebook, Twitter, Linkedin, Instagram, Youtube, Globe } from "lucide-react";
 
 const quickLinks = [
   { label: "About KNCCI", href: "#about" },
@@ -126,33 +126,47 @@ export function Footer() {
 
           <div>
             <h4 className="font-semibold text-lg mb-6">Contact Us</h4>
+            <p className="text-white/60 text-sm mb-4">
+              For inquiries, partnerships, and sponsorships:
+            </p>
             <ul className="space-y-4">
               <li className="flex items-start gap-3">
                 <MapPin className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
                 <span className="text-white/70" data-testid="text-address">
-                  Heritan House, Woodlands Road<br />
-                  P.O. Box 47024-00100<br />
-                  Nairobi, Kenya
+                  Daima Towers, M2 Room 9<br />
+                  Eldoret
                 </span>
               </li>
               <li className="flex items-center gap-3">
                 <Phone className="w-5 h-5 text-primary flex-shrink-0" />
                 <a 
-                  href="tel:+254202247247" 
+                  href="tel:+254740853372" 
                   className="text-white/70 hover:text-white transition-colors"
                   data-testid="link-phone"
                 >
-                  +254 20 224 7247
+                  +254 740 853 372
                 </a>
               </li>
               <li className="flex items-center gap-3">
                 <Mail className="w-5 h-5 text-primary flex-shrink-0" />
                 <a 
-                  href="mailto:info@kncci.org" 
+                  href="mailto:events@uasingishuchamber.co.ke" 
                   className="text-white/70 hover:text-white transition-colors"
                   data-testid="link-email"
                 >
-                  info@kncci.org
+                  events@uasingishuchamber.co.ke
+                </a>
+              </li>
+              <li className="flex items-center gap-3">
+                <Globe className="w-5 h-5 text-primary flex-shrink-0" />
+                <a 
+                  href="https://www.uasingishuchamber.co.ke" 
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-white/70 hover:text-white transition-colors"
+                  data-testid="link-website"
+                >
+                  www.uasingishuchamber.co.ke
                 </a>
               </li>
             </ul>

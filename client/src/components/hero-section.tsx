@@ -33,12 +33,12 @@ function calculateTimeLeft(targetDate: Date): CountdownValues & { isOver: boolea
 function CountdownBlock({ value, label }: { value: number; label: string }) {
   return (
     <div className="flex flex-col items-center">
-      <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg p-3 sm:p-4 min-w-[60px] sm:min-w-[80px]">
-        <span className="text-2xl sm:text-4xl font-bold text-white tabular-nums" data-testid={`countdown-${label.toLowerCase()}`}>
+      <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg p-2 sm:p-3 min-w-[50px] sm:min-w-[60px]">
+        <span className="text-xl sm:text-2xl md:text-3xl font-bold text-white tabular-nums" data-testid={`countdown-${label.toLowerCase()}`}>
           {value.toString().padStart(2, "0")}
         </span>
       </div>
-      <span className="text-xs sm:text-sm text-white/80 mt-2 uppercase tracking-wider">
+      <span className="text-[10px] sm:text-xs text-white/80 mt-1 uppercase tracking-wider">
         {label}
       </span>
     </div>
@@ -52,7 +52,9 @@ export function HeroSection() {
 
   const eventDate = useMemo(() => {
     if (!event?.date) return null;
-    return new Date(`${event.date}T09:00:00`);
+    // Parse date string and create date at 9 AM local time
+    const [year, month, day] = event.date.split('-').map(Number);
+    return new Date(year, month - 1, day, 9, 0, 0);
   }, [event?.date]);
 
   const [timeLeft, setTimeLeft] = useState<(CountdownValues & { isOver: boolean }) | null>(null);
@@ -63,10 +65,15 @@ export function HeroSection() {
       return;
     }
     
-    setTimeLeft(calculateTimeLeft(eventDate));
+    // Calculate immediately
+    const initialTimeLeft = calculateTimeLeft(eventDate);
+    setTimeLeft(initialTimeLeft);
+    
+    // Then update every second
     const timer = setInterval(() => {
       setTimeLeft(calculateTimeLeft(eventDate));
     }, 1000);
+    
     return () => clearInterval(timer);
   }, [eventDate]);
 
@@ -98,7 +105,7 @@ export function HeroSection() {
   return (
     <section
       id="home"
-      className="relative min-h-screen flex items-center justify-center overflow-hidden"
+      className="relative h-screen flex items-center justify-center overflow-hidden"
       data-testid="section-hero"
     >
       <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
@@ -108,24 +115,24 @@ export function HeroSection() {
       </div>
       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent" />
 
-      <div className="relative z-10 container mx-auto px-4 text-center py-24 sm:py-32">
-        <div className="max-w-4xl mx-auto space-y-8 animate-fade-in-up">
+      <div className="relative z-10 container mx-auto px-4 text-center h-full flex flex-col justify-center">
+        <div className="max-w-4xl mx-auto w-full space-y-3 sm:space-y-4 animate-fade-in-up">
           {isLoading ? (
             <>
-              <Skeleton className="h-10 w-48 mx-auto bg-white/10" />
-              <Skeleton className="h-16 w-full max-w-2xl mx-auto bg-white/10" />
-              <Skeleton className="h-8 w-3/4 mx-auto bg-white/10" />
-              <div className="flex flex-wrap items-center justify-center gap-4">
-                <Skeleton className="h-6 w-40 bg-white/10" />
-                <Skeleton className="h-6 w-40 bg-white/10" />
+              <Skeleton className="h-6 sm:h-8 w-40 sm:w-48 mx-auto bg-white/10" />
+              <Skeleton className="h-10 sm:h-12 md:h-14 w-full max-w-2xl mx-auto bg-white/10" />
+              <Skeleton className="h-5 sm:h-6 md:h-7 w-3/4 mx-auto bg-white/10" />
+              <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+                <Skeleton className="h-4 sm:h-5 w-32 sm:w-40 bg-white/10" />
+                <Skeleton className="h-4 sm:h-5 w-32 sm:w-40 bg-white/10" />
               </div>
-              <div className="pt-8">
-                <Skeleton className="h-4 w-32 mx-auto mb-4 bg-white/10" />
-                <div className="flex justify-center gap-3 sm:gap-6">
+              <div className="pt-2 sm:pt-3">
+                <Skeleton className="h-3 sm:h-4 w-28 sm:w-32 mx-auto mb-2 sm:mb-3 bg-white/10" />
+                <div className="flex justify-center gap-2 sm:gap-3 md:gap-4">
                   {[1, 2, 3, 4].map((i) => (
                     <div key={i} className="flex flex-col items-center">
-                      <Skeleton className="h-16 w-16 sm:h-20 sm:w-20 rounded-lg bg-white/10" />
-                      <Skeleton className="h-3 w-12 mt-2 bg-white/10" />
+                      <Skeleton className="h-12 sm:h-14 md:h-16 w-12 sm:w-14 md:w-16 rounded-lg bg-white/10" />
+                      <Skeleton className="h-2.5 sm:h-3 w-10 sm:w-12 mt-1 bg-white/10" />
                     </div>
                   ))}
                 </div>
@@ -138,37 +145,37 @@ export function HeroSection() {
             </div>
           ) : event ? (
             <>
-              <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-2 text-white/90 text-sm">
-                <Calendar className="w-4 h-4" />
+              <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-3 py-1.5 text-white/90 text-xs sm:text-sm">
+                <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span data-testid="text-event-date">{formatDate(event.date, event.endDate)}</span>
               </div>
 
-              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-tight" data-testid="text-event-name">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight px-2" data-testid="text-event-name">
                 {event.name}
               </h1>
 
-              <p className="text-lg sm:text-xl text-white/80 max-w-2xl mx-auto leading-relaxed" data-testid="text-event-subtitle">
+              <p className="text-sm sm:text-base md:text-lg text-white/80 max-w-2xl mx-auto leading-relaxed px-2" data-testid="text-event-subtitle">
                 {event.subtitle}
               </p>
 
-              <div className="flex flex-wrap items-center justify-center gap-4 text-white/80">
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-primary" />
-                  <span data-testid="text-event-venue">{event.venue}, {event.location}</span>
+              <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-white/80 text-xs sm:text-sm">
+                <div className="flex items-center gap-1.5">
+                  <MapPin className="w-3 h-3 sm:w-4 sm:h-4 text-primary" />
+                  <span data-testid="text-event-venue">{event.venue} • {event.location}</span>
                 </div>
                 <div className="w-1 h-1 rounded-full bg-white/40 hidden sm:block" />
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-secondary" />
+                <div className="flex items-center gap-1.5">
+                  <Calendar className="w-3 h-3 sm:w-4 sm:h-4 text-secondary" />
                   <span data-testid="text-event-duration">{getDayCount(event.date, event.endDate)} {event.tagline}</span>
                 </div>
               </div>
 
               {event.highlights && event.highlights.length > 0 && (
-                <div className="flex flex-wrap justify-center gap-3 pt-4">
+                <div className="flex flex-wrap justify-center gap-2">
                   {event.highlights.slice(0, 3).map((highlight, index) => (
                     <div 
                       key={index}
-                      className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-2 text-white/90 text-sm"
+                      className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-3 py-1.5 text-white/90 text-xs sm:text-sm"
                       data-testid={`badge-highlight-${index}`}
                     >
                       {highlight}
@@ -177,24 +184,44 @@ export function HeroSection() {
                 </div>
               )}
 
-              {timeLeft && (
-                !timeLeft.isOver ? (
-                  <div className="pt-8">
-                    <p className="text-sm text-white/60 uppercase tracking-wider mb-4">
+              {eventDate && (
+                timeLeft ? (
+                  !timeLeft.isOver ? (
+                    <div className="pt-2 sm:pt-3">
+                      <p className="text-[10px] sm:text-xs text-white/60 uppercase tracking-wider mb-2 sm:mb-3">
+                        Event Starts In
+                      </p>
+                      <div className="flex justify-center gap-2 sm:gap-3 md:gap-4">
+                        <CountdownBlock value={timeLeft.days} label="Days" />
+                        <CountdownBlock value={timeLeft.hours} label="Hours" />
+                        <CountdownBlock value={timeLeft.minutes} label="Minutes" />
+                        <CountdownBlock value={timeLeft.seconds} label="Seconds" />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="pt-2 sm:pt-3">
+                      <div className="inline-flex items-center gap-2 bg-secondary/20 border border-secondary/30 rounded-full px-4 py-2 sm:px-6 sm:py-3">
+                        <div className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
+                        <span className="text-white font-medium text-sm sm:text-base" data-testid="text-event-status">Event In Progress</span>
+                      </div>
+                    </div>
+                  )
+                ) : (
+                  <div className="pt-2 sm:pt-3">
+                    <p className="text-[10px] sm:text-xs text-white/60 uppercase tracking-wider mb-2 sm:mb-3">
                       Event Starts In
                     </p>
-                    <div className="flex justify-center gap-3 sm:gap-6">
-                      <CountdownBlock value={timeLeft.days} label="Days" />
-                      <CountdownBlock value={timeLeft.hours} label="Hours" />
-                      <CountdownBlock value={timeLeft.minutes} label="Minutes" />
-                      <CountdownBlock value={timeLeft.seconds} label="Seconds" />
-                    </div>
-                  </div>
-                ) : (
-                  <div className="pt-8">
-                    <div className="inline-flex items-center gap-2 bg-secondary/20 border border-secondary/30 rounded-full px-6 py-3">
-                      <div className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
-                      <span className="text-white font-medium" data-testid="text-event-status">Event In Progress</span>
+                    <div className="flex justify-center gap-2 sm:gap-3 md:gap-4">
+                      {[1, 2, 3, 4].map((i) => (
+                        <div key={i} className="flex flex-col items-center">
+                          <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg p-2 sm:p-3 min-w-[50px] sm:min-w-[60px]">
+                            <Skeleton className="h-6 sm:h-8 md:h-10 w-10 sm:w-12 md:w-16 bg-white/20" />
+                          </div>
+                          <span className="text-[10px] sm:text-xs text-white/80 mt-1 uppercase tracking-wider">
+                            {['Days', 'Hours', 'Minutes', 'Seconds'][i - 1]}
+                          </span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )
@@ -202,11 +229,11 @@ export function HeroSection() {
             </>
           ) : null}
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4 sm:pt-5">
             <Button
               size="lg"
               onClick={() => scrollToSection("#registration")}
-              className="w-full sm:w-auto bg-primary text-primary-foreground text-lg px-8 py-6"
+              className="w-full sm:w-auto bg-primary text-primary-foreground text-base sm:text-lg px-6 sm:px-8 py-4 sm:py-5"
               data-testid="button-register-hero"
             >
               Register for Event
@@ -215,7 +242,7 @@ export function HeroSection() {
               size="lg"
               variant="outline"
               onClick={() => scrollToSection("#program")}
-              className="w-full sm:w-auto border-white/30 text-white bg-white/5 backdrop-blur-sm text-lg px-8 py-6"
+              className="w-full sm:w-auto border-white/30 text-white bg-white/5 backdrop-blur-sm text-base sm:text-lg px-6 sm:px-8 py-4 sm:py-5"
               data-testid="button-program-hero"
             >
               View Program
@@ -223,9 +250,9 @@ export function HeroSection() {
           </div>
         </div>
 
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
-          <div className="w-6 h-10 border-2 border-white/30 rounded-full flex items-start justify-center p-1">
-            <div className="w-1.5 h-3 bg-white/60 rounded-full animate-pulse" />
+        <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 animate-bounce">
+          <div className="w-5 h-8 sm:w-6 sm:h-10 border-2 border-white/30 rounded-full flex items-start justify-center p-1">
+            <div className="w-1.5 h-2 sm:h-3 bg-white/60 rounded-full animate-pulse" />
           </div>
         </div>
       </div>

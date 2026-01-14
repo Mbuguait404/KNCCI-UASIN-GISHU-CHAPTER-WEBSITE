@@ -4,6 +4,7 @@ import { AboutSection } from "@/components/about-section";
 import { SpeakersSection } from "@/components/speakers-section";
 import { ProgramSection } from "@/components/program-section";
 import { VenueSection } from "@/components/venue-section";
+import { NearbyHotelsSection } from "@/components/nearby-hotels-section";
 import { RegistrationSection } from "@/components/registration-section";
 import { PartnersSection } from "@/components/partners-section";
 import { GallerySection } from "@/components/gallery-section";
@@ -20,6 +21,7 @@ export default function Home() {
         <SpeakersSection />
         <ProgramSection />
         <VenueSection />
+        <NearbyHotelsSection />
         <RegistrationSection />
         <GallerySection />
         <PartnersSection />

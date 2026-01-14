@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Link } from "wouter";
 import type { Partner } from "@shared/schema";
 
 const tierColors = {
@@ -112,16 +114,23 @@ export function PartnersSection() {
         )}
 
         <div className="text-center mt-12">
-          <p className="text-muted-foreground mb-4">
+          <p className="text-muted-foreground mb-6">
             Interested in becoming a partner or sponsor?
           </p>
-          <a
-            href="#footer"
-            className="text-primary font-semibold hover:underline"
-            data-testid="link-partnership"
-          >
-            Contact us for partnership opportunities
-          </a>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link href="/partnership">
+              <Button size="lg" className="bg-primary text-primary-foreground" data-testid="button-become-partner">
+                Become a Partner
+              </Button>
+            </Link>
+            <a
+              href="#footer"
+              className="text-primary font-semibold hover:underline"
+              data-testid="link-partnership"
+            >
+              Contact us for partnership opportunities
+            </a>
+          </div>
         </div>
       </div>
     </section>

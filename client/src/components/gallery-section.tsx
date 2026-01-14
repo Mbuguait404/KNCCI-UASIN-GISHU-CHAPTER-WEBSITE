@@ -101,7 +101,7 @@ export function GallerySection() {
           </h2>
           <p className="text-lg text-muted-foreground leading-relaxed">
             Explore highlights from our previous events and get a glimpse of what 
-            to expect at the Kenya Business Summit 2025.
+            to expect at The Eldoret International Business Summit 2026.
           </p>
         </div>
 
