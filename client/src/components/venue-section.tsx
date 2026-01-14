@@ -1,23 +1,10 @@
-import { useQuery } from "@tanstack/react-query";
+import { staticVenue } from "@/data/static-data";
 import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { MapPin, Car, Accessibility, Building2 } from "lucide-react";
 import type { Venue } from "@shared/schema";
 
 export function VenueSection() {
-  const { data: venue, isLoading, isError } = useQuery<Venue>({
-    queryKey: ["/api/venue"],
-  });
-
-  if (isError) {
-    return (
-      <section id="venue" className="py-20 sm:py-28 bg-accent/30" data-testid="section-venue">
-        <div className="container mx-auto px-4 text-center py-12">
-          <p className="text-muted-foreground">Unable to load venue information. Please try again later.</p>
-        </div>
-      </section>
-    );
-  }
+  const venue = staticVenue;
 
   return (
     <section
@@ -30,12 +17,7 @@ export function VenueSection() {
           <span className="text-primary font-semibold text-sm uppercase tracking-wider">
             Event Location
           </span>
-          {isLoading ? (
-            <>
-              <Skeleton className="h-12 w-64 mx-auto mt-4 mb-6" />
-              <Skeleton className="h-6 w-3/4 mx-auto" />
-            </>
-          ) : venue ? (
+          {venue && (
             <>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mt-4 mb-6" data-testid="text-venue-name">
                 {venue.name}, {venue.city}
@@ -46,27 +28,12 @@ export function VenueSection() {
                 </p>
               )}
             </>
-          ) : null}
+          )}
         </div>
 
         <div className="grid lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
           <div className="space-y-6">
-            {isLoading ? (
-              <>
-                {[1, 2, 3, 4].map((i) => (
-                  <Card key={i} className="p-6 border border-border bg-card">
-                    <div className="flex items-start gap-4">
-                      <Skeleton className="w-12 h-12 rounded-lg" />
-                      <div className="flex-1">
-                        <Skeleton className="h-6 w-24 mb-2" />
-                        <Skeleton className="h-4 w-full" />
-                        <Skeleton className="h-4 w-3/4 mt-1" />
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-              </>
-            ) : venue ? (
+            {venue && (
               <>
                 <Card className="p-6 border border-border bg-card">
                   <div className="flex items-start gap-4">
@@ -144,18 +111,11 @@ export function VenueSection() {
                   </Card>
                 )}
               </>
-            ) : null}
+            )}
           </div>
 
           <div className="space-y-6">
-            {isLoading ? (
-              <Card className="overflow-hidden border border-border">
-                <Skeleton className="aspect-video" />
-                <div className="p-4 bg-card">
-                  <Skeleton className="h-[300px]" />
-                </div>
-              </Card>
-            ) : venue ? (
+            {venue && (
               <Card className="overflow-hidden border border-border">
                 <div className="aspect-video bg-gradient-to-br from-muted to-accent flex items-center justify-center">
                   <div className="text-center p-8">
@@ -185,7 +145,7 @@ export function VenueSection() {
                   </div>
                 )}
               </Card>
-            ) : null}
+            )}
           </div>
         </div>
       </div>

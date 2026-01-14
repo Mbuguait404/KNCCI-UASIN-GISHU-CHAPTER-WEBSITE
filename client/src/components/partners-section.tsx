@@ -1,6 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { staticPartners } from "@/data/static-data";
 import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import type { Partner } from "@shared/schema";
@@ -36,18 +35,9 @@ function PartnerLogo({ partner }: { partner: Partner }) {
   );
 }
 
-function PartnerSkeleton() {
-  return (
-    <Card className="p-6 border border-border bg-card aspect-video">
-      <Skeleton className="w-full h-full rounded-md" />
-    </Card>
-  );
-}
 
 export function PartnersSection() {
-  const { data: partners = [], isLoading, isError } = useQuery<Partner[]>({
-    queryKey: ["/api/partners"],
-  });
+  const partners = staticPartners;
 
   const tiers = ["platinum", "gold", "silver", "bronze"] as const;
 
@@ -71,22 +61,7 @@ export function PartnersSection() {
           </p>
         </div>
 
-        {isLoading ? (
-          <div className="space-y-12 max-w-5xl mx-auto">
-            {[1, 2].map((tier) => (
-              <div key={tier} className="grid grid-cols-2 md:grid-cols-3 gap-6">
-                {[1, 2, 3].map((i) => (
-                  <PartnerSkeleton key={i} />
-                ))}
-              </div>
-            ))}
-          </div>
-        ) : isError ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">Unable to load partners. Please try again later.</p>
-          </div>
-        ) : (
-          <>
+        <>
             {tiers.map((tier) => {
               const tierPartners = partners.filter(p => p.tier === tier);
               if (tierPartners.length === 0) return null;
@@ -110,8 +85,7 @@ export function PartnersSection() {
                 </div>
               );
             })}
-          </>
-        )}
+        </>
 
         <div className="text-center mt-12">
           <p className="text-muted-foreground mb-6">

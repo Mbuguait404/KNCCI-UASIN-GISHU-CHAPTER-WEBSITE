@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { staticGallery } from "@/data/static-data";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import type { GalleryImage } from "@shared/schema";
 
@@ -54,21 +53,12 @@ function GalleryCard({
   );
 }
 
-function GallerySkeleton() {
-  return (
-    <div className="aspect-square rounded-lg overflow-hidden">
-      <Skeleton className="w-full h-full" />
-    </div>
-  );
-}
 
 export function GallerySection() {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  const { data: galleryImages = [], isLoading, isError } = useQuery<GalleryImage[]>({
-    queryKey: ["/api/gallery"],
-  });
+  const galleryImages = staticGallery;
 
   const openLightbox = (index: number) => {
     setCurrentIndex(index);
@@ -105,18 +95,7 @@ export function GallerySection() {
           </p>
         </div>
 
-        {isLoading ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-w-6xl mx-auto">
-            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-              <GallerySkeleton key={i} />
-            ))}
-          </div>
-        ) : isError ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">Unable to load gallery. Please try again later.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-w-6xl mx-auto">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-w-6xl mx-auto">
             {galleryImages.map((image, index) => (
               <GalleryCard
                 key={image.id}
@@ -125,8 +104,7 @@ export function GallerySection() {
                 onClick={() => openLightbox(index)}
               />
             ))}
-          </div>
-        )}
+        </div>
 
         <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
           <DialogContent className="max-w-4xl p-0 bg-black/95 border-0">
