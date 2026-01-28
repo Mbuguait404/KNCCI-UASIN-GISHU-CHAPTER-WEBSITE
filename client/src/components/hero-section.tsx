@@ -1,7 +1,13 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Calendar, MapPin } from "lucide-react";
 import { staticEvent } from "@/data/static-data";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  type CarouselApi,
+} from "@/components/ui/carousel";
 
 interface CountdownValues {
   days: number;
@@ -45,6 +51,14 @@ function CountdownBlock({ value, label }: { value: number; label: string }) {
 
 export function HeroSection() {
   const event = staticEvent;
+  const [api, setApi] = useState<CarouselApi>();
+  const [current, setCurrent] = useState(0);
+
+  const carouselImages = [
+    "https://solby.sfo3.digitaloceanspaces.com/1769497085012-WhatsApp%20Image%202026-01-27%20at%2009.11.08.jpeg",
+    "https://solby.sfo3.digitaloceanspaces.com/1769497085040-WhatsApp%20Image%202026-01-27%20at%2009.10.56.jpeg",
+    "https://solby.sfo3.digitaloceanspaces.com/1769497085219-WhatsApp%20Image%202026-01-27%20at%2009.11.03.jpeg",
+  ];
 
   const eventDate = useMemo(() => {
     if (!event?.date) return null;
@@ -72,6 +86,33 @@ export function HeroSection() {
     
     return () => clearInterval(timer);
   }, [eventDate]);
+
+  useEffect(() => {
+    if (!api) {
+      return;
+    }
+
+    setCurrent(api.selectedScrollSnap());
+
+    api.on("select", () => {
+      setCurrent(api.selectedScrollSnap());
+    });
+  }, [api]);
+
+  // Auto-play carousel
+  useEffect(() => {
+    if (!api) return;
+
+    const interval = setInterval(() => {
+      if (api.canScrollNext()) {
+        api.scrollNext();
+      } else {
+        api.scrollTo(0);
+      }
+    }, 5000); // Change slide every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [api]);
 
   const scrollToSection = (href: string) => {
     const element = document.querySelector(href);
@@ -104,12 +145,40 @@ export function HeroSection() {
       className="relative h-screen flex items-center justify-center overflow-hidden"
       data-testid="section-hero"
     >
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSA2MCAwIEwgMCAwIDAgNjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjAzKSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-50" />
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-secondary/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: "1s" }} />
+      {/* Carousel Background */}
+      <div className="absolute inset-0">
+        <Carousel setApi={setApi} className="h-full w-full">
+          <CarouselContent className="h-full">
+            {carouselImages.map((image, index) => (
+              <CarouselItem key={index} className="h-full pl-0">
+                <div className="h-full w-full">
+                  <img
+                    src={image}
+                    alt={`The Eldoret International Business Summit 2026 - Event scene ${index + 1} showcasing business networking, speakers, and exhibition activities`}
+                    className="h-full w-full object-cover"
+                    loading={index === 0 ? "eager" : "lazy"}
+                    fetchPriority={index === 0 ? "high" : "auto"}
+                    width={1920}
+                    height={1080}
+                  />
+                </div>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+        </Carousel>
       </div>
-      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent" />
+
+      {/* Dark Blue Overlay - darker in center, fades out towards edges */}
+      <div className="absolute inset-0" 
+           style={{
+             background: 'radial-gradient(ellipse 90% 70% at center, rgba(30, 58, 138, 0.75) 0%, rgba(30, 64, 175, 0.55) 40%, rgba(30, 58, 138, 0.35) 70%, rgba(30, 58, 138, 0.15) 100%)'
+           }} />
+      
+      {/* Additional subtle overlay for text area in center */}
+      <div className="absolute inset-0" 
+           style={{
+             background: 'radial-gradient(ellipse 80% 60% at center, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.25) 40%, rgba(0, 0, 0, 0.1) 70%, transparent 100%)'
+           }} />
 
       <div className="relative z-10 container mx-auto px-4 text-center h-full flex flex-col justify-center">
         <div className="max-w-4xl mx-auto w-full space-y-3 sm:space-y-4 animate-fade-in-up">

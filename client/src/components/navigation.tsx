@@ -79,9 +79,13 @@ export function Navigation() {
           {/* Update the src path below to match your logo filename */}
           {/* Example: /kncci-logo.png or /kncci-logo.svg */}
           <img 
-            src="/kncci_logo-removebg-preview.png" 
-            alt="KNCCI - Kenya National Chamber of Commerce and Industry" 
-            className="h-10 sm:h-12 w-auto object-contain"
+            src="/UG_chapter_logo-removebg-preview.png" 
+            alt="KNCCI - Kenya National Chamber of Commerce and Industry, Uasin Gishu Chapter" 
+            className="h-12 sm:h-14 w-auto object-contain"
+            width={200}
+            height={56}
+            loading="eager"
+            fetchPriority="high"
           />
         </a>
 

@@ -1,0 +1,26 @@
+{
+  "name": "KNCCI Uasin Gishu Chapter - Eldoret International Business Summit 2026",
+  "short_name": "KNCCI Summit 2026",
+  "description": "Join The Eldoret International Business Summit 2026 - Gateway to Africa's Trade and Economic Future",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a1a1a",
+  "theme_color": "#1a1a1a",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/kncci_logo-removebg-preview.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon"
+    }
+  ],
+  "categories": ["business", "events", "networking"],
+  "lang": "en-KE",
+  "dir": "ltr"
+}
