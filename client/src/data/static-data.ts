@@ -126,14 +126,14 @@ export const staticPartners: Partner[] = [
 
 // Gallery data
 export const staticGallery: GalleryImage[] = [
-  { id: "1", url: "", eventName: "Kenya Business Summit", year: "2024", alt: "Business leaders networking at the summit" },
-  { id: "2", url: "", eventName: "Trade Expo Kenya", year: "2024", alt: "Exhibition hall with business booths" },
-  { id: "3", url: "", eventName: "SME Conference", year: "2023", alt: "Panel discussion with industry experts" },
-  { id: "4", url: "", eventName: "Kenya Business Summit", year: "2023", alt: "Keynote speaker addressing the audience" },
-  { id: "5", url: "", eventName: "Trade Expo Kenya", year: "2023", alt: "Business professionals at networking event" },
-  { id: "6", url: "", eventName: "Investment Forum", year: "2023", alt: "Workshop session in progress" },
-  { id: "7", url: "", eventName: "Kenya Business Summit", year: "2022", alt: "Award ceremony at the gala dinner" },
-  { id: "8", url: "", eventName: "Trade Expo Kenya", year: "2022", alt: "Product showcase at the exhibition" },
+  { id: "1", url: "https://solby.sfo3.digitaloceanspaces.com/1769497085012-WhatsApp%20Image%202026-01-27%20at%2009.11.08.jpeg", eventName: "Kenya Business Summit", year: "2024", alt: "Business leaders networking at the summit" },
+  { id: "2", url: "https://solby.sfo3.digitaloceanspaces.com/1769497085040-WhatsApp%20Image%202026-01-27%20at%2009.10.56.jpeg", eventName: "Trade Expo Kenya", year: "2024", alt: "Exhibition hall with business booths" },
+  { id: "3", url: "https://solby.sfo3.digitaloceanspaces.com/1769497085219-WhatsApp%20Image%202026-01-27%20at%2009.11.03.jpeg", eventName: "SME Conference", year: "2023", alt: "Panel discussion with industry experts" },
+  { id: "4", url: "https://solby.sfo3.digitaloceanspaces.com/1769497085012-WhatsApp%20Image%202026-01-27%20at%2009.11.08.jpeg", eventName: "Kenya Business Summit", year: "2023", alt: "Keynote speaker addressing the audience" },
+  { id: "5", url: "https://solby.sfo3.digitaloceanspaces.com/1769497085040-WhatsApp%20Image%202026-01-27%20at%2009.10.56.jpeg", eventName: "Trade Expo Kenya", year: "2023", alt: "Business professionals at networking event" },
+  { id: "6", url: "https://solby.sfo3.digitaloceanspaces.com/1769497085219-WhatsApp%20Image%202026-01-27%20at%2009.11.03.jpeg", eventName: "Investment Forum", year: "2023", alt: "Workshop session in progress" },
+  { id: "7", url: "https://solby.sfo3.digitaloceanspaces.com/1769497085012-WhatsApp%20Image%202026-01-27%20at%2009.11.08.jpeg", eventName: "Kenya Business Summit", year: "2022", alt: "Award ceremony at the gala dinner" },
+  { id: "8", url: "https://solby.sfo3.digitaloceanspaces.com/1769497085040-WhatsApp%20Image%202026-01-27%20at%2009.10.56.jpeg", eventName: "Trade Expo Kenya", year: "2022", alt: "Product showcase at the exhibition" },
 ];
 
 // Testimonials data

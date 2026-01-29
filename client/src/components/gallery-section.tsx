@@ -26,6 +26,7 @@ function GalleryCard({
   onClick: () => void;
 }) {
   const gradient = gradientColors[index % gradientColors.length];
+  const hasImage = image.url && image.url.trim() !== "";
   
   return (
     <div
@@ -33,15 +34,27 @@ function GalleryCard({
       onClick={onClick}
       data-testid={`card-gallery-${image.id}`}
     >
-      <div className={`aspect-square bg-gradient-to-br ${gradient}`}>
-        <div className="w-full h-full flex items-center justify-center">
-          <div className="text-center p-4">
-            <div className="w-12 h-12 mx-auto mb-2 rounded-full bg-white/20 flex items-center justify-center">
-              <span className="text-lg font-bold text-foreground">{index + 1}</span>
+      <div className={`aspect-square bg-gradient-to-br ${gradient} relative`}>
+        {hasImage ? (
+          <img
+            src={image.url}
+            alt={`${image.eventName} ${image.year} - ${image.alt}`}
+            className="w-full h-full object-cover"
+            loading="lazy"
+            width={400}
+            height={400}
+            decoding="async"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <div className="text-center p-4">
+              <div className="w-12 h-12 mx-auto mb-2 rounded-full bg-white/20 flex items-center justify-center">
+                <span className="text-lg font-bold text-foreground">{index + 1}</span>
+              </div>
+              <p className="text-xs text-muted-foreground">{image.alt}</p>
             </div>
-            <p className="text-xs text-muted-foreground">{image.alt}</p>
           </div>
-        </div>
+        )}
       </div>
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/0 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
         <div>
@@ -121,14 +134,34 @@ export function GallerySection() {
               
               {currentImage && (
                 <>
-                  <div className="aspect-video flex items-center justify-center">
-                    <div className={`w-full h-full bg-gradient-to-br ${gradientColors[currentIndex % gradientColors.length]} flex items-center justify-center`}>
-                      <div className="text-center text-white">
-                        <p className="text-2xl font-bold mb-2" data-testid="text-lightbox-name">{currentImage.eventName}</p>
-                        <p className="text-white/70" data-testid="text-lightbox-year">{currentImage.year}</p>
-                        <p className="text-sm text-white/50 mt-4">{currentImage.alt}</p>
+                  <div className="aspect-video flex items-center justify-center relative bg-black">
+                    {currentImage.url && currentImage.url.trim() !== "" ? (
+                      <>
+                        <img
+                          src={currentImage.url}
+                          alt={`${currentImage.eventName} ${currentImage.year} - ${currentImage.alt}`}
+                          className="w-full h-full object-contain"
+                          data-testid="image-lightbox"
+                          loading="eager"
+                          fetchPriority="high"
+                          width={1200}
+                          height={800}
+                        />
+                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-6">
+                          <p className="text-2xl font-bold text-white mb-1" data-testid="text-lightbox-name">{currentImage.eventName}</p>
+                          <p className="text-white/70" data-testid="text-lightbox-year">{currentImage.year}</p>
+                          <p className="text-sm text-white/60 mt-2">{currentImage.alt}</p>
+                        </div>
+                      </>
+                    ) : (
+                      <div className={`w-full h-full bg-gradient-to-br ${gradientColors[currentIndex % gradientColors.length]} flex items-center justify-center`}>
+                        <div className="text-center text-white">
+                          <p className="text-2xl font-bold mb-2" data-testid="text-lightbox-name">{currentImage.eventName}</p>
+                          <p className="text-white/70" data-testid="text-lightbox-year">{currentImage.year}</p>
+                          <p className="text-sm text-white/50 mt-4">{currentImage.alt}</p>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
 
                   <div className="absolute inset-y-0 left-0 flex items-center">

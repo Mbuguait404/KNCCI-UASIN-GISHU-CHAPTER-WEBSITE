@@ -7,6 +7,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, Star, MapPin, Phone, Mail, Globe, Check } from "lucide-react";
 import { Link } from "wouter";
 import { hotelsData } from "@/components/hotels-map";
+import { SEOHead } from "@/components/seo/seo-head";
+import { Helmet } from "react-helmet-async";
 
 export default function HotelDetail() {
   const [match, params] = useRoute<{ id: string }>("/hotels/:id");
@@ -14,24 +16,85 @@ export default function HotelDetail() {
 
   if (!hotel) {
     return (
-      <div className="min-h-screen bg-background">
-        <Navigation />
-        <main className="py-20 sm:py-28">
-          <div className="container mx-auto px-4 text-center">
-            <h1 className="text-3xl font-bold text-foreground mb-4">Hotel Not Found</h1>
-            <p className="text-muted-foreground mb-6">The hotel you're looking for doesn't exist.</p>
-            <Link href="/#hotels">
-              <Button>Back to Hotels</Button>
-            </Link>
-          </div>
-        </main>
-        <Footer />
-      </div>
+      <>
+        <SEOHead
+          title="Hotel Not Found - Eldoret International Business Summit 2026"
+          description="The hotel you're looking for doesn't exist."
+          noindex={true}
+        />
+        <div className="min-h-screen bg-background">
+          <Navigation />
+          <main className="py-20 sm:py-28">
+            <div className="container mx-auto px-4 text-center">
+              <h1 className="text-3xl font-bold text-foreground mb-4">Hotel Not Found</h1>
+              <p className="text-muted-foreground mb-6">The hotel you're looking for doesn't exist.</p>
+              <Link href="/#hotels">
+                <Button>Back to Hotels</Button>
+              </Link>
+            </div>
+          </main>
+          <Footer />
+        </div>
+      </>
     );
   }
 
+  const siteUrl = typeof window !== "undefined" ? window.location.origin : "";
+  const pageUrl = `${siteUrl}/hotels/${hotel.id}`;
+  const ratingValue = parseFloat(hotel.rating) || 4.5;
+
+  // LodgingBusiness schema for hotel
+  const hotelSchema = {
+    "@context": "https://schema.org",
+    "@type": "LodgingBusiness",
+    name: hotel.name,
+    description: hotel.description,
+    image: hotel.image,
+    address: {
+      "@type": "PostalAddress",
+      addressLocality: "Eldoret",
+      addressRegion: "Uasin Gishu County",
+      addressCountry: "KE",
+      streetAddress: hotel.location,
+    },
+    geo: {
+      "@type": "GeoCoordinates",
+      latitude: hotel.coordinates[0].toString(),
+      longitude: hotel.coordinates[1].toString(),
+    },
+    aggregateRating: {
+      "@type": "AggregateRating",
+      ratingValue: ratingValue.toString(),
+      bestRating: "5",
+      worstRating: "1",
+    },
+    telephone: "+254740853372",
+    email: "events@uasingishuchamber.co.ke",
+    url: "https://www.uasingishuchamber.co.ke",
+  };
+
   return (
-    <div className="min-h-screen bg-background">
+    <>
+      <SEOHead
+        title={`${hotel.name} - Recommended Hotel for Eldoret Business Summit 2026`}
+        description={`${hotel.name} in Eldoret - ${hotel.description}. Rated ${hotel.rating}/5. Perfect accommodation for attendees of The Eldoret International Business Summit 2026.`}
+        keywords={[
+          hotel.name,
+          "Eldoret Hotels",
+          "Business Summit Accommodation",
+          "Hotels near Rupaz Center Eldoret",
+          "Eldoret Kenya Hotels",
+        ]}
+        canonicalUrl={pageUrl}
+        image={hotel.image}
+      />
+      <Helmet>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(hotelSchema) }}
+        />
+      </Helmet>
+      <div className="min-h-screen bg-background">
       <Navigation />
       <main>
         {/* Hero Section with Image */}
@@ -181,5 +244,6 @@ export default function HotelDetail() {
       </main>
       <Footer />
     </div>
+    </>
   );
 }

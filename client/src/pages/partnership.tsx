@@ -6,6 +6,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Check, TrendingUp, Users, Mic, Building2 } from "lucide-react";
 import { Link } from "wouter";
+import { SEOHead } from "@/components/seo/seo-head";
+import { Helmet } from "react-helmet-async";
 
 const partnershipPackages = [
   {
@@ -102,21 +104,54 @@ const benefits = [
 ];
 
 export default function Partnership() {
+  const siteUrl = typeof window !== "undefined" ? window.location.origin : "";
+  const pageUrl = `${siteUrl}/partnership`;
+
+  // Partnership packages schema
+  const offersSchema = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: "Partnership Packages - Eldoret International Business Summit 2026",
+    description: "Choose from Platinum, Gold, Silver, Bronze, and Brass partnership packages for The Eldoret International Business Summit 2026",
+    itemListElement: partnershipPackages.map((pkg, index) => ({
+      "@type": "Offer",
+      position: index + 1,
+      name: `${pkg.tier} Partnership Package`,
+      description: `Partnership package including ${pkg.presentation} presentation, ${pkg.exhibitionSpace} exhibition space, ${pkg.dinnerCards} dinner cards, and ${pkg.branding} branding opportunities`,
+      price: pkg.value.replace(/,/g, ""),
+      priceCurrency: "KES",
+      availability: "https://schema.org/InStock",
+      category: "Business Partnership",
+    })),
+  };
+
   return (
-    <div className="min-h-screen bg-background">
-      <Navigation />
-      <main>
+    <>
+      <SEOHead
+        title="Partnership Opportunities - Eldoret International Business Summit 2026"
+        description="Become a partner or sponsor of The Eldoret International Business Summit 2026. Choose from Platinum, Gold, Silver, Bronze, or Brass packages. Enhance your brand visibility, engage with business leaders, and access exclusive networking opportunities."
+        keywords={[
+          "Business Partnership Kenya",
+          "Event Sponsorship Eldoret",
+          "KNCCI Partnership",
+          "Business Summit Sponsorship",
+          "Corporate Partnership Kenya",
+          "Event Sponsorship Packages",
+        ]}
+        canonicalUrl={pageUrl}
+        type="website"
+      />
+      <Helmet>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(offersSchema) }}
+        />
+      </Helmet>
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <main>
         <section className="py-20 sm:py-28 bg-gradient-to-br from-primary/5 to-secondary/5">
           <div className="container mx-auto px-4">
-            <div className="mb-8">
-              <Link href="/">
-                <Button variant="outline" size="lg" className="group" data-testid="button-back">
-                  <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
-                  Back to Home
-                </Button>
-              </Link>
-            </div>
-            
             <div className="max-w-4xl mx-auto text-center mb-12">
               <span className="text-primary font-semibold text-sm uppercase tracking-wider">
                 Partnership Opportunities
@@ -236,5 +271,6 @@ export default function Partnership() {
       </main>
       <Footer />
     </div>
+    </>
   );
 }

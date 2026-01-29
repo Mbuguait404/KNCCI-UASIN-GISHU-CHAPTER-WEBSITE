@@ -78,10 +78,13 @@ export function Footer() {
           <div className="lg:col-span-2">
             <div className="flex items-center gap-3 mb-6">
               <img 
-                src="/kncci_logo-removebg-preview.png" 
-                alt="KNCCI - Kenya National Chamber of Commerce and Industry" 
-                className="h-12 sm:h-14 w-auto object-contain"
+                src="/UG_chapter_logo-removebg-preview.png" 
+                alt="KNCCI - Kenya National Chamber of Commerce and Industry, Uasin Gishu Chapter" 
+                className="h-14 sm:h-16 w-auto object-contain"
                 data-testid="footer-logo-image"
+                width={200}
+                height={64}
+                loading="lazy"
               />
               {/* <div>
                 <span className="font-bold text-xl" data-testid="text-footer-logo">KNCCI</span>
