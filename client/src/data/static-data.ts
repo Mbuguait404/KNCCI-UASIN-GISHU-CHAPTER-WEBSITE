@@ -126,14 +126,62 @@ export const staticPartners: Partner[] = [
 
 // Gallery data
 export const staticGallery: GalleryImage[] = [
-  { id: "1", url: "https://solby.sfo3.digitaloceanspaces.com/1769497085012-WhatsApp%20Image%202026-01-27%20at%2009.11.08.jpeg", eventName: "Kenya Business Summit", year: "2024", alt: "Business leaders networking at the summit" },
-  { id: "2", url: "https://solby.sfo3.digitaloceanspaces.com/1769497085040-WhatsApp%20Image%202026-01-27%20at%2009.10.56.jpeg", eventName: "Trade Expo Kenya", year: "2024", alt: "Exhibition hall with business booths" },
-  { id: "3", url: "https://solby.sfo3.digitaloceanspaces.com/1769497085219-WhatsApp%20Image%202026-01-27%20at%2009.11.03.jpeg", eventName: "SME Conference", year: "2023", alt: "Panel discussion with industry experts" },
-  { id: "4", url: "https://solby.sfo3.digitaloceanspaces.com/1769497085012-WhatsApp%20Image%202026-01-27%20at%2009.11.08.jpeg", eventName: "Kenya Business Summit", year: "2023", alt: "Keynote speaker addressing the audience" },
-  { id: "5", url: "https://solby.sfo3.digitaloceanspaces.com/1769497085040-WhatsApp%20Image%202026-01-27%20at%2009.10.56.jpeg", eventName: "Trade Expo Kenya", year: "2023", alt: "Business professionals at networking event" },
-  { id: "6", url: "https://solby.sfo3.digitaloceanspaces.com/1769497085219-WhatsApp%20Image%202026-01-27%20at%2009.11.03.jpeg", eventName: "Investment Forum", year: "2023", alt: "Workshop session in progress" },
-  { id: "7", url: "https://solby.sfo3.digitaloceanspaces.com/1769497085012-WhatsApp%20Image%202026-01-27%20at%2009.11.08.jpeg", eventName: "Kenya Business Summit", year: "2022", alt: "Award ceremony at the gala dinner" },
-  { id: "8", url: "https://solby.sfo3.digitaloceanspaces.com/1769497085040-WhatsApp%20Image%202026-01-27%20at%2009.10.56.jpeg", eventName: "Trade Expo Kenya", year: "2022", alt: "Product showcase at the exhibition" },
+  { 
+    id: "1", 
+    url: "https://solby.sfo3.digitaloceanspaces.com/1769497085012-WhatsApp%20Image%202026-01-27%20at%2009.11.08.jpeg", 
+    eventName: "Kenya Business Summit", 
+    year: "2024", 
+    alt: "Business leaders networking at the summit" 
+  },
+  { 
+    id: "2", 
+    url: "https://solby.sfo3.digitaloceanspaces.com/1769497085040-WhatsApp%20Image%202026-01-27%20at%2009.10.56.jpeg", 
+    eventName: "Trade Expo Kenya", 
+    year: "2024", 
+    alt: "Exhibition hall with business booths" 
+  },
+  { 
+    id: "3", 
+    url: "https://solby.sfo3.digitaloceanspaces.com/1769497085219-WhatsApp%20Image%202026-01-27%20at%2009.11.03.jpeg", 
+    eventName: "SME Conference", 
+    year: "2023", 
+    alt: "Panel discussion with industry experts" 
+  },
+  { 
+    id: "4", 
+    url: "https://solby.sfo3.digitaloceanspaces.com/1769687104798-WhatsApp%20Image%202026-01-27%20at%2009.11.09%20(2).jpeg", 
+    eventName: "Nairobi Tech Week", 
+    year: "2025", 
+    alt: "Innovators showcasing digital solutions" 
+  },
+  { 
+    id: "5", 
+    url: "https://solby.sfo3.digitaloceanspaces.com/1769687104848-WhatsApp%20Image%202026-01-27%20at%2009.11.09%20(4).jpeg", 
+    eventName: "East Africa Manufacturing Gala", 
+    year: "2023", 
+    alt: "Keynote speech on industrial growth" 
+  },
+  { 
+    id: "6", 
+    url: "https://solby.sfo3.digitaloceanspaces.com/1769687104735-WhatsApp%20Image%202026-01-27%20at%2009.10.55%20(1).jpeg", 
+    eventName: "Future of Finance Forum", 
+    year: "2024", 
+    alt: "Corporate professionals in a workshop" 
+  },
+  { 
+    id: "7", 
+    url: "https://solby.sfo3.digitaloceanspaces.com/1769687104740-WhatsApp%20Image%202026-01-27%20at%2009.10.56%20(1).jpeg", 
+    eventName: "Global Leadership Retreat", 
+    year: "2022", 
+    alt: "Team building session outdoors" 
+  },
+  { 
+    id: "8", 
+    url: "https://solby.sfo3.digitaloceanspaces.com/1769687104724-WhatsApp%20Image%202026-01-27%20at%2009.11.02%20(1).jpeg", 
+    eventName: "Women in Business Awards", 
+    year: "2023", 
+    alt: "Attendees mingling at the reception" 
+  },
 ];
 
 // Testimonials data
@@ -168,6 +216,51 @@ export const staticTestimonials: Testimonial[] = [
   },
 ];
 
+// Gala Dinner data
+export interface GalaDinner {
+  title: string;
+  subtitle: string;
+  description: string;
+  date: string;
+  time: string;
+  venue: string;
+  venueAddress: string;
+  dressCode: string;
+  priceNonMember: number;
+  priceMember: number;
+  currency: string;
+  highlights: string[];
+  included: string[];
+}
+
+export const staticGalaDinner: GalaDinner = {
+  title: "Gala Networking Dinner",
+  subtitle: "An exclusive evening to celebrate and connect",
+  description: "Join fellow delegates, speakers, and partners for an elegant gala dinner that caps off the summit experience. The Gala Networking Dinner is a high-level occasion for stakeholders to forge lasting connections, celebrate achievements, and enjoy world-class hospitality in The City of Champions.",
+  date: "Friday, April 24, 2026",
+  time: "19:00 – 23:00 (7:00 PM – 11:00 PM)",
+  venue: "Rupaz Center",
+  venueAddress: "Eldoret, Uasin Gishu County",
+  dressCode: "Black tie / Business formal",
+  priceNonMember: 4000,
+  priceMember: 3000,
+  currency: "KES",
+  highlights: [
+    "Three-course dinner with premium catering",
+    "Awards ceremony recognizing outstanding businesses and partners",
+    "Live entertainment and cultural performances",
+    "Networking with 500+ business leaders and dignitaries",
+    "Corporate table options for sponsors (Platinum, Gold, Silver)",
+  ],
+  included: [
+    "Welcome cocktail reception",
+    "Seated dinner with selected menu",
+    "Awards and recognition segment",
+    "Entertainment and music",
+    "Complimentary parking",
+  ],
+};
+
 // Venue data
 export const staticVenue: Venue = {
   name: "Rupa's Mall Eldoret",
@@ -185,9 +278,7 @@ export const staticVenue: Venue = {
   ],
   parking: "Ample parking available at Rupa's Mall. Additional parking facilities nearby. Valet parking service available for VIP attendees.",
   nearbyHotels: [
-    "Eka Hotel Eldoret",
-    "Boma Inn Eldoret",
-    "The Noble Hotel",
-    "The Sirikwa Hotel",
+    "EKA Hotel Eldoret",
+    "Grand Empire Hotel Eldoret",
   ],
 };

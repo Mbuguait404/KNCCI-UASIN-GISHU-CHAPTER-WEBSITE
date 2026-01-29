@@ -14,10 +14,10 @@ export function NearbyHotelsSection() {
               Accommodation
             </span>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mt-4 mb-6" data-testid="text-hotels-title">
-              Nearby Hotels
+              Partner Hotels
             </h2>
             <p className="text-lg text-muted-foreground leading-relaxed max-w-3xl mx-auto">
-              Explore hotels near the event venue in Eldoret. Click on any marker to view hotel details and make a reservation.
+              We're proud to partner with these exceptional hotels in Eldoret. Click on any marker to view hotel details and make a reservation.
             </p>
           </div>
 

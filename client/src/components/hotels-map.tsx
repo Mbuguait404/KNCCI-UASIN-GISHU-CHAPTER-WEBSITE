@@ -45,52 +45,25 @@ const createCustomIcon = (color: string = "#3b82f6") => {
   });
 };
 
-// Hotels data
+// Hotels data - Partner Hotels Only
 export const hotelsData = [
   {
     id: "eka-hotel-eldoret",
-    name: "Eka Hotel Eldoret",
-    description: "A contemporary style hotel located at Rupa's Mall, offering convenience and comfort.",
+    name: "EKA Hotel Eldoret",
+    description: "A contemporary style hotel located at Rupa's Mall, offering convenience and comfort. Our official partner hotel.",
     coordinates: [0.5134, 35.2923] as [number, number],
     image: "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80",
     rating: 4.5,
-    location: "Rupa's Mall, Malaba Road"
+    location: "Rupa's Mall, Malaba Road, Eldoret"
   },
   {
-    id: "boma-inn-eldoret",
-    name: "Boma Inn Eldoret",
-    description: "Located in Elgon View, featuring a health club, swimming pool, and conference facilities.",
-    coordinates: [0.5050, 35.2750] as [number, number],
+    id: "grand-empire-hotel-eldoret",
+    name: "Grand Empire Hotel Eldoret",
+    description: "A premier hotel in Eldoret offering exceptional service and amenities. Our official partner hotel.",
+    coordinates: [0.5150, 35.2800] as [number, number],
     image: "https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=800&q=80",
-    rating: 4.3,
-    location: "Elgon View, Ramogi Drive"
-  },
-  {
-    id: "sirikwa-hotel",
-    name: "The Sirikwa Hotel",
-    description: "A historic landmark in the city center with a large pool and extensive gardens.",
-    coordinates: [0.5186, 35.2718] as [number, number],
-    image: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=800&q=80",
-    rating: 4.0,
-    location: "Oloo Street, CBD"
-  },
-  {
-    id: "the-noble-hotel",
-    name: "The Noble Hotel",
-    description: "A serene conference and leisure hotel located in the quiet Kapsoya estate.",
-    coordinates: [0.5250, 35.2950] as [number, number],
-    image: "https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?auto=format&fit=crop&w=800&q=80",
-    rating: 4.2,
-    location: "Kapsoya Estate, Off Nairobi Rd"
-  },
-  {
-    id: "wagon-wheel",
-    name: "Wagon Wheel Hotel",
-    description: "A classic colonial-style hotel known for its history and central location.",
-    coordinates: [0.5150, 35.2690] as [number, number],
-    image: "https://images.unsplash.com/photo-1455587734955-081b22074882?auto=format&fit=crop&w=800&q=80",
-    rating: 3.9,
-    location: "Oloo Street, Near Post Office"
+    rating: 4.4,
+    location: "Eldoret, Kenya"
   }
 ];
 

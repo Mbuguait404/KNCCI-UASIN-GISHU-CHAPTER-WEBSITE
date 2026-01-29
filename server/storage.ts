@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type Registration, type InsertRegistration, type NewsletterSubscription, type InsertNewsletter, type Event, type Speaker, type Session, type Partner, type GalleryImage, type Testimonial, type Venue } from "@shared/schema";
+import { type User, type InsertUser, type Registration, type InsertRegistration, type NewsletterSubscription, type InsertNewsletter, type SponsorRequest, type InsertSponsorRequest, type Event, type Speaker, type Session, type Partner, type GalleryImage, type Testimonial, type Venue } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -11,6 +11,9 @@ export interface IStorage {
   
   subscribeNewsletter(data: InsertNewsletter): Promise<NewsletterSubscription>;
   getNewsletterSubscriptions(): Promise<NewsletterSubscription[]>;
+
+  createSponsorRequest(data: InsertSponsorRequest): Promise<SponsorRequest>;
+  getSponsorRequests(): Promise<SponsorRequest[]>;
   
   getEvent(): Event;
   getSpeakers(): Speaker[];
@@ -25,11 +28,13 @@ export class MemStorage implements IStorage {
   private users: Map<string, User>;
   private registrations: Map<string, Registration>;
   private newsletterSubscriptions: Map<string, NewsletterSubscription>;
+  private sponsorRequests: Map<string, SponsorRequest>;
 
   constructor() {
     this.users = new Map();
     this.registrations = new Map();
     this.newsletterSubscriptions = new Map();
+    this.sponsorRequests = new Map();
   }
 
   async getUser(id: string): Promise<User | undefined> {
@@ -84,6 +89,22 @@ export class MemStorage implements IStorage {
 
   async getNewsletterSubscriptions(): Promise<NewsletterSubscription[]> {
     return Array.from(this.newsletterSubscriptions.values());
+  }
+
+  async createSponsorRequest(data: InsertSponsorRequest): Promise<SponsorRequest> {
+    const id = randomUUID();
+    const request: SponsorRequest = {
+      id,
+      ...data,
+      message: data.message ?? "",
+      submittedAt: new Date().toISOString(),
+    };
+    this.sponsorRequests.set(id, request);
+    return request;
+  }
+
+  async getSponsorRequests(): Promise<SponsorRequest[]> {
+    return Array.from(this.sponsorRequests.values());
   }
 
   getEvent(): Event {
