@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertRegistrationSchema, insertNewsletterSchema } from "@shared/schema";
+import { insertRegistrationSchema, insertNewsletterSchema, insertSponsorRequestSchema } from "@shared/schema";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -82,6 +82,26 @@ export async function registerRoutes(
   app.get("/api/newsletter", async (req, res) => {
     const subscriptions = await storage.getNewsletterSubscriptions();
     res.json(subscriptions);
+  });
+
+  // Sponsor / partnership interest endpoint
+  app.post("/api/sponsor-requests", async (req, res) => {
+    try {
+      const validatedData = insertSponsorRequestSchema.parse(req.body);
+      const request = await storage.createSponsorRequest(validatedData);
+      res.status(201).json(request);
+    } catch (error) {
+      if (error instanceof Error) {
+        res.status(400).json({ error: error.message });
+      } else {
+        res.status(400).json({ error: "Invalid sponsor request data" });
+      }
+    }
+  });
+
+  app.get("/api/sponsor-requests", async (req, res) => {
+    const requests = await storage.getSponsorRequests();
+    res.json(requests);
   });
 
   return httpServer;

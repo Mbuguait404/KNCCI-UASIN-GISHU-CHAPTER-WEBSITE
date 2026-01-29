@@ -131,3 +131,28 @@ export const insertNewsletterSchema = z.object({
 });
 
 export type InsertNewsletter = z.infer<typeof insertNewsletterSchema>;
+
+// Sponsor / partnership interest requests
+export interface SponsorRequest {
+  id: string;
+  organization: string;
+  contactName: string;
+  email: string;
+  phone: string;
+  tier: "Platinum" | "Gold" | "Silver" | "Bronze" | "Brass";
+  message: string;
+  submittedAt: string;
+}
+
+export const insertSponsorRequestSchema = z.object({
+  organization: z.string().min(1, "Organization is required"),
+  contactName: z.string().min(1, "Contact name is required"),
+  email: z.string().email("Valid email is required"),
+  phone: z.string().min(10, "Valid phone number is required"),
+  tier: z.enum(["Platinum", "Gold", "Silver", "Bronze", "Brass"], {
+    required_error: "Please select a partnership tier",
+  }),
+  message: z.string().optional(),
+});
+
+export type InsertSponsorRequest = z.infer<typeof insertSponsorRequestSchema>;

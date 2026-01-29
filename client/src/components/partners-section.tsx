@@ -97,13 +97,6 @@ export function PartnersSection() {
                 Become a Partner
               </Button>
             </Link>
-            <a
-              href="#footer"
-              className="text-primary font-semibold hover:underline"
-              data-testid="link-partnership"
-            >
-              Contact us for partnership opportunities
-            </a>
           </div>
         </div>
       </div>

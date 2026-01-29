@@ -133,7 +133,7 @@ export function Footer() {
           <div>
             <h4 className="font-semibold text-lg mb-6">Contact us</h4>
             <p className="text-white/60 text-sm mb-4">
-              For inquiries, partnerships, and sponsorships:
+              For inquiries and sponsorships:
             </p>
             <ul className="space-y-4">
               <li className="flex items-start gap-3">

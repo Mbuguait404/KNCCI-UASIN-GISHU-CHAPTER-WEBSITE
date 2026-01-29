@@ -1,11 +1,20 @@
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Navigation } from "@/components/navigation";
 import { Footer } from "@/components/footer";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Check, TrendingUp, Users, Mic, Building2 } from "lucide-react";
-import { Link } from "wouter";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { insertSponsorRequestSchema, type InsertSponsorRequest } from "@shared/schema";
+import { Check, TrendingUp, Users, Mic, Building2, Loader2, Send } from "lucide-react";
 import { SEOHead } from "@/components/seo/seo-head";
 import { Helmet } from "react-helmet-async";
 
@@ -103,9 +112,48 @@ const benefits = [
   },
 ];
 
+const TIER_OPTIONS = ["Platinum", "Gold", "Silver", "Bronze", "Brass"] as const;
+
 export default function Partnership() {
   const siteUrl = typeof window !== "undefined" ? window.location.origin : "";
   const pageUrl = `${siteUrl}/partnership`;
+  const { toast } = useToast();
+
+  const sponsorForm = useForm<InsertSponsorRequest>({
+    resolver: zodResolver(insertSponsorRequestSchema),
+    defaultValues: {
+      organization: "",
+      contactName: "",
+      email: "",
+      phone: "",
+      tier: undefined,
+      message: "",
+    },
+  });
+
+  const sponsorMutation = useMutation({
+    mutationFn: async (data: InsertSponsorRequest) => {
+      return apiRequest("POST", "/api/sponsor-requests", data);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Request submitted",
+        description: "Thank you for your interest in becoming a sponsor. We will contact you shortly.",
+      });
+      sponsorForm.reset();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Submission failed",
+        description: error.message || "Please try again or contact us directly.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onSponsorSubmit = (data: InsertSponsorRequest) => {
+    sponsorMutation.mutate(data);
+  };
 
   // Partnership packages schema
   const offersSchema = {
@@ -211,12 +259,134 @@ export default function Partnership() {
                 </Card>
               </div>
 
-              <div className="text-center mb-12">
-                <Link href="#footer">
-                  <Button size="lg" className="bg-primary text-primary-foreground" data-testid="button-contact">
-                    Contact Us to Get Started
-                  </Button>
-                </Link>
+              {/* Sponsor sign-up / request form */}
+              <div id="sponsor-form" className="max-w-2xl mx-auto mb-12">
+                <div className="text-center mb-8">
+                  <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
+                    Request to become a sponsor
+                  </h2>
+                  <p className="text-muted-foreground">
+                    Submit your details and preferred tier. Our team will get in touch to discuss next steps.
+                  </p>
+                </div>
+                <Card className="p-6 sm:p-8 border border-border">
+                  <Form {...sponsorForm}>
+                    <form onSubmit={sponsorForm.handleSubmit(onSponsorSubmit)} className="space-y-4">
+                      <div className="grid sm:grid-cols-2 gap-4">
+                        <FormField
+                          control={sponsorForm.control}
+                          name="organization"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Organization / Company</FormLabel>
+                              <FormControl>
+                                <Input {...field} placeholder="Your company name" data-testid="input-sponsor-organization" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={sponsorForm.control}
+                          name="contactName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Contact name</FormLabel>
+                              <FormControl>
+                                <Input {...field} placeholder="Full name" data-testid="input-sponsor-contact" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      <div className="grid sm:grid-cols-2 gap-4">
+                        <FormField
+                          control={sponsorForm.control}
+                          name="email"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Email</FormLabel>
+                              <FormControl>
+                                <Input {...field} type="email" placeholder="you@company.com" data-testid="input-sponsor-email" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={sponsorForm.control}
+                          name="phone"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Phone</FormLabel>
+                              <FormControl>
+                                <Input {...field} type="tel" placeholder="+254 700 000 000" data-testid="input-sponsor-phone" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      <FormField
+                        control={sponsorForm.control}
+                        name="tier"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Partnership tier of interest</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger data-testid="select-sponsor-tier">
+                                  <SelectValue placeholder="Select a tier" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {TIER_OPTIONS.map((tier) => (
+                                  <SelectItem key={tier} value={tier}>
+                                    {tier}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={sponsorForm.control}
+                        name="message"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Message (optional)</FormLabel>
+                            <FormControl>
+                              <Textarea {...field} placeholder="Tell us about your goals or questions..." className="min-h-[100px]" data-testid="input-sponsor-message" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <Button
+                        type="submit"
+                        size="lg"
+                        className="w-full bg-primary text-primary-foreground"
+                        disabled={sponsorMutation.isPending}
+                        data-testid="button-sponsor-submit"
+                      >
+                        {sponsorMutation.isPending ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Submitting...
+                          </>
+                        ) : (
+                          <>
+                            <Send className="w-4 h-4 mr-2" />
+                            Submit sponsor request
+                          </>
+                        )}
+                      </Button>
+                    </form>
+                  </Form>
+                </Card>
               </div>
             </div>
           </div>
