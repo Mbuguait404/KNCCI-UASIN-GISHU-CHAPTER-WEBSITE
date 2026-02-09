@@ -6,14 +6,9 @@ import { useLocation } from "wouter";
 import { Menu, X, Sun, Moon } from "lucide-react";
 
 const navLinks = [
-  { label: "Home", href: "#home" },
-  { label: "About", href: "#about" },
   { label: "Speakers", href: "#speakers" },
   { label: "Program", href: "#program" },
-  { label: "Venue", href: "#venue" },
-  { label: "Gallery", href: "#gallery" },
   { label: "Partners", href: "#partners" },
-  { label: "Contact", href: "#footer" },
 ];
 
 export function Navigation() {
@@ -134,24 +129,6 @@ export function Navigation() {
           </Button>
 
           <Button
-            onClick={() => {
-              if (location === "/partnership") {
-                return; // Already on partnership page
-              }
-              window.location.href = "/partnership";
-            }}
-            variant="outline"
-            className={`hidden sm:flex ${
-              isScrolled || !isHomePage
-                ? "border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-                : "border-white/30 text-white hover:bg-white/20 hover:text-white"
-            }`}
-            data-testid="button-become-partner-nav"
-          >
-            Become a Partner
-          </Button>
-
-          <Button
             onClick={() => scrollToSection("#registration")}
             className={`hidden sm:flex ${
               isScrolled || !isHomePage
@@ -191,19 +168,6 @@ export function Navigation() {
                   </button>
                 ))}
                 <div className="border-t border-border my-4" />
-                <Button
-                  onClick={() => {
-                    setMobileOpen(false);
-                    if (location !== "/partnership") {
-                      window.location.href = "/partnership";
-                    }
-                  }}
-                  variant="outline"
-                  className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-                  data-testid="button-become-partner-mobile"
-                >
-                  Become a Partner
-                </Button>
                 <Button
                   onClick={() => scrollToSection("#registration")}
                   className="w-full bg-primary text-primary-foreground"
