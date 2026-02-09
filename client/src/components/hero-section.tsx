@@ -2,12 +2,6 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Calendar, MapPin } from "lucide-react";
 import { staticEvent } from "@/data/static-data";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  type CarouselApi,
-} from "@/components/ui/carousel";
 
 interface CountdownValues {
   days: number;
@@ -51,14 +45,6 @@ function CountdownBlock({ value, label }: { value: number; label: string }) {
 
 export function HeroSection() {
   const event = staticEvent;
-  const [api, setApi] = useState<CarouselApi>();
-  const [current, setCurrent] = useState(0);
-
-  const carouselImages = [
-    "https://solby.sfo3.digitaloceanspaces.com/1769497085012-WhatsApp%20Image%202026-01-27%20at%2009.11.08.jpeg",
-    "https://solby.sfo3.digitaloceanspaces.com/1769497085040-WhatsApp%20Image%202026-01-27%20at%2009.10.56.jpeg",
-    "https://solby.sfo3.digitaloceanspaces.com/1769497085219-WhatsApp%20Image%202026-01-27%20at%2009.11.03.jpeg",
-  ];
 
   const eventDate = useMemo(() => {
     if (!event?.date) return null;
@@ -86,33 +72,6 @@ export function HeroSection() {
     
     return () => clearInterval(timer);
   }, [eventDate]);
-
-  useEffect(() => {
-    if (!api) {
-      return;
-    }
-
-    setCurrent(api.selectedScrollSnap());
-
-    api.on("select", () => {
-      setCurrent(api.selectedScrollSnap());
-    });
-  }, [api]);
-
-  // Auto-play carousel
-  useEffect(() => {
-    if (!api) return;
-
-    const interval = setInterval(() => {
-      if (api.canScrollNext()) {
-        api.scrollNext();
-      } else {
-        api.scrollTo(0);
-      }
-    }, 5000); // Change slide every 5 seconds
-
-    return () => clearInterval(interval);
-  }, [api]);
 
   const scrollToSection = (href: string) => {
     const element = document.querySelector(href);
@@ -145,27 +104,17 @@ export function HeroSection() {
       className="relative h-screen flex items-center justify-center overflow-hidden"
       data-testid="section-hero"
     >
-      {/* Carousel Background */}
+      {/* Static Background Image */}
       <div className="absolute inset-0">
-        <Carousel setApi={setApi} className="h-full w-full">
-          <CarouselContent className="h-full">
-            {carouselImages.map((image, index) => (
-              <CarouselItem key={index} className="h-full pl-0">
-                <div className="h-full w-full">
-                  <img
-                    src={image}
-                    alt={`The Eldoret International Business Summit 2026 - Event scene ${index + 1} showcasing business networking, speakers, and exhibition activities`}
-                    className="h-full w-full object-cover"
-                    loading={index === 0 ? "eager" : "lazy"}
-                    fetchPriority={index === 0 ? "high" : "auto"}
-                    width={1920}
-                    height={1080}
-                  />
-                </div>
-              </CarouselItem>
-            ))}
-          </CarouselContent>
-        </Carousel>
+        <img
+          src="https://solby.sfo3.digitaloceanspaces.com/1769497085040-WhatsApp%20Image%202026-01-27%20at%2009.10.56.jpeg"
+          alt="The Eldoret International Business Summit 2026 - Business networking and exhibition activities"
+          className="h-full w-full object-cover"
+          loading="eager"
+          fetchPriority="high"
+          width={1920}
+          height={1080}
+        />
       </div>
 
       {/* Dark Blue Overlay - darker in center, fades out towards edges */}
@@ -192,6 +141,12 @@ export function HeroSection() {
               <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight px-2" data-testid="text-event-name">
                 {event.name}
               </h1>
+
+              <div className="inline-flex items-center gap-2 bg-primary backdrop-blur-sm border-2 border-white/30 rounded-full px-5 py-2 sm:px-6 sm:py-2.5 shadow-lg shadow-primary/50" data-testid="text-event-edition">
+                <span className="text-xs sm:text-sm md:text-base font-bold text-white uppercase tracking-[0.2em] drop-shadow-md">
+                  4TH EDITION
+                </span>
+              </div>
 
               <p className="text-sm sm:text-base md:text-lg text-white/80 max-w-2xl mx-auto leading-relaxed px-2" data-testid="text-event-subtitle">
                 {event.subtitle}

@@ -9,6 +9,7 @@ import { WhatsAppFloat } from "@/components/whatsapp-float";
 import Home from "@/pages/home";
 import Partnership from "@/pages/partnership";
 import HotelDetail from "@/pages/hotel-detail";
+import ExhibitionBooking from "@/pages/exhibition-booking";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -17,6 +18,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/partnership" component={Partnership} />
       <Route path="/hotels/:id" component={HotelDetail} />
+      <Route path="/exhibition-booking" component={ExhibitionBooking} />
       <Route component={NotFound} />
     </Switch>
   );
