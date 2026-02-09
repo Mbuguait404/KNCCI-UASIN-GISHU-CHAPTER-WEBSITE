@@ -72,18 +72,30 @@ export function Navigation() {
               window.location.href = "/";
             }
           }}
-          className="flex items-center gap-2"
+          className="flex items-center gap-3"
           data-testid="link-logo"
         >
-          {/* Upload your logo image to client/public/ directory */}
-          {/* Update the src path below to match your logo filename */}
-          {/* Example: /kncci-logo.png or /kncci-logo.svg */}
+          {/* Main KNCCI Logo */}
+          <img 
+            src="/kncci_logo-removebg-preview.png" 
+            alt="KNCCI - Kenya National Chamber of Commerce and Industry" 
+            className="h-8 sm:h-10 w-auto object-contain"
+            width={140}
+            height={40}
+            loading="eager"
+            fetchPriority="high"
+          />
+          {/* Divider */}
+          <div className={`h-8 sm:h-10 w-px mx-1 transition-colors duration-300 ${
+            isScrolled ? "bg-gray-400" : "bg-white/40"
+          }`} />
+          {/* Chapter Logo */}
           <img 
             src="/UG_chapter_logo-removebg-preview.png" 
-            alt="KNCCI - Kenya National Chamber of Commerce and Industry, Uasin Gishu Chapter" 
-            className="h-12 sm:h-14 w-auto object-contain"
-            width={200}
-            height={56}
+            alt="KNCCI Uasin Gishu Chapter" 
+            className="h-12 sm:h-16 w-auto object-contain"
+            width={220}
+            height={64}
             loading="eager"
             fetchPriority="high"
           />

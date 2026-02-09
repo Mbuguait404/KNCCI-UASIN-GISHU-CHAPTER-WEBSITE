@@ -1,10 +1,8 @@
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
   Award,
   Users,
   Ticket,
-  Building2,
   Tag,
 } from "lucide-react";
 import { staticGalaDinner } from "@/data/static-data";
@@ -15,7 +13,6 @@ function formatPrice(currency: string, amount: number) {
 
 export function GalaDinnerSection() {
   const gala = staticGalaDinner;
-  const savings = gala.priceNonMember - gala.priceMember;
 
   return (
     <section
@@ -40,55 +37,31 @@ export function GalaDinnerSection() {
             </p>
           </div>
 
-          {/* Pricing – intuitive tier cards */}
+          {/* Pricing – unified ticket price */}
           <div className="mb-16">
             <p className="text-center text-sm font-medium text-muted-foreground uppercase tracking-wider mb-6 flex items-center justify-center gap-2">
               <Tag className="w-4 h-4" />
               Gala dinner ticket
             </p>
-            <div className="grid sm:grid-cols-2 gap-6 max-w-2xl mx-auto">
-              <Card
-                className="relative overflow-hidden border-2 border-border bg-card hover:border-primary/30 hover-elevate transition-colors"
-                data-testid="card-gala-non-member"
-              >
-                <div className="p-6 text-center">
-                  <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-muted mb-4">
-                    <Ticket className="w-5 h-5 text-muted-foreground" />
-                  </div>
-                  <p className="text-sm font-medium text-muted-foreground mb-1">General admission</p>
-                  <p className="text-2xl sm:text-3xl font-bold text-foreground tabular-nums">
-                    {formatPrice(gala.currency, gala.priceNonMember)}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-2">Non-members</p>
-                </div>
-              </Card>
+            <div className="max-w-sm mx-auto">
               <Card
                 className="relative overflow-hidden border-2 border-primary/50 bg-primary/5 hover:border-primary hover-elevate transition-colors"
-                data-testid="card-gala-member"
+                data-testid="card-gala-ticket"
               >
-                <Badge
-                  className="absolute top-3 right-3 bg-primary text-primary-foreground border-0 shadow-sm"
-                  variant="secondary"
-                >
-                  Member rate
-                </Badge>
                 <div className="p-6 text-center">
                   <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-primary/20 mb-4">
-                    <Building2 className="w-5 h-5 text-primary" />
+                    <Ticket className="w-5 h-5 text-primary" />
                   </div>
-                  <p className="text-sm font-medium text-primary mb-1">KNCCI members</p>
+                  <p className="text-sm font-medium text-primary mb-1">Standard Admission</p>
                   <p className="text-2xl sm:text-3xl font-bold text-foreground tabular-nums">
                     {formatPrice(gala.currency, gala.priceMember)}
                   </p>
-                  <p className="text-xs text-secondary font-medium mt-2 flex items-center justify-center gap-1">
-                    <Tag className="w-3.5 h-3.5" />
-                    Save {formatPrice(gala.currency, savings)}
-                  </p>
+                  <p className="text-xs text-muted-foreground mt-2">Per person</p>
                 </div>
               </Card>
             </div>
             <p className="text-center text-sm text-muted-foreground mt-4 max-w-md mx-auto">
-              One ticket per person. Show your KNCCI membership at registration to get the member rate.
+              One ticket per person. Available for all attendees.
             </p>
           </div>
 
