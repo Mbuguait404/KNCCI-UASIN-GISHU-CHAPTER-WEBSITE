@@ -36,7 +36,7 @@ function CountdownBlock({ value, label }: { value: number; label: string }) {
           {value.toString().padStart(2, "0")}
         </span>
       </div>
-      <span className="text-[10px] sm:text-xs text-white/80 mt-1 uppercase tracking-wider">
+      <span className="text-[10px] sm:text-xs text-white/80 mt-1 uppercase tracking-wider font-bold">
         {label}
       </span>
     </div>
@@ -117,23 +117,19 @@ export function HeroSection() {
         />
       </div>
 
-      {/* Dark Blue Overlay - darker in center, fades out towards edges */}
-      <div className="absolute inset-0" 
-           style={{
-             background: 'radial-gradient(ellipse 90% 70% at center, rgba(30, 58, 138, 0.75) 0%, rgba(30, 64, 175, 0.55) 40%, rgba(30, 58, 138, 0.35) 70%, rgba(30, 58, 138, 0.15) 100%)'
-           }} />
-      
-      {/* Additional subtle overlay for text area in center */}
-      <div className="absolute inset-0" 
-           style={{
-             background: 'radial-gradient(ellipse 80% 60% at center, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.25) 40%, rgba(0, 0, 0, 0.1) 70%, transparent 100%)'
-           }} />
+      {/* Vignette Overlay - darker at edges, clearer in center */}
+      <div 
+        className="absolute inset-0"
+        style={{
+          background: 'radial-gradient(ellipse 80% 80% at center, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.4) 40%, rgba(0, 0, 0, 0.65) 70%, rgba(0, 0, 0, 0.85) 100%)'
+        }} 
+      />
 
       <div className="relative z-10 container mx-auto px-4 text-center h-full flex flex-col justify-center">
         <div className="max-w-4xl mx-auto w-full space-y-3 sm:space-y-4 animate-fade-in-up">
           {event && (
             <>
-              <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-3 py-1.5 text-white/90 text-xs sm:text-sm">
+              <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-3 py-1.5 text-white/90 text-xs sm:text-sm font-bold">
                 <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span data-testid="text-event-date">{formatDate(event.date, event.endDate)}</span>
               </div>
@@ -148,11 +144,11 @@ export function HeroSection() {
                 </span>
               </div>
 
-              <p className="text-sm sm:text-base md:text-lg text-white/80 max-w-2xl mx-auto leading-relaxed px-2" data-testid="text-event-subtitle">
+              <p className="text-sm sm:text-base md:text-lg text-white/90 max-w-2xl mx-auto leading-relaxed px-2 font-semibold drop-shadow-lg" data-testid="text-event-subtitle">
                 {event.subtitle}
               </p>
 
-              <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-white/80 text-xs sm:text-sm">
+              <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-white/90 text-xs sm:text-sm font-semibold">
                 <div className="flex items-center gap-1.5">
                   <MapPin className="w-3 h-3 sm:w-4 sm:h-4 text-primary" />
                   <span data-testid="text-event-venue">{event.venue} • {event.location}</span>
@@ -169,7 +165,7 @@ export function HeroSection() {
                   {event.highlights.slice(0, 3).map((highlight, index) => (
                     <div 
                       key={index}
-                      className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-3 py-1.5 text-white/90 text-xs sm:text-sm"
+                      className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-3 py-1.5 text-white text-xs sm:text-sm font-bold"
                       data-testid={`badge-highlight-${index}`}
                     >
                       {highlight}
@@ -182,7 +178,7 @@ export function HeroSection() {
                 timeLeft ? (
                   !timeLeft.isOver ? (
                     <div className="pt-2 sm:pt-3">
-                      <p className="text-[10px] sm:text-xs text-white/60 uppercase tracking-wider mb-2 sm:mb-3">
+                      <p className="text-[10px] sm:text-xs text-white/80 uppercase tracking-wider mb-2 sm:mb-3 font-bold">
                         Event Starts In
                       </p>
                       <div className="flex justify-center gap-2 sm:gap-3 md:gap-4">
@@ -196,13 +192,13 @@ export function HeroSection() {
                     <div className="pt-2 sm:pt-3">
                       <div className="inline-flex items-center gap-2 bg-secondary/20 border border-secondary/30 rounded-full px-4 py-2 sm:px-6 sm:py-3">
                         <div className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
-                        <span className="text-white font-medium text-sm sm:text-base" data-testid="text-event-status">Event In Progress</span>
+                        <span className="text-white font-bold text-sm sm:text-base" data-testid="text-event-status">Event In Progress</span>
                       </div>
                     </div>
                   )
                 ) : (
                   <div className="pt-2 sm:pt-3">
-                    <p className="text-[10px] sm:text-xs text-white/60 uppercase tracking-wider mb-2 sm:mb-3">
+                    <p className="text-[10px] sm:text-xs text-white/80 uppercase tracking-wider mb-2 sm:mb-3 font-bold">
                       Event Starts In
                     </p>
                     <div className="flex justify-center gap-2 sm:gap-3 md:gap-4">
