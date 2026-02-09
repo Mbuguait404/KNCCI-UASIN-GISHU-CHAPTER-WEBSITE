@@ -6,6 +6,7 @@ import { useLocation } from "wouter";
 import { Menu, X, Sun, Moon } from "lucide-react";
 
 const navLinks = [
+  { label: "Home", href: "#home" },
   { label: "Speakers", href: "#speakers" },
   { label: "Program", href: "#program" },
   { label: "Partners", href: "#partners" },
@@ -56,7 +57,7 @@ export function Navigation() {
           : "py-4 bg-transparent"
       }`}
     >
-      <div className="container mx-auto px-4 flex items-center justify-between gap-4">
+      <div className="max-w-6xl mx-auto px-4 w-full flex items-center justify-between gap-4">
         <a
           href="/"
           onClick={(e) => {
@@ -70,13 +71,13 @@ export function Navigation() {
           className="flex items-center gap-3"
           data-testid="link-logo"
         >
-          {/* Main KNCCI Logo */}
+          {/* County Logo */}
           <img 
-            src="/kncci_logo-removebg-preview.png" 
-            alt="KNCCI - Kenya National Chamber of Commerce and Industry" 
-            className="h-8 sm:h-10 w-auto object-contain"
-            width={140}
-            height={40}
+            src="/county-removebg-preview.png" 
+            alt="Uasin Gishu County" 
+            className="h-12 sm:h-16 w-auto object-contain"
+            width={220}
+            height={64}
             loading="eager"
             fetchPriority="high"
           />
