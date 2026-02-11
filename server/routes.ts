@@ -1,17 +1,44 @@
+
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertRegistrationSchema, insertNewsletterSchema, insertSponsorRequestSchema } from "@shared/schema";
+import { TicketingService } from "./services/ticketing";
 
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  
+
   // Event data endpoints
   app.get("/api/event", (req, res) => {
     const event = storage.getEvent();
     res.json(event);
+  });
+
+  // Ticketing API Proxy Endpoints
+  app.get("/api/ticketing/events", async (req, res) => {
+    try {
+      const data = await TicketingService.getEvent(req.query.id as string);
+      res.json(data);
+    } catch (error) {
+      console.error("Error fetching events:", error);
+      res.status(500).json({ error: "Failed to fetch event data" });
+    }
+  });
+
+  app.get("/api/ticketing/ticket-types", async (req, res) => {
+    try {
+      const eventId = req.query.eventId as string;
+      if (!eventId) {
+        return res.status(400).json({ error: "eventId is required" });
+      }
+      const data = await TicketingService.getTicketTypes(eventId);
+      res.json(data);
+    } catch (error) {
+      console.error("Error fetching ticket types:", error);
+      res.status(500).json({ error: "Failed to fetch ticket types" });
+    }
   });
 
   app.get("/api/speakers", (req, res) => {
