@@ -8,8 +8,8 @@ interface TicketingConfig {
 const config: TicketingConfig = {
   // Base URL for the external ticketing API
   // Default to the production domain if env var is not set
-  apiUrl: process.env.TICKETING_API_URL || "https://ticketing.lancolatech.co.ke",
-  apiKey: process.env.TICKETING_API_KEY || "pk_HdZLAcfFFatoCyRT1HTATxzmXwKVM3vz",
+  apiUrl:  "https://ticketing.lancolatech.co.ke",
+  apiKey:  "pk_HdZLAcfFFatoCyRT1HTATxzmXwKVM3vz",
 };
 
 export class TicketingService {
