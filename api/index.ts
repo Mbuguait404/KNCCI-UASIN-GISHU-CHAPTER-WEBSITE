@@ -1,7 +1,11 @@
 // Vercel serverless function entry point
 import express, { type Request, Response, NextFunction } from "express";
 import { storage } from "../server/storage";
-import { insertRegistrationSchema, insertNewsletterSchema } from "../shared/schema";
+import {
+  insertRegistrationSchema,
+  insertNewsletterSchema,
+} from "../shared/schema";
+import { TicketingService } from "../server/services/ticketing";
 import path from "path";
 import fs from "fs";
 
@@ -129,6 +133,61 @@ app.get("/api/newsletter", async (req, res) => {
   }
 });
 
+// Ticketing API Proxy Endpoints
+app.get("/api/ticketing/events", async (req, res) => {
+  try {
+    const data = await TicketingService.getEvent(req.query.id as string);
+    res.json(data);
+  } catch (error) {
+    console.error("Error fetching events:", error);
+    res.status(500).json({ error: "Failed to fetch event data" });
+  }
+});
+
+app.get("/api/ticketing/ticket-types", async (req, res) => {
+  try {
+    const eventId = req.query.eventId as string;
+    if (!eventId) {
+      return res.status(400).json({ error: "eventId is required" });
+    }
+    const data = await TicketingService.getTicketTypes(eventId);
+    res.json(data);
+  } catch (error) {
+    console.error("Error fetching ticket types:", error);
+    const errorMessage =
+      error instanceof Error ? error.message : "Failed to fetch ticket types";
+    res.status(500).json({ error: errorMessage });
+  }
+});
+
+app.post("/api/ticketing/purchases", async (req, res) => {
+  try {
+    const purchaseData = req.body;
+    if (!purchaseData.eventId) {
+      return res.status(400).json({ error: "eventId is required" });
+    }
+    if (
+      !purchaseData.ticketItems ||
+      !Array.isArray(purchaseData.ticketItems) ||
+      purchaseData.ticketItems.length === 0
+    ) {
+      return res
+        .status(400)
+        .json({ error: "ticketItems array is required and must not be empty" });
+    }
+    if (!purchaseData.paymentMethod) {
+      return res.status(400).json({ error: "paymentMethod is required" });
+    }
+    const data = await TicketingService.createPurchase(purchaseData);
+    res.json(data);
+  } catch (error) {
+    console.error("Error creating purchase:", error);
+    const errorMessage =
+      error instanceof Error ? error.message : "Failed to create purchase";
+    res.status(500).json({ error: errorMessage });
+  }
+});
+
 // Error handling middleware
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   console.error("Unhandled error:", err);
@@ -147,7 +206,7 @@ if (fs.existsSync(distPath)) {
     }
     express.static(distPath)(req, res, next);
   });
-  
+
   // Fallback to index.html for client-side routing (SPA) - only for non-API routes
   app.get("*", (req: Request, res: Response) => {
     if (req.path.startsWith("/api")) {
@@ -164,7 +223,11 @@ if (fs.existsSync(distPath)) {
   // If dist/public doesn't exist, handle non-API routes
   app.get("*", (req: Request, res: Response) => {
     if (!req.path.startsWith("/api")) {
-      res.status(500).json({ error: "Build files not found. Please run 'npm run build' first." });
+      res
+        .status(500)
+        .json({
+          error: "Build files not found. Please run 'npm run build' first.",
+        });
     }
   });
 }
