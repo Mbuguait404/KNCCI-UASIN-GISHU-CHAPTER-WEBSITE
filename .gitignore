@@ -8,3 +8,7 @@ vite.config.ts.*
 .env.local
 .env.development
 .env.production
+client/.env
+client/.env.local
+client/.env.development
+client/.env.production

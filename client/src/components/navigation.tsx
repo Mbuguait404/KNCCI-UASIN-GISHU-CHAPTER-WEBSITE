@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useTheme } from "@/components/theme-provider";
 import { useLocation } from "wouter";
+import { useRegistration } from "@/contexts/registration-context";
 import { Menu, X, Sun, Moon } from "lucide-react";
 
 const navLinks = [
@@ -18,6 +19,7 @@ export function Navigation() {
   const { theme, toggleTheme } = useTheme();
   const [location] = useLocation();
   const isHomePage = location === "/";
+  const { openRegistration } = useRegistration();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -79,7 +81,7 @@ export function Navigation() {
             width={220}
             height={64}
             loading="eager"
-            fetchPriority="high"
+            fetchpriority="high"
           />
           {/* Divider */}
           <div className={`h-8 sm:h-10 w-px mx-1 transition-colors duration-300 ${
@@ -93,7 +95,7 @@ export function Navigation() {
             width={220}
             height={64}
             loading="eager"
-            fetchPriority="high"
+            fetchpriority="high"
           />
         </a>
 
@@ -130,7 +132,10 @@ export function Navigation() {
           </Button>
 
           <Button
-            onClick={() => scrollToSection("#registration")}
+            onClick={() => {
+              openRegistration();
+              setMobileOpen(false);
+            }}
             className={`hidden sm:flex ${
               isScrolled || !isHomePage
                 ? "bg-primary text-primary-foreground"
@@ -170,7 +175,10 @@ export function Navigation() {
                 ))}
                 <div className="border-t border-border my-4" />
                 <Button
-                  onClick={() => scrollToSection("#registration")}
+                  onClick={() => {
+                    openRegistration();
+                    setMobileOpen(false);
+                  }}
                   className="w-full bg-primary text-primary-foreground"
                   data-testid="button-register-mobile"
                 >

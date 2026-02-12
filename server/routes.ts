@@ -30,14 +30,71 @@ export async function registerRoutes(
   app.get("/api/ticketing/ticket-types", async (req, res) => {
     try {
       const eventId = req.query.eventId as string;
+      console.log("Ticket types request received:", { eventId });
+      
       if (!eventId) {
         return res.status(400).json({ error: "eventId is required" });
       }
+      
+      console.log("Calling TicketingService.getTicketTypes...");
       const data = await TicketingService.getTicketTypes(eventId);
+      console.log("Ticket types fetched successfully:", { 
+        hasData: !!data, 
+        dataKeys: data ? Object.keys(data) : [],
+      });
+      
       res.json(data);
     } catch (error) {
       console.error("Error fetching ticket types:", error);
-      res.status(500).json({ error: "Failed to fetch ticket types" });
+      const errorMessage = error instanceof Error ? error.message : "Failed to fetch ticket types";
+      console.error("Full error details:", {
+        message: errorMessage,
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      res.status(500).json({ error: errorMessage });
+    }
+  });
+
+  // Purchase endpoint
+  app.post("/api/ticketing/purchases", async (req, res) => {
+    try {
+      const purchaseData = req.body;
+      
+      // Log incoming request for debugging
+      console.log("Purchase request received:", {
+        eventId: purchaseData.eventId,
+        ticketItemsCount: purchaseData.ticketItems?.length || 0,
+        paymentMethod: purchaseData.paymentMethod,
+      });
+      
+      // Validate required fields
+      if (!purchaseData.eventId) {
+        return res.status(400).json({ error: "eventId is required" });
+      }
+      if (!purchaseData.ticketItems || !Array.isArray(purchaseData.ticketItems) || purchaseData.ticketItems.length === 0) {
+        return res.status(400).json({ error: "ticketItems array is required and must not be empty" });
+      }
+      if (!purchaseData.paymentMethod) {
+        return res.status(400).json({ error: "paymentMethod is required" });
+      }
+
+      console.log("Calling TicketingService.createPurchase...");
+      const data = await TicketingService.createPurchase(purchaseData);
+      console.log("Purchase created successfully:", { 
+        hasData: !!data, 
+        dataKeys: data ? Object.keys(data) : [],
+        purchaseId: (data as any)?.id || (data as any)?.data?.id 
+      });
+      
+      res.json(data);
+    } catch (error) {
+      console.error("Error creating purchase:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to create purchase";
+      console.error("Full error details:", {
+        message: errorMessage,
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      res.status(500).json({ error: errorMessage });
     }
   });
 

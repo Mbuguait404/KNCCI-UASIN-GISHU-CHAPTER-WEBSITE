@@ -9,9 +9,13 @@ import { Link } from "wouter";
 import { hotelsData } from "@/components/hotels-map";
 import { SEOHead } from "@/components/seo/seo-head";
 import { Helmet } from "react-helmet-async";
+import { RegistrationDialog } from "@/components/registration-dialog";
+import { useRegistration } from "@/contexts/registration-context";
+import { staticEvent } from "@/data/static-data";
 
 export default function HotelDetail() {
   const [match, params] = useRoute<{ id: string }>("/hotels/:id");
+  const { isOpen, closeRegistration } = useRegistration();
   const hotel = hotelsData.find(h => h.id === params?.id);
 
   if (!hotel) {
@@ -32,12 +36,18 @@ export default function HotelDetail() {
                 <Button>Back to Hotels</Button>
               </Link>
             </div>
-          </main>
-          <Footer />
-        </div>
-      </>
-    );
-  }
+      </main>
+      <Footer />
+      
+      <RegistrationDialog
+        isOpen={isOpen}
+        onOpenChange={closeRegistration}
+        event={staticEvent}
+      />
+    </div>
+    </>
+  );
+}
 
   const siteUrl = typeof window !== "undefined" ? window.location.origin : "";
   const pageUrl = `${siteUrl}/hotels/${hotel.id}`;

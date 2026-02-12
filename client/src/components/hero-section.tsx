@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar, MapPin } from "lucide-react";
 import { staticEvent } from "@/data/static-data";
 import { Event } from "@shared/schema";
+import { useRegistration } from "@/contexts/registration-context";
 
 interface CountdownValues {
   days: number;
@@ -46,11 +47,11 @@ function CountdownBlock({ value, label }: { value: number; label: string }) {
 
 interface HeroSectionProps {
   event?: Event;
-  onRegister?: () => void;
 }
 
-export function HeroSection({ event: propEvent, onRegister }: HeroSectionProps) {
+export function HeroSection({ event: propEvent }: HeroSectionProps) {
   const event = propEvent || staticEvent;
+  const { openRegistration } = useRegistration();
 
   const eventDate = useMemo(() => {
     if (!event?.date) return null;
@@ -154,8 +155,8 @@ export function HeroSection({ event: propEvent, onRegister }: HeroSectionProps) 
                 {event.name}
               </h1>
 
-              <div className="inline-flex items-center gap-2 bg-primary backdrop-blur-sm border-2 border-white/30 rounded-full px-5 py-2 sm:px-6 sm:py-2.5 shadow-lg shadow-primary/50" data-testid="text-event-edition">
-                <span className="text-xs sm:text-sm md:text-base font-bold text-white uppercase tracking-[0.2em] drop-shadow-md">
+              <div className="inline-flex items-center gap-2 bg-primary backdrop-blur-sm border-2 border-white/30 rounded-full px-4 py-1.5 sm:px-5 sm:py-2 shadow-lg shadow-primary/50" data-testid="text-event-edition">
+                <span className="text-[10px] sm:text-xs md:text-sm font-bold text-white uppercase tracking-[0.2em] drop-shadow-md">
                   4TH EDITION
                 </span>
               </div>
@@ -167,18 +168,13 @@ export function HeroSection({ event: propEvent, onRegister }: HeroSectionProps) 
               <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-white/90 text-xs sm:text-sm font-semibold">
                 <div className="flex items-center gap-1.5">
                   <MapPin className="w-3 h-3 sm:w-4 sm:h-4 text-primary" />
-                  <span data-testid="text-event-venue">{event.venue} • {event.location}</span>
-                </div>
-                <div className="w-1 h-1 rounded-full bg-white/40 hidden sm:block" />
-                <div className="flex items-center gap-1.5">
-                  <Calendar className="w-3 h-3 sm:w-4 sm:h-4 text-secondary" />
-                  <span data-testid="text-event-duration">{getDayCount(event.date, event.endDate)} {event.tagline}</span>
+                  <span data-testid="text-event-venue">{event.venue}</span>
                 </div>
               </div>
 
               {event.highlights && event.highlights.length > 0 && (
                 <div className="flex flex-wrap justify-center gap-2">
-                  {event.highlights.slice(0, 3).map((highlight, index) => (
+                  {event.highlights.slice(0, 4).map((highlight, index) => (
                     <div
                       key={index}
                       className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-3 py-1.5 text-white text-xs sm:text-sm font-bold"
@@ -232,7 +228,7 @@ export function HeroSection({ event: propEvent, onRegister }: HeroSectionProps) 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4 sm:pt-5">
             <Button
               size="lg"
-              onClick={() => onRegister ? onRegister() : scrollToSection("#registration")}
+              onClick={() => openRegistration()}
               className="w-full sm:w-auto bg-primary text-primary-foreground text-base sm:text-lg px-6 sm:px-8 py-4 sm:py-5"
               data-testid="button-register-hero"
             >

@@ -16,10 +16,10 @@ import { useQuery } from "@tanstack/react-query";
 import { ticketing } from "@/lib/ticketing";
 import { Event } from "@shared/schema";
 import { RegistrationDialog } from "@/components/registration-dialog";
-import { useState } from "react";
+import { useRegistration } from "@/contexts/registration-context";
 
 export default function Home() {
-  const [isRegistrationOpen, setIsRegistrationOpen] = useState(false);
+  const { isOpen, closeRegistration } = useRegistration();
 
   const { data: apiEvents } = useQuery({
     queryKey: ["events"],
@@ -34,8 +34,8 @@ export default function Home() {
     id: apiEvent.id,
     name: apiEvent.title,
     description: apiEvent.description,
-    date: apiEvent.startDateTime,
-    endDate: apiEvent.endDateTime,
+    date: staticEvent.date, // Always use correct date: April 23, 2026
+    endDate: staticEvent.endDate, // Always use correct end date: April 25, 2026
     location: apiEvent.location.city,
     venue: apiEvent.location.name,
     // Keep static highlights/stats if API doesn't provide them yet
@@ -71,21 +71,14 @@ export default function Home() {
       <div className="min-h-screen bg-background">
         <Navigation />
         <main>
-          <HeroSection
-            event={displayEvent}
-            onRegister={() => setIsRegistrationOpen(true)}
-          />
+          <HeroSection event={displayEvent} />
           <AboutSection />
           {/* <SpeakersSection />
         <ProgramSection /> */}
           {/* <VenueSection /> */}
           <GalaDinnerSection />
           <NearbyHotelsSection />
-
-          {/* Reuse RegistrationSection but maybe link it to modal too? 
-              For now keeping as is, but could replace with just the section */}
           <RegistrationSection />
-
           <GallerySection />
           <PartnersSection />
           <ExhibitionRatesSection />
@@ -94,8 +87,8 @@ export default function Home() {
         <Footer />
 
         <RegistrationDialog
-          isOpen={isRegistrationOpen}
-          onOpenChange={setIsRegistrationOpen}
+          isOpen={isOpen}
+          onOpenChange={closeRegistration}
           event={displayEvent}
         />
       </div>

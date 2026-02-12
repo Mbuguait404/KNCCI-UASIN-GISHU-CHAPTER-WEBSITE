@@ -1,14 +1,8 @@
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { useToast } from "@/hooks/use-toast";
-import { useMutation } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { insertRegistrationSchema, type InsertRegistration } from "@shared/schema";
-import { Check, Users, Calendar, Award, Loader2 } from "lucide-react";
+import { useRegistration } from "@/contexts/registration-context";
+import { Check, Users, Calendar, Award, Ticket, ArrowRight, Sparkles } from "lucide-react";
+import { motion } from "framer-motion";
 
 const benefits = [
   { icon: Users, text: "Network with 500+ business leaders" },
@@ -16,44 +10,28 @@ const benefits = [
   { icon: Award, text: "Certificate of attendance" },
 ];
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.2
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: { duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }
+  }
+};
+
 export function RegistrationSection() {
-  const { toast } = useToast();
-  
-  const form = useForm<InsertRegistration>({
-    resolver: zodResolver(insertRegistrationSchema),
-    defaultValues: {
-      firstName: "",
-      lastName: "",
-      email: "",
-      phone: "",
-      organization: "",
-      jobTitle: "",
-    },
-  });
-
-  const registerMutation = useMutation({
-    mutationFn: async (data: InsertRegistration) => {
-      return apiRequest("POST", "/api/registrations", data);
-    },
-    onSuccess: () => {
-      toast({
-        title: "Registration Successful!",
-        description: "Thank you for registering. You will receive a confirmation email shortly.",
-      });
-      form.reset();
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Registration Failed",
-        description: error.message || "Please try again later or contact us for assistance.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const onSubmit = (data: InsertRegistration) => {
-    registerMutation.mutate(data);
-  };
+  const { openRegistration } = useRegistration();
 
   return (
     <section
@@ -66,10 +44,22 @@ export function RegistrationSection() {
       <div className="absolute bottom-1/4 left-0 w-96 h-96 bg-secondary/10 rounded-full blur-3xl" />
 
       <div className="container mx-auto px-4 relative z-10">
-        <div className="max-w-3xl mx-auto text-center mb-16">
-          <span className="text-primary font-semibold text-sm uppercase tracking-wider">
+        <motion.div 
+          className="max-w-3xl mx-auto text-center mb-16"
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+        >
+          <motion.span 
+            className="text-primary font-semibold text-sm uppercase tracking-wider"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+          >
             Secure Your Spot
-          </span>
+          </motion.span>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mt-4 mb-6" data-testid="text-registration-title">
             Register Now
           </h2>
@@ -77,39 +67,55 @@ export function RegistrationSection() {
             Don't miss this opportunity to be part of Kenya's premier business event. 
             Early registration ensures your place among industry leaders.
           </p>
-        </div>
+        </motion.div>
 
-        <div className="grid lg:grid-cols-2 gap-12 max-w-6xl mx-auto items-start">
-          <div className="space-y-8">
+        <div className="grid lg:grid-cols-2 gap-12 max-w-6xl mx-auto items-center">
+          <motion.div 
+            className="space-y-8"
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+          >
             <div className="space-y-6">
               {benefits.map((benefit, index) => (
-                <div key={index} className="flex items-center gap-4" data-testid={`benefit-${index}`}>
+                <motion.div 
+                  key={index} 
+                  className="flex items-center gap-4" 
+                  data-testid={`benefit-${index}`}
+                  variants={itemVariants}
+                >
                   <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-white/10 flex items-center justify-center">
                     <benefit.icon className="w-6 h-6 text-primary" />
                   </div>
                   <span className="text-lg text-white/90">{benefit.text}</span>
-                </div>
+                </motion.div>
               ))}
             </div>
 
-            <Card className="p-6 bg-white/5 border-white/10">
-              <div className="grid grid-cols-3 gap-4 text-center">
-                <div>
-                  <div className="text-3xl font-bold text-primary" data-testid="stat-attendees">500+</div>
-                  <div className="text-sm text-white/60">Attendees</div>
+            <motion.div variants={itemVariants}>
+              <Card className="p-6 bg-white/5 border-white/10">
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div>
+                    <div className="text-3xl font-bold text-primary" data-testid="stat-attendees">500+</div>
+                    <div className="text-sm text-white/60">Attendees</div>
+                  </div>
+                  <div>
+                    <div className="text-3xl font-bold text-secondary" data-testid="stat-speakers">50+</div>
+                    <div className="text-sm text-white/60">Speakers</div>
+                  </div>
+                  <div>
+                    <div className="text-3xl font-bold text-chart-3" data-testid="stat-sessions">30+</div>
+                    <div className="text-sm text-white/60">Sessions</div>
+                  </div>
                 </div>
-                <div>
-                  <div className="text-3xl font-bold text-secondary" data-testid="stat-speakers">50+</div>
-                  <div className="text-sm text-white/60">Speakers</div>
-                </div>
-                <div>
-                  <div className="text-3xl font-bold text-chart-3" data-testid="stat-sessions">30+</div>
-                  <div className="text-sm text-white/60">Sessions</div>
-                </div>
-              </div>
-            </Card>
+              </Card>
+            </motion.div>
 
-            <div className="flex flex-wrap gap-4">
+            <motion.div 
+              className="flex flex-wrap gap-4"
+              variants={itemVariants}
+            >
               <div className="flex items-center gap-2 text-sm text-white/60">
                 <Check className="w-4 h-4 text-secondary" />
                 <span>Free WiFi</span>
@@ -122,143 +128,77 @@ export function RegistrationSection() {
                 <Check className="w-4 h-4 text-secondary" />
                 <span>Event Materials</span>
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
 
-          <Card className="p-8 bg-white dark:bg-card border-0 shadow-2xl">
-            <h3 className="text-2xl font-bold text-foreground mb-6">
-              Complete Your Registration
-            </h3>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="firstName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-foreground">First Name</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            placeholder="John"
-                            data-testid="input-first-name"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="lastName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-foreground">Last Name</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            placeholder="Doe"
-                            data-testid="input-last-name"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-foreground">Email Address</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          type="email"
-                          placeholder="john@company.com"
-                          data-testid="input-email"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="phone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-foreground">Phone Number</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          type="tel"
-                          placeholder="+254 700 000 000"
-                          data-testid="input-phone"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="organization"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-foreground">Organization</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          placeholder="Company Name"
-                          data-testid="input-organization"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="jobTitle"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-foreground">Job Title</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          placeholder="CEO, Manager, etc."
-                          data-testid="input-job-title"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button
-                  type="submit"
-                  size="lg"
-                  className="w-full bg-primary text-primary-foreground mt-4"
-                  disabled={registerMutation.isPending}
-                  data-testid="button-submit-registration"
+          <motion.div
+            initial={{ opacity: 0, x: 50 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+          >
+            <Card className="p-8 bg-white dark:bg-card border-0 shadow-2xl">
+              <div className="text-center space-y-6">
+                <motion.div 
+                  className="w-20 h-20 mx-auto bg-primary/10 rounded-full flex items-center justify-center"
+                  whileHover={{ scale: 1.1, rotate: 10 }}
+                  transition={{ type: "spring", stiffness: 400 }}
                 >
-                  {registerMutation.isPending ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Registering...
-                    </>
-                  ) : (
-                    "Register for Event"
-                  )}
-                </Button>
-                <p className="text-xs text-muted-foreground text-center mt-4">
+                  <Ticket className="w-10 h-10 text-primary" />
+                </motion.div>
+                
+                <div className="space-y-2">
+                  <h3 className="text-2xl font-bold text-foreground">
+                    Get Your Tickets
+                  </h3>
+                  <p className="text-muted-foreground">
+                    Select from our range of ticket options including General Admission, 
+                    VIP Access, and Corporate Packages.
+                  </p>
+                </div>
+
+                <div className="space-y-3 text-left bg-muted/50 rounded-lg p-4">
+                  <div className="flex items-center gap-3">
+                    <Sparkles className="w-4 h-4 text-primary" />
+                    <span className="text-sm text-foreground">Multiple ticket tiers available</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Sparkles className="w-4 h-4 text-primary" />
+                    <span className="text-sm text-foreground">Secure M-PESA payment</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Sparkles className="w-4 h-4 text-primary" />
+                    <span className="text-sm text-foreground">Instant email confirmation</span>
+                  </div>
+                </div>
+
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Button
+                    onClick={openRegistration}
+                    size="lg"
+                    className="w-full bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all"
+                    data-testid="button-register-ticket"
+                  >
+                    <span>Register for Event</span>
+                    <motion.div
+                      className="ml-2"
+                      animate={{ x: [0, 4, 0] }}
+                      transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                    >
+                      <ArrowRight className="w-4 h-4" />
+                    </motion.div>
+                  </Button>
+                </motion.div>
+
+                <p className="text-xs text-muted-foreground text-center">
                   By registering, you agree to receive event-related communications from KNCCI.
                 </p>
-              </form>
-            </Form>
-          </Card>
+              </div>
+            </Card>
+          </motion.div>
         </div>
       </div>
     </section>

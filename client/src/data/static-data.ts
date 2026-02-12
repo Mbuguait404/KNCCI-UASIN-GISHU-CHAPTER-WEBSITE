@@ -16,7 +16,7 @@ export const staticEvent: Event = {
     "Networking with 1000+ business leaders",
     "200+ industry speakers",
     "60+ sessions and workshops",
-    "Content exhibition and trade fairs",
+    "Business exhibitions and trade fairs",
     "Policy discussions and roundtables",
   ],
   tagline: "Days of Strategic Dialogue",

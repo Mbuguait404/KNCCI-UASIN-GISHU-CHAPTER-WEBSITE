@@ -17,6 +17,9 @@ import { insertSponsorRequestSchema, type InsertSponsorRequest } from "@shared/s
 import { Check, TrendingUp, Users, Mic, Building2, Loader2, Send } from "lucide-react";
 import { SEOHead } from "@/components/seo/seo-head";
 import { Helmet } from "react-helmet-async";
+import { RegistrationDialog } from "@/components/registration-dialog";
+import { useRegistration } from "@/contexts/registration-context";
+import { staticEvent } from "@/data/static-data";
 
 const partnershipPackages = [
   {
@@ -118,6 +121,7 @@ export default function Partnership() {
   const siteUrl = typeof window !== "undefined" ? window.location.origin : "";
   const pageUrl = `${siteUrl}/partnership`;
   const { toast } = useToast();
+  const { isOpen, closeRegistration } = useRegistration();
 
   const sponsorForm = useForm<InsertSponsorRequest>({
     resolver: zodResolver(insertSponsorRequestSchema),
@@ -440,6 +444,12 @@ export default function Partnership() {
         </section>
       </main>
       <Footer />
+      
+      <RegistrationDialog
+        isOpen={isOpen}
+        onOpenChange={closeRegistration}
+        event={staticEvent}
+      />
     </div>
     </>
   );
