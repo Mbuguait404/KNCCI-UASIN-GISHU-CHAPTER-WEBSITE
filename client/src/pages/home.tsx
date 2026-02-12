@@ -29,9 +29,10 @@ export default function Home() {
   const apiEvent = apiEvents?.[0];
 
   // Map API event to Schema Event
+  // Use API event ID if available, otherwise use static event with valid database ID
   const displayEvent: Event = apiEvent ? {
     ...staticEvent, // Fallback to static data for missing fields
-    id: apiEvent.id,
+    id: apiEvent.id, // Use actual database ID from API
     name: apiEvent.title,
     description: apiEvent.description,
     date: staticEvent.date, // Always use correct date: April 23, 2026
@@ -39,7 +40,7 @@ export default function Home() {
     location: apiEvent.location.city,
     venue: "Rupaz mall Grounds", // Always use correct venue
     // Keep static highlights/stats if API doesn't provide them yet
-  } : staticEvent;
+  } : staticEvent; // staticEvent now has the correct database ID
 
   return (
     <>
