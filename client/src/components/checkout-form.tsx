@@ -110,8 +110,9 @@ export function CheckoutForm({ quantities, ticketTypes, onBack, onSubmit, isSubm
                                 <FormLabel>Phone Number</FormLabel>
                                 <FormControl>
                                     <div className="relative">
-                                        <Phone className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                                        <Input type="tel" placeholder="+254..." className="pl-9" {...field} />
+                                        <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                        <span className="absolute left-9 top-2.5 text-sm text-muted-foreground font-medium">+254</span>
+                                        <Input type="tel" placeholder="712 345 678" className="pl-20" {...field} />
                                     </div>
                                 </FormControl>
                                 <FormMessage />
