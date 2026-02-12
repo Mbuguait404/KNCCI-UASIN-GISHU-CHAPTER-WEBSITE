@@ -18,7 +18,8 @@ export const staticEvent: Event = {
     "60+ sessions and workshops",
     "Content exhibition and trade fairs",
     "Policy discussions and roundtables",
-  ],/m
+  ],
+  tagline: "Days of Strategic Dialogue",
   stats: {
     visitors: "10,000+",
     exhibitors: "200+",
@@ -144,61 +145,61 @@ export const staticPartners: Partner[] = [
 
 // Gallery data
 export const staticGallery: GalleryImage[] = [
-  { 
-    id: "1", 
-    url: "https://solby.sfo3.digitaloceanspaces.com/1769497085012-WhatsApp%20Image%202026-01-27%20at%2009.11.08.jpeg", 
-    eventName: "Kenya Business Summit", 
-    year: "2024", 
-    alt: "Business leaders networking at the summit" 
+  {
+    id: "1",
+    url: "https://solby.sfo3.digitaloceanspaces.com/1769497085012-WhatsApp%20Image%202026-01-27%20at%2009.11.08.jpeg",
+    eventName: "Kenya Business Summit",
+    year: "2024",
+    alt: "Business leaders networking at the summit"
   },
-  { 
-    id: "2", 
-    url: "https://solby.sfo3.digitaloceanspaces.com/1769497085040-WhatsApp%20Image%202026-01-27%20at%2009.10.56.jpeg", 
-    eventName: "Trade Expo Kenya", 
-    year: "2024", 
-    alt: "Exhibition hall with business booths" 
+  {
+    id: "2",
+    url: "https://solby.sfo3.digitaloceanspaces.com/1769497085040-WhatsApp%20Image%202026-01-27%20at%2009.10.56.jpeg",
+    eventName: "Trade Expo Kenya",
+    year: "2024",
+    alt: "Exhibition hall with business booths"
   },
-  { 
-    id: "3", 
-    url: "https://solby.sfo3.digitaloceanspaces.com/1769497085219-WhatsApp%20Image%202026-01-27%20at%2009.11.03.jpeg", 
-    eventName: "SME Conference", 
-    year: "2023", 
-    alt: "Panel discussion with industry experts" 
+  {
+    id: "3",
+    url: "https://solby.sfo3.digitaloceanspaces.com/1769497085219-WhatsApp%20Image%202026-01-27%20at%2009.11.03.jpeg",
+    eventName: "SME Conference",
+    year: "2023",
+    alt: "Panel discussion with industry experts"
   },
-  { 
-    id: "4", 
-    url: "https://solby.sfo3.digitaloceanspaces.com/1769687104798-WhatsApp%20Image%202026-01-27%20at%2009.11.09%20(2).jpeg", 
-    eventName: "Nairobi Tech Week", 
-    year: "2025", 
-    alt: "Innovators showcasing digital solutions" 
+  {
+    id: "4",
+    url: "https://solby.sfo3.digitaloceanspaces.com/1769687104798-WhatsApp%20Image%202026-01-27%20at%2009.11.09%20(2).jpeg",
+    eventName: "Nairobi Tech Week",
+    year: "2025",
+    alt: "Innovators showcasing digital solutions"
   },
-  { 
-    id: "5", 
-    url: "https://solby.sfo3.digitaloceanspaces.com/1769687104848-WhatsApp%20Image%202026-01-27%20at%2009.11.09%20(4).jpeg", 
-    eventName: "East Africa Manufacturing Gala", 
-    year: "2023", 
-    alt: "Keynote speech on industrial growth" 
+  {
+    id: "5",
+    url: "https://solby.sfo3.digitaloceanspaces.com/1769687104848-WhatsApp%20Image%202026-01-27%20at%2009.11.09%20(4).jpeg",
+    eventName: "East Africa Manufacturing Gala",
+    year: "2023",
+    alt: "Keynote speech on industrial growth"
   },
-  { 
-    id: "6", 
-    url: "https://solby.sfo3.digitaloceanspaces.com/1769687104735-WhatsApp%20Image%202026-01-27%20at%2009.10.55%20(1).jpeg", 
-    eventName: "Future of Finance Forum", 
-    year: "2024", 
-    alt: "Corporate professionals in a workshop" 
+  {
+    id: "6",
+    url: "https://solby.sfo3.digitaloceanspaces.com/1769687104735-WhatsApp%20Image%202026-01-27%20at%2009.10.55%20(1).jpeg",
+    eventName: "Future of Finance Forum",
+    year: "2024",
+    alt: "Corporate professionals in a workshop"
   },
-  { 
-    id: "7", 
-    url: "https://solby.sfo3.digitaloceanspaces.com/1769687104740-WhatsApp%20Image%202026-01-27%20at%2009.10.56%20(1).jpeg", 
-    eventName: "Global Leadership Retreat", 
-    year: "2022", 
-    alt: "Team building session outdoors" 
+  {
+    id: "7",
+    url: "https://solby.sfo3.digitaloceanspaces.com/1769687104740-WhatsApp%20Image%202026-01-27%20at%2009.10.56%20(1).jpeg",
+    eventName: "Global Leadership Retreat",
+    year: "2022",
+    alt: "Team building session outdoors"
   },
-  { 
-    id: "8", 
-    url: "https://solby.sfo3.digitaloceanspaces.com/1769687104724-WhatsApp%20Image%202026-01-27%20at%2009.11.02%20(1).jpeg", 
-    eventName: "Women in Business Awards", 
-    year: "2023", 
-    alt: "Attendees mingling at the reception" 
+  {
+    id: "8",
+    url: "https://solby.sfo3.digitaloceanspaces.com/1769687104724-WhatsApp%20Image%202026-01-27%20at%2009.11.02%20(1).jpeg",
+    eventName: "Women in Business Awards",
+    year: "2023",
+    alt: "Attendees mingling at the reception"
   },
 ];
 
