@@ -1,7 +1,8 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Calendar, MapPin } from "lucide-react";
 import { staticEvent } from "@/data/static-data";
+import { Event } from "@shared/schema";
 
 interface CountdownValues {
   days: number;
@@ -43,13 +44,20 @@ function CountdownBlock({ value, label }: { value: number; label: string }) {
   );
 }
 
-export function HeroSection() {
-  const event = staticEvent;
+interface HeroSectionProps {
+  event?: Event;
+  onRegister?: () => void;
+}
+
+export function HeroSection({ event: propEvent, onRegister }: HeroSectionProps) {
+  const event = propEvent || staticEvent;
 
   const eventDate = useMemo(() => {
     if (!event?.date) return null;
     // Parse date string and create date at 9 AM local time
-    const [year, month, day] = event.date.split('-').map(Number);
+    // Handle both YYYY-MM-DD and ISO strings
+    const dateStr = event.date.includes('T') ? event.date.split('T')[0] : event.date;
+    const [year, month, day] = dateStr.split('-').map(Number);
     return new Date(year, month - 1, day, 9, 0, 0);
   }, [event?.date]);
 
@@ -60,16 +68,16 @@ export function HeroSection() {
       setTimeLeft(null);
       return;
     }
-    
+
     // Calculate immediately
     const initialTimeLeft = calculateTimeLeft(eventDate);
     setTimeLeft(initialTimeLeft);
-    
+
     // Then update every second
     const timer = setInterval(() => {
       setTimeLeft(calculateTimeLeft(eventDate));
     }, 1000);
-    
+
     return () => clearInterval(timer);
   }, [eventDate]);
 
@@ -81,21 +89,29 @@ export function HeroSection() {
   };
 
   const formatDate = (dateStr: string, endDateStr: string) => {
-    const start = new Date(dateStr);
-    const end = new Date(endDateStr);
-    const startMonth = start.toLocaleDateString("en-US", { month: "long" });
-    const startDay = start.getDate();
-    const endDay = end.getDate();
-    const year = start.getFullYear();
-    return `${startMonth} ${startDay}-${endDay}, ${year}`;
+    try {
+      const start = new Date(dateStr);
+      const end = new Date(endDateStr);
+      const startMonth = start.toLocaleDateString("en-US", { month: "long" });
+      const startDay = start.getDate();
+      const endDay = end.getDate();
+      const year = start.getFullYear();
+      return `${startMonth} ${startDay}-${endDay}, ${year}`;
+    } catch (e) {
+      return dateStr;
+    }
   };
 
   const getDayCount = (startDate: string, endDate: string) => {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const diffTime = Math.abs(end.getTime() - start.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-    return diffDays;
+    try {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      const diffTime = Math.abs(end.getTime() - start.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+      return diffDays;
+    } catch (e) {
+      return 3;
+    }
   };
 
   return (
@@ -118,11 +134,11 @@ export function HeroSection() {
       </div>
 
       {/* Vignette Overlay - darker at edges, clearer in center */}
-      <div 
+      <div
         className="absolute inset-0"
         style={{
           background: 'radial-gradient(ellipse 80% 80% at center, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.4) 40%, rgba(0, 0, 0, 0.65) 70%, rgba(0, 0, 0, 0.85) 100%)'
-        }} 
+        }}
       />
 
       <div className="relative z-10 container mx-auto px-4 text-center h-full flex flex-col justify-center">
@@ -163,7 +179,7 @@ export function HeroSection() {
               {event.highlights && event.highlights.length > 0 && (
                 <div className="flex flex-wrap justify-center gap-2">
                   {event.highlights.slice(0, 3).map((highlight, index) => (
-                    <div 
+                    <div
                       key={index}
                       className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-3 py-1.5 text-white text-xs sm:text-sm font-bold"
                       data-testid={`badge-highlight-${index}`}
@@ -216,7 +232,7 @@ export function HeroSection() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4 sm:pt-5">
             <Button
               size="lg"
-              onClick={() => scrollToSection("#registration")}
+              onClick={() => onRegister ? onRegister() : scrollToSection("#registration")}
               className="w-full sm:w-auto bg-primary text-primary-foreground text-base sm:text-lg px-6 sm:px-8 py-4 sm:py-5"
               data-testid="button-register-hero"
             >
