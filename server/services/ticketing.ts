@@ -20,7 +20,7 @@ export class TicketingService {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
-    
+  
     // Convert options.headers to Record<string, string> if provided
     if (options?.headers) {
       if (options.headers instanceof Headers) {
