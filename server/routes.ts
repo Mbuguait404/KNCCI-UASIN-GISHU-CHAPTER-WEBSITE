@@ -4,6 +4,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertRegistrationSchema, insertNewsletterSchema, insertSponsorRequestSchema } from "@shared/schema";
 import { TicketingService } from "./services/ticketing";
+import { getMockEventsResponse, getMockTicketTypesResponse, createMockPurchase } from "./mock-data";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -17,10 +18,17 @@ export async function registerRoutes(
   });
 
   // Ticketing API Proxy Endpoints
+  // TODO: Replace with actual API calls when endpoints are ready
   app.get("/api/ticketing/events", async (req, res) => {
     try {
-      const data = await TicketingService.getEvent(req.query.id as string);
-      res.json(data);
+      // Using mock data for demonstration
+      console.log("[MOCK] Returning mock events data");
+      const mockResponse = getMockEventsResponse();
+      res.json(mockResponse);
+      
+      // Uncomment below when API is ready:
+      // const data = await TicketingService.getEvent(req.query.id as string);
+      // res.json(data);
     } catch (error) {
       console.error("Error fetching events:", error);
       res.status(500).json({ error: "Failed to fetch event data" });
@@ -30,7 +38,7 @@ export async function registerRoutes(
   app.get("/api/ticketing/ticket-types", async (req, res) => {
     try {
       const eventId = req.query.eventId as string;
-      console.log("Ticket types request received:", { 
+      console.log("[MOCK] Ticket types request received:", { 
         eventId,
         queryParams: req.query,
         url: req.url 
@@ -40,15 +48,14 @@ export async function registerRoutes(
         return res.status(400).json({ error: "eventId is required" });
       }
       
-      console.log("Calling TicketingService.getTicketTypes with eventId:", eventId);
-      const data = await TicketingService.getTicketTypes(eventId);
-      console.log("Ticket types fetched successfully:", { 
-        hasData: !!data, 
-        dataKeys: data ? Object.keys(data) : [],
-        dataType: typeof data,
-      });
+      // Using mock data for demonstration
+      console.log("[MOCK] Returning mock ticket types for eventId:", eventId);
+      const mockResponse = getMockTicketTypesResponse(eventId);
+      res.json(mockResponse);
       
-      res.json(data);
+      // Uncomment below when API is ready:
+      // const data = await TicketingService.getTicketTypes(eventId);
+      // res.json(data);
     } catch (error) {
       console.error("Error fetching ticket types:", error);
       const errorMessage = error instanceof Error ? error.message : "Failed to fetch ticket types";
@@ -74,7 +81,7 @@ export async function registerRoutes(
       const purchaseData = req.body;
       
       // Log incoming request for debugging
-      console.log("Purchase request received:", {
+      console.log("[MOCK] Purchase request received:", {
         eventId: purchaseData.eventId,
         ticketItemsCount: purchaseData.ticketItems?.length || 0,
         paymentMethod: purchaseData.paymentMethod,
@@ -91,15 +98,20 @@ export async function registerRoutes(
         return res.status(400).json({ error: "paymentMethod is required" });
       }
 
-      console.log("Calling TicketingService.createPurchase...");
-      const data = await TicketingService.createPurchase(purchaseData);
-      console.log("Purchase created successfully:", { 
-        hasData: !!data, 
-        dataKeys: data ? Object.keys(data) : [],
-        purchaseId: (data as any)?.id || (data as any)?.data?.id 
+      // Using mock data for demonstration
+      console.log("[MOCK] Creating mock purchase...");
+      const mockPurchase = createMockPurchase(purchaseData);
+      console.log("[MOCK] Purchase created successfully:", { 
+        purchaseId: mockPurchase.id,
+        totalAmount: mockPurchase.totalAmount,
+        paymentStatus: mockPurchase.paymentStatus,
       });
       
-      res.json(data);
+      res.json({ data: mockPurchase });
+      
+      // Uncomment below when API is ready:
+      // const data = await TicketingService.createPurchase(purchaseData);
+      // res.json(data);
     } catch (error) {
       console.error("Error creating purchase:", error);
       const errorMessage = error instanceof Error ? error.message : "Failed to create purchase";
