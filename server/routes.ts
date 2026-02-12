@@ -30,28 +30,41 @@ export async function registerRoutes(
   app.get("/api/ticketing/ticket-types", async (req, res) => {
     try {
       const eventId = req.query.eventId as string;
-      console.log("Ticket types request received:", { eventId });
+      console.log("Ticket types request received:", { 
+        eventId,
+        queryParams: req.query,
+        url: req.url 
+      });
       
       if (!eventId) {
         return res.status(400).json({ error: "eventId is required" });
       }
       
-      console.log("Calling TicketingService.getTicketTypes...");
+      console.log("Calling TicketingService.getTicketTypes with eventId:", eventId);
       const data = await TicketingService.getTicketTypes(eventId);
       console.log("Ticket types fetched successfully:", { 
         hasData: !!data, 
         dataKeys: data ? Object.keys(data) : [],
+        dataType: typeof data,
       });
       
       res.json(data);
     } catch (error) {
       console.error("Error fetching ticket types:", error);
       const errorMessage = error instanceof Error ? error.message : "Failed to fetch ticket types";
+      const errorStack = error instanceof Error ? error.stack : undefined;
+      
       console.error("Full error details:", {
         message: errorMessage,
-        stack: error instanceof Error ? error.stack : undefined,
+        stack: errorStack,
+        eventId: req.query.eventId,
       });
-      res.status(500).json({ error: errorMessage });
+      
+      // Return more detailed error in development, generic in production
+      res.status(500).json({ 
+        error: errorMessage,
+        ...(process.env.NODE_ENV === "development" && { stack: errorStack })
+      });
     }
   });
 
