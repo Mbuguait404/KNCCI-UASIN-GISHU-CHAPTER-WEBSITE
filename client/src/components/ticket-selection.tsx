@@ -1,20 +1,20 @@
 import { useQuery } from "@tanstack/react-query";
-import { ticketing, type TicketType } from "@/lib/ticketing";
+import { ticketing } from "@/lib/ticketing";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2, Ticket, Check, ArrowRight, Plus, Minus } from "lucide-react";
-import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
 interface TicketSelectionProps {
     eventId: string;
+    quantities: Record<string, number>;
+    onQuantitiesChange: (quantities: Record<string, number>) => void;
+    onProceed: () => void;
 }
 
-export function TicketSelection({ eventId }: TicketSelectionProps) {
+export function TicketSelection({ eventId, quantities, onQuantitiesChange, onProceed }: TicketSelectionProps) {
     const { toast } = useToast();
-    // Track quantity for each ticket type: { [ticketId]: quantity }
-    const [quantities, setQuantities] = useState<Record<string, number>>({});
 
     const { data: ticketTypes, isLoading, error } = useQuery({
         queryKey: ["ticketTypes", eventId],
@@ -40,19 +40,17 @@ export function TicketSelection({ eventId }: TicketSelectionProps) {
     }
 
     const updateQuantity = (id: string, delta: number) => {
-        setQuantities(prev => {
-            const current = prev[id] || 0;
-            const newQuantity = Math.max(0, current + delta);
+        const current = quantities[id] || 0;
+        const newQuantity = Math.max(0, current + delta);
 
-            // Limit max quantity per ticket type if needed (e.g., 10)
-            if (newQuantity > 10) return prev;
+        // Limit max quantity per ticket type if needed (e.g., 10)
+        if (newQuantity > 10) return;
 
-            const next = { ...prev, [id]: newQuantity };
-            if (newQuantity === 0) {
-                delete next[id];
-            }
-            return next;
-        });
+        const next = { ...quantities, [id]: newQuantity };
+        if (newQuantity === 0) {
+            delete next[id];
+        }
+        onQuantitiesChange(next);
     };
 
     const totalTickets = Object.values(quantities).reduce((sum, q) => sum + q, 0);
@@ -61,16 +59,6 @@ export function TicketSelection({ eventId }: TicketSelectionProps) {
     }, 0) || 0;
     // Assuming all tickets have the same currency for now, or take the first one
     const currency = ticketTypes?.[0]?.currency || 'KES';
-
-    const handleRegister = () => {
-        if (totalTickets === 0) return;
-
-        // Placeholder for registration flow
-        toast({
-            title: "Registration Started",
-            description: `Selected ${totalTickets} tickets. Total: ${currency} ${totalPrice.toLocaleString()}. Implementation pending.`
-        });
-    }
 
     return (
         <div className="space-y-6">
@@ -124,6 +112,12 @@ export function TicketSelection({ eventId }: TicketSelectionProps) {
                                         <Check className="w-4 h-4 text-green-500" />
                                         <span>Networking Sessions</span>
                                     </div>
+                                    {ticket.price > 0 && (
+                                        <div className="flex items-center gap-2">
+                                            <Check className="w-4 h-4 text-green-500" />
+                                            <span>Gala Dinner Access</span>
+                                        </div>
+                                    )}
                                 </div>
                             </CardContent>
 
@@ -172,7 +166,7 @@ export function TicketSelection({ eventId }: TicketSelectionProps) {
                 <Button
                     size="lg"
                     disabled={totalTickets === 0}
-                    onClick={handleRegister}
+                    onClick={onProceed}
                     className="w-full sm:w-auto gap-2 px-8 shadow-lg shadow-primary/20 min-w-[200px]"
                 >
                     Proceed to Registration <ArrowRight className="w-4 h-4" />
