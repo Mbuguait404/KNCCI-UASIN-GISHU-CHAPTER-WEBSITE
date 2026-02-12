@@ -8,7 +8,7 @@ interface TicketingConfig {
 const config: TicketingConfig = {
   // Base URL for the external ticketing API
   // Default to the production domain if env var is not set
-  apiUrl:  "https://ticketing.lancolatech.co.ke",
+  apiUrl:  "https://ticketing-system-server-v-production.up.railway.app",
   apiKey:  "pk_HdZLAcfFFatoCyRT1HTATxzmXwKVM3vz",
 };
 
