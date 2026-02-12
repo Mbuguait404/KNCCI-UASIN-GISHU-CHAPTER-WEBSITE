@@ -55,8 +55,8 @@ export function Navigation() {
       data-testid="navigation-bar"
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         isScrolled
-          ? "py-2 bg-background/80 backdrop-blur-xl border-b border-border/50 shadow-sm"
-          : "py-4 bg-transparent"
+          ? "pt-4 pb-2 bg-background/80 backdrop-blur-xl border-b border-border/50 shadow-sm"
+          : "pt-6 pb-4 bg-transparent"
       }`}
     >
       <div className="max-w-6xl mx-auto px-4 w-full flex items-center justify-between gap-4">
@@ -73,10 +73,10 @@ export function Navigation() {
           className="flex items-center gap-3"
           data-testid="link-logo"
         >
-          {/* County Logo */}
+          {/* Chapter Logo */}
           <img 
-            src="/county-removebg-preview.png" 
-            alt="Uasin Gishu County" 
+            src="https://solby.sfo3.digitaloceanspaces.com/1770900740026-kncci_logo-removebg-preview.png" 
+            alt="KNCCI Uasin Gishu Chapter" 
             className="h-12 sm:h-16 w-auto object-contain"
             width={220}
             height={64}
@@ -87,10 +87,10 @@ export function Navigation() {
           <div className={`h-8 sm:h-10 w-px mx-1 transition-colors duration-300 ${
             isScrolled ? "bg-gray-400" : "bg-white/40"
           }`} />
-          {/* Chapter Logo */}
+          {/* County Logo */}
           <img 
-            src="/UG_chapter_logo-removebg-preview.png" 
-            alt="KNCCI Uasin Gishu Chapter" 
+            src="/county-removebg-preview.png" 
+            alt="Uasin Gishu County" 
             className="h-12 sm:h-16 w-auto object-contain"
             width={220}
             height={64}
