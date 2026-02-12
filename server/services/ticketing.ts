@@ -7,9 +7,9 @@ interface TicketingConfig {
 
 const config: TicketingConfig = {
   // Base URL for the external ticketing API
-  // Default to the production domain if env var is not set
-  apiUrl:  "https://ticketing-system-server-v-production.up.railway.app",
-  apiKey:  "pk_HdZLAcfFFatoCyRT1HTATxzmXwKVM3vz",
+  // TODO: Move to environment variables later
+  apiUrl: "https://ticketing-system-server-v-production.up.railway.app",
+  apiKey: "pk_HdZLAcfFFatoCyRT1HTATxzmXwKVM3vz",
 };
 
 export class TicketingService {
