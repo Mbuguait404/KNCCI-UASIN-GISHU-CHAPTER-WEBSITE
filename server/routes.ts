@@ -3,7 +3,8 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertRegistrationSchema, insertNewsletterSchema, insertSponsorRequestSchema } from "@shared/schema";
-import { TicketingService } from "./services/ticketing";
+// TicketingService import kept for future use but NOT currently called
+// import { TicketingService } from "./services/ticketing";
 import { getMockEventsResponse, getMockTicketTypesResponse, createMockPurchase } from "./mock-data";
 
 export async function registerRoutes(
@@ -18,15 +19,16 @@ export async function registerRoutes(
   });
 
   // Ticketing API Proxy Endpoints
+  // NOTE: Currently using MOCK DATA for demonstration
   // TODO: Replace with actual API calls when endpoints are ready
   app.get("/api/ticketing/events", async (req, res) => {
     try {
-      // Using mock data for demonstration
-      console.log("[MOCK] Returning mock events data");
+      // ALWAYS using mock data - no API calls
+      console.log("[MOCK] Returning mock events data - API calls disabled");
       const mockResponse = getMockEventsResponse();
-      res.json(mockResponse);
+      return res.json(mockResponse);
       
-      // Uncomment below when API is ready:
+      // API calls disabled - uncomment when ready:
       // const data = await TicketingService.getEvent(req.query.id as string);
       // res.json(data);
     } catch (error) {
@@ -48,12 +50,12 @@ export async function registerRoutes(
         return res.status(400).json({ error: "eventId is required" });
       }
       
-      // Using mock data for demonstration
-      console.log("[MOCK] Returning mock ticket types for eventId:", eventId);
+      // ALWAYS using mock data - no API calls
+      console.log("[MOCK] Returning mock ticket types for eventId:", eventId, "- API calls disabled");
       const mockResponse = getMockTicketTypesResponse(eventId);
-      res.json(mockResponse);
+      return res.json(mockResponse);
       
-      // Uncomment below when API is ready:
+      // API calls disabled - uncomment when ready:
       // const data = await TicketingService.getTicketTypes(eventId);
       // res.json(data);
     } catch (error) {
@@ -98,8 +100,8 @@ export async function registerRoutes(
         return res.status(400).json({ error: "paymentMethod is required" });
       }
 
-      // Using mock data for demonstration
-      console.log("[MOCK] Creating mock purchase...");
+      // ALWAYS using mock data - no API calls
+      console.log("[MOCK] Creating mock purchase - API calls disabled");
       const mockPurchase = createMockPurchase(purchaseData);
       console.log("[MOCK] Purchase created successfully:", { 
         purchaseId: mockPurchase.id,
@@ -107,9 +109,9 @@ export async function registerRoutes(
         paymentStatus: mockPurchase.paymentStatus,
       });
       
-      res.json({ data: mockPurchase });
+      return res.json({ data: mockPurchase });
       
-      // Uncomment below when API is ready:
+      // API calls disabled - uncomment when ready:
       // const data = await TicketingService.createPurchase(purchaseData);
       // res.json(data);
     } catch (error) {
