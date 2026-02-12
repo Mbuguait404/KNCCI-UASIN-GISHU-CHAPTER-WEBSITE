@@ -5,9 +5,40 @@ import {
   insertRegistrationSchema,
   insertNewsletterSchema,
 } from "../shared/schema";
-import { TicketingService } from "../server/services/ticketing";
 import path from "path";
 import fs from "fs";
+
+// Inline ticketing proxy config (avoids import issues on Vercel)
+const TICKETING_API_URL =
+  process.env.TICKETING_API_URL ||
+  "https://ticketing-system-server-v-production.up.railway.app";
+const TICKETING_API_KEY =
+  process.env.TICKETING_API_KEY || "pk_HdZLAcfFFatoCyRT1HTATxzmXwKVM3vz";
+
+async function ticketingFetch(endpoint: string, options?: RequestInit) {
+  const url = `${TICKETING_API_URL}${endpoint}`;
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (TICKETING_API_KEY) {
+    headers["x-api-key"] = TICKETING_API_KEY;
+  }
+  const { headers: _, ...restOptions } = options || {};
+  const response = await fetch(url, { headers, ...restOptions });
+  if (!response.ok) {
+    const errorText = await response.text();
+    let errorMessage = `API error: ${response.status} ${response.statusText}`;
+    const contentType = response.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorMessage = errorJson.message || errorJson.error || errorMessage;
+      } catch {}
+    }
+    throw new Error(errorMessage);
+  }
+  return response.json();
+}
 
 const app = express();
 
@@ -136,7 +167,7 @@ app.get("/api/newsletter", async (req, res) => {
 // Ticketing API Proxy Endpoints
 app.get("/api/ticketing/events", async (req, res) => {
   try {
-    const data = await TicketingService.getEvent(req.query.id as string);
+    const data = await ticketingFetch("/events");
     res.json(data);
   } catch (error) {
     console.error("Error fetching events:", error);
@@ -150,7 +181,9 @@ app.get("/api/ticketing/ticket-types", async (req, res) => {
     if (!eventId) {
       return res.status(400).json({ error: "eventId is required" });
     }
-    const data = await TicketingService.getTicketTypes(eventId);
+    const data = await ticketingFetch(
+      `/ticket-types/public?eventId=${eventId}`,
+    );
     res.json(data);
   } catch (error) {
     console.error("Error fetching ticket types:", error);
@@ -178,7 +211,10 @@ app.post("/api/ticketing/purchases", async (req, res) => {
     if (!purchaseData.paymentMethod) {
       return res.status(400).json({ error: "paymentMethod is required" });
     }
-    const data = await TicketingService.createPurchase(purchaseData);
+    const data = await ticketingFetch("/purchases", {
+      method: "POST",
+      body: JSON.stringify(purchaseData),
+    });
     res.json(data);
   } catch (error) {
     console.error("Error creating purchase:", error);
@@ -223,11 +259,9 @@ if (fs.existsSync(distPath)) {
   // If dist/public doesn't exist, handle non-API routes
   app.get("*", (req: Request, res: Response) => {
     if (!req.path.startsWith("/api")) {
-      res
-        .status(500)
-        .json({
-          error: "Build files not found. Please run 'npm run build' first.",
-        });
+      res.status(500).json({
+        error: "Build files not found. Please run 'npm run build' first.",
+      });
     }
   });
 }
