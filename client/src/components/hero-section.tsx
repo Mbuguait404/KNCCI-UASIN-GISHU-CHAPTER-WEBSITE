@@ -1,7 +1,9 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Calendar, MapPin } from "lucide-react";
 import { staticEvent } from "@/data/static-data";
+import { Event } from "@shared/schema";
+import { useRegistration } from "@/contexts/registration-context";
 
 interface CountdownValues {
   days: number;
@@ -43,13 +45,31 @@ function CountdownBlock({ value, label }: { value: number; label: string }) {
   );
 }
 
-export function HeroSection() {
-  const event = staticEvent;
+interface HeroSectionProps {
+  event?: Event;
+}
+
+export function HeroSection({ event: propEvent }: HeroSectionProps) {
+  const event = propEvent || staticEvent;
+  const { openRegistration } = useRegistration();
+
+  // Remove "4th Edition" and variations from event name for display
+  const displayName = useMemo(() => {
+    if (!event?.name) return "";
+    return event.name
+      .replace(/\s*4th\s+Edition\s*/gi, " ")
+      .replace(/\s*4TH\s+EDITION\s*/gi, " ")
+      .replace(/\s*4th\s+edition\s*/gi, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }, [event?.name]);
 
   const eventDate = useMemo(() => {
     if (!event?.date) return null;
     // Parse date string and create date at 9 AM local time
-    const [year, month, day] = event.date.split('-').map(Number);
+    // Handle both YYYY-MM-DD and ISO strings
+    const dateStr = event.date.includes('T') ? event.date.split('T')[0] : event.date;
+    const [year, month, day] = dateStr.split('-').map(Number);
     return new Date(year, month - 1, day, 9, 0, 0);
   }, [event?.date]);
 
@@ -60,16 +80,16 @@ export function HeroSection() {
       setTimeLeft(null);
       return;
     }
-    
+
     // Calculate immediately
     const initialTimeLeft = calculateTimeLeft(eventDate);
     setTimeLeft(initialTimeLeft);
-    
+
     // Then update every second
     const timer = setInterval(() => {
       setTimeLeft(calculateTimeLeft(eventDate));
     }, 1000);
-    
+
     return () => clearInterval(timer);
   }, [eventDate]);
 
@@ -81,21 +101,29 @@ export function HeroSection() {
   };
 
   const formatDate = (dateStr: string, endDateStr: string) => {
-    const start = new Date(dateStr);
-    const end = new Date(endDateStr);
-    const startMonth = start.toLocaleDateString("en-US", { month: "long" });
-    const startDay = start.getDate();
-    const endDay = end.getDate();
-    const year = start.getFullYear();
-    return `${startMonth} ${startDay}-${endDay}, ${year}`;
+    try {
+      const start = new Date(dateStr);
+      const end = new Date(endDateStr);
+      const startMonth = start.toLocaleDateString("en-US", { month: "long" });
+      const startDay = start.getDate();
+      const endDay = end.getDate();
+      const year = start.getFullYear();
+      return `${startMonth} ${startDay}-${endDay}, ${year}`;
+    } catch (e) {
+      return dateStr;
+    }
   };
 
   const getDayCount = (startDate: string, endDate: string) => {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const diffTime = Math.abs(end.getTime() - start.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-    return diffDays;
+    try {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      const diffTime = Math.abs(end.getTime() - start.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+      return diffDays;
+    } catch (e) {
+      return 3;
+    }
   };
 
   return (
@@ -107,7 +135,7 @@ export function HeroSection() {
       {/* Static Background Image */}
       <div className="absolute inset-0">
         <img
-          src="https://solby.sfo3.digitaloceanspaces.com/1769497085040-WhatsApp%20Image%202026-01-27%20at%2009.10.56.jpeg"
+          src="https://solby.sfo3.digitaloceanspaces.com/1770897937932-WhatsApp%20Image%202026-02-12%20at%2015.03.53.jpeg"
           alt="The Eldoret International Business Summit 2026 - Business networking and exhibition activities"
           className="h-full w-full object-cover"
           loading="eager"
@@ -117,12 +145,13 @@ export function HeroSection() {
         />
       </div>
 
-      {/* Vignette Overlay - darker at edges, clearer in center */}
-      <div 
+      {/* Vignette Overlay - darker at center, lighter towards edges for better text contrast */}
+      <div
         className="absolute inset-0"
         style={{
-          background: 'radial-gradient(ellipse 80% 80% at center, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.4) 40%, rgba(0, 0, 0, 0.65) 70%, rgba(0, 0, 0, 0.85) 100%)'
-        }} 
+          background:
+            'radial-gradient(ellipse 80% 80% at center, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.6) 35%, rgba(0, 0, 0, 0.35) 70%, rgba(0, 0, 0, 0.15) 100%)',
+        }}
       />
 
       <div className="relative z-10 container mx-auto px-4 text-center h-full flex flex-col justify-center">
@@ -135,11 +164,11 @@ export function HeroSection() {
               </div>
 
               <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight px-2" data-testid="text-event-name">
-                {event.name}
+                {displayName}
               </h1>
 
-              <div className="inline-flex items-center gap-2 bg-primary backdrop-blur-sm border-2 border-white/30 rounded-full px-5 py-2 sm:px-6 sm:py-2.5 shadow-lg shadow-primary/50" data-testid="text-event-edition">
-                <span className="text-xs sm:text-sm md:text-base font-bold text-white uppercase tracking-[0.2em] drop-shadow-md">
+              <div className="inline-flex items-center gap-2 bg-primary backdrop-blur-sm border-2 border-white/30 rounded-full px-4 py-1.5 sm:px-5 sm:py-2 shadow-lg shadow-primary/50" data-testid="text-event-edition">
+                <span className="text-[10px] sm:text-xs md:text-sm font-bold text-white uppercase tracking-[0.2em] drop-shadow-md">
                   4TH EDITION
                 </span>
               </div>
@@ -151,19 +180,14 @@ export function HeroSection() {
               <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-white/90 text-xs sm:text-sm font-semibold">
                 <div className="flex items-center gap-1.5">
                   <MapPin className="w-3 h-3 sm:w-4 sm:h-4 text-primary" />
-                  <span data-testid="text-event-venue">{event.venue} • {event.location}</span>
-                </div>
-                <div className="w-1 h-1 rounded-full bg-white/40 hidden sm:block" />
-                <div className="flex items-center gap-1.5">
-                  <Calendar className="w-3 h-3 sm:w-4 sm:h-4 text-secondary" />
-                  <span data-testid="text-event-duration">{getDayCount(event.date, event.endDate)} {event.tagline}</span>
+                  <span data-testid="text-event-venue">{event.venue}</span>
                 </div>
               </div>
 
               {event.highlights && event.highlights.length > 0 && (
                 <div className="flex flex-wrap justify-center gap-2">
-                  {event.highlights.slice(0, 3).map((highlight, index) => (
-                    <div 
+                  {event.highlights.slice(0, 4).map((highlight, index) => (
+                    <div
                       key={index}
                       className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-3 py-1.5 text-white text-xs sm:text-sm font-bold"
                       data-testid={`badge-highlight-${index}`}
@@ -216,7 +240,7 @@ export function HeroSection() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4 sm:pt-5">
             <Button
               size="lg"
-              onClick={() => scrollToSection("#registration")}
+              onClick={() => openRegistration()}
               className="w-full sm:w-auto bg-primary text-primary-foreground text-base sm:text-lg px-6 sm:px-8 py-4 sm:py-5"
               data-testid="button-register-hero"
             >

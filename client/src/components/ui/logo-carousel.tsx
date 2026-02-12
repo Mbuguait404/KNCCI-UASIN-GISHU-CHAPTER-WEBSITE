@@ -92,11 +92,10 @@ const LogoColumn: React.FC<LogoColumnProps> = React.memo(
           <motion.div
             key={`${currentPartner.id}-${currentIndex}`}
             className="absolute inset-0 flex items-center justify-center"
-            initial={{ y: "10%", opacity: 0, filter: "blur(8px)" }}
+            initial={{ y: "10%", opacity: 0 }}
             animate={{
               y: "0%",
               opacity: 1,
-              filter: "blur(0px)",
               transition: {
                 type: "spring",
                 stiffness: 300,
@@ -109,12 +108,14 @@ const LogoColumn: React.FC<LogoColumnProps> = React.memo(
             exit={{
               y: "-20%",
               opacity: 0,
-              filter: "blur(6px)",
               transition: {
                 type: "tween",
                 ease: "easeIn",
                 duration: 0.3,
               },
+            }}
+            style={{
+              filter: "blur(0px)", // Static blur value to avoid negative interpolation
             }}
           >
             <PartnerLogoDisplay partner={currentPartner} />

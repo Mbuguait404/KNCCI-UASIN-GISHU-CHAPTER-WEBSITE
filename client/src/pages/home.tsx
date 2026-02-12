@@ -1,9 +1,6 @@
 import { Navigation } from "@/components/navigation";
 import { HeroSection } from "@/components/hero-section";
 import { AboutSection } from "@/components/about-section";
-import { SpeakersSection } from "@/components/speakers-section";
-import { ProgramSection } from "@/components/program-section";
-import { VenueSection } from "@/components/venue-section";
 import { GalaDinnerSection } from "../components/gala-dinner-section";
 import { NearbyHotelsSection } from "@/components/nearby-hotels-section";
 import { RegistrationSection } from "@/components/registration-section";
@@ -15,14 +12,41 @@ import { Footer } from "@/components/footer";
 import { SEOHead } from "@/components/seo/seo-head";
 import { StructuredData } from "@/components/seo/structured-data";
 import { staticEvent, staticSpeakers, staticVenue, staticTestimonials } from "@/data/static-data";
+import { useQuery } from "@tanstack/react-query";
+import { ticketing } from "@/lib/ticketing";
+import { Event } from "@shared/schema";
+import { RegistrationDialog } from "@/components/registration-dialog";
+import { useRegistration } from "@/contexts/registration-context";
 
 export default function Home() {
+  const { isOpen, closeRegistration } = useRegistration();
+
+  const { data: apiEvents } = useQuery({
+    queryKey: ["events"],
+    queryFn: ticketing.getEvents
+  });
+
+  const apiEvent = apiEvents?.[0];
+
+  // Map API event to Schema Event
+  const displayEvent: Event = apiEvent ? {
+    ...staticEvent, // Fallback to static data for missing fields
+    id: apiEvent.id,
+    name: apiEvent.title,
+    description: apiEvent.description,
+    date: staticEvent.date, // Always use correct date: April 23, 2026
+    endDate: staticEvent.endDate, // Always use correct end date: April 25, 2026
+    location: apiEvent.location.city,
+    venue: "Rupaz mall Grounds", // Always use correct venue
+    // Keep static highlights/stats if API doesn't provide them yet
+  } : staticEvent;
+
   return (
     <>
       <SEOHead
-        title={staticEvent.name}
-        description={staticEvent.description}
-        event={staticEvent}
+        title={displayEvent.name}
+        description={displayEvent.description}
+        event={displayEvent}
         keywords={[
           "Eldoret International Business Summit",
           "Business Conference Kenya",
@@ -34,7 +58,7 @@ export default function Home() {
         canonicalUrl={typeof window !== "undefined" ? window.location.origin : ""}
       />
       <StructuredData
-        event={staticEvent}
+        event={displayEvent}
         speakers={staticSpeakers}
         venue={staticVenue}
         testimonials={staticTestimonials}
@@ -47,10 +71,10 @@ export default function Home() {
       <div className="min-h-screen bg-background">
         <Navigation />
         <main>
-          <HeroSection />
+          <HeroSection event={displayEvent} />
           <AboutSection />
-        //   {/* <SpeakersSection />
-        // <ProgramSection /> */}
+          {/* <SpeakersSection />
+        <ProgramSection /> */}
           {/* <VenueSection /> */}
           <GalaDinnerSection />
           <NearbyHotelsSection />
@@ -61,6 +85,12 @@ export default function Home() {
           <TestimonialsSection />
         </main>
         <Footer />
+
+        <RegistrationDialog
+          isOpen={isOpen}
+          onOpenChange={closeRegistration}
+          event={displayEvent}
+        />
       </div>
     </>
   );

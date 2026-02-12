@@ -6,20 +6,20 @@ import type { Event, Speaker, Session, Partner, GalleryImage, Testimonial, Venue
 export const staticEvent: Event = {
   id: "eldoret-international-business-summit-2026",
   name: "The Eldoret International Business Summit 2026",
-  subtitle: "Eldoret City: Gateway to Africa's Trade, Innocation and Economic Future",
+  subtitle: "Eldoret City: Gateway to Africa's Trade, Innovation and Economic Future",
   description: "Eldoret is a thriving business hub in the North Rift and a key gateway to East and Central Africa. Following the success of the previous summit (which attracted over 10,000 attendees and 200+ exhibitors), the 2026 edition aims to unite key stakeholders to explore innovative strategies for sustainable business growth. The Eldoret International Business Summit 2026 is the flagship event organized by the Kenya National Chamber of Commerce and Industry (KNCCI) Uasin Gishu Chapter. This three-day summit brings together the nation's brightest minds in business, government, and civil society to drive economic growth and foster international partnerships. Join us in Eldoret as we explore Africa's trade and economic future.",
   date: "2026-04-23",
   endDate: "2026-04-25",
-  location: "Eldoret, Uasin Gishu County",
-  venue: "RUPA Mall Grounds",
+  location: "Eldoret City",
+  venue: "Rupaz mall Grounds",
   highlights: [
     "Networking with 1000+ business leaders",
     "200+ industry speakers",
     "60+ sessions and workshops",
-    "Exhibition and trade fair",
+    "Business exhibitions and trade fairs",
     "Policy discussions and roundtables",
   ],
-  tagline: "Days of Excellence",
+  tagline: "Days of Strategic Dialogue",
   stats: {
     visitors: "10,000+",
     exhibitors: "200+",
@@ -145,61 +145,61 @@ export const staticPartners: Partner[] = [
 
 // Gallery data
 export const staticGallery: GalleryImage[] = [
-  { 
-    id: "1", 
-    url: "https://solby.sfo3.digitaloceanspaces.com/1769497085012-WhatsApp%20Image%202026-01-27%20at%2009.11.08.jpeg", 
-    eventName: "Kenya Business Summit", 
-    year: "2024", 
-    alt: "Business leaders networking at the summit" 
+  {
+    id: "1",
+    url: "https://solby.sfo3.digitaloceanspaces.com/1769497085012-WhatsApp%20Image%202026-01-27%20at%2009.11.08.jpeg",
+    eventName: "Kenya Business Summit",
+    year: "2024",
+    alt: "Business leaders networking at the summit"
   },
-  { 
-    id: "2", 
-    url: "https://solby.sfo3.digitaloceanspaces.com/1769497085040-WhatsApp%20Image%202026-01-27%20at%2009.10.56.jpeg", 
-    eventName: "Trade Expo Kenya", 
-    year: "2024", 
-    alt: "Exhibition hall with business booths" 
+  {
+    id: "2",
+    url: "https://solby.sfo3.digitaloceanspaces.com/1769497085040-WhatsApp%20Image%202026-01-27%20at%2009.10.56.jpeg",
+    eventName: "Trade Expo Kenya",
+    year: "2024",
+    alt: "Exhibition hall with business booths"
   },
-  { 
-    id: "3", 
-    url: "https://solby.sfo3.digitaloceanspaces.com/1769497085219-WhatsApp%20Image%202026-01-27%20at%2009.11.03.jpeg", 
-    eventName: "SME Conference", 
-    year: "2023", 
-    alt: "Panel discussion with industry experts" 
+  {
+    id: "3",
+    url: "https://solby.sfo3.digitaloceanspaces.com/1769497085219-WhatsApp%20Image%202026-01-27%20at%2009.11.03.jpeg",
+    eventName: "SME Conference",
+    year: "2023",
+    alt: "Panel discussion with industry experts"
   },
-  { 
-    id: "4", 
-    url: "https://solby.sfo3.digitaloceanspaces.com/1769687104798-WhatsApp%20Image%202026-01-27%20at%2009.11.09%20(2).jpeg", 
-    eventName: "Nairobi Tech Week", 
-    year: "2025", 
-    alt: "Innovators showcasing digital solutions" 
+  {
+    id: "4",
+    url: "https://solby.sfo3.digitaloceanspaces.com/1769687104798-WhatsApp%20Image%202026-01-27%20at%2009.11.09%20(2).jpeg",
+    eventName: "Nairobi Tech Week",
+    year: "2025",
+    alt: "Innovators showcasing digital solutions"
   },
-  { 
-    id: "5", 
-    url: "https://solby.sfo3.digitaloceanspaces.com/1769687104848-WhatsApp%20Image%202026-01-27%20at%2009.11.09%20(4).jpeg", 
-    eventName: "East Africa Manufacturing Gala", 
-    year: "2023", 
-    alt: "Keynote speech on industrial growth" 
+  {
+    id: "5",
+    url: "https://solby.sfo3.digitaloceanspaces.com/1769687104848-WhatsApp%20Image%202026-01-27%20at%2009.11.09%20(4).jpeg",
+    eventName: "East Africa Manufacturing Gala",
+    year: "2023",
+    alt: "Keynote speech on industrial growth"
   },
-  { 
-    id: "6", 
-    url: "https://solby.sfo3.digitaloceanspaces.com/1769687104735-WhatsApp%20Image%202026-01-27%20at%2009.10.55%20(1).jpeg", 
-    eventName: "Future of Finance Forum", 
-    year: "2024", 
-    alt: "Corporate professionals in a workshop" 
+  {
+    id: "6",
+    url: "https://solby.sfo3.digitaloceanspaces.com/1769687104735-WhatsApp%20Image%202026-01-27%20at%2009.10.55%20(1).jpeg",
+    eventName: "Future of Finance Forum",
+    year: "2024",
+    alt: "Corporate professionals in a workshop"
   },
-  { 
-    id: "7", 
-    url: "https://solby.sfo3.digitaloceanspaces.com/1769687104740-WhatsApp%20Image%202026-01-27%20at%2009.10.56%20(1).jpeg", 
-    eventName: "Global Leadership Retreat", 
-    year: "2022", 
-    alt: "Team building session outdoors" 
+  {
+    id: "7",
+    url: "https://solby.sfo3.digitaloceanspaces.com/1769687104740-WhatsApp%20Image%202026-01-27%20at%2009.10.56%20(1).jpeg",
+    eventName: "Global Leadership Retreat",
+    year: "2022",
+    alt: "Team building session outdoors"
   },
-  { 
-    id: "8", 
-    url: "https://solby.sfo3.digitaloceanspaces.com/1769687104724-WhatsApp%20Image%202026-01-27%20at%2009.11.02%20(1).jpeg", 
-    eventName: "Women in Business Awards", 
-    year: "2023", 
-    alt: "Attendees mingling at the reception" 
+  {
+    id: "8",
+    url: "https://solby.sfo3.digitaloceanspaces.com/1769687104724-WhatsApp%20Image%202026-01-27%20at%2009.11.02%20(1).jpeg",
+    eventName: "Women in Business Awards",
+    year: "2023",
+    alt: "Attendees mingling at the reception"
   },
 ];
 

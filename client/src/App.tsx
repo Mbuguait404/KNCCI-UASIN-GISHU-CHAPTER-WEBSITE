@@ -5,6 +5,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
+import { RegistrationProvider } from "@/contexts/registration-context";
 import { WhatsAppFloat } from "@/components/whatsapp-float";
 import Home from "@/pages/home";
 import Partnership from "@/pages/partnership";
@@ -30,9 +31,11 @@ function App() {
       <ThemeProvider>
         <QueryClientProvider client={queryClient}>
           <TooltipProvider>
-            <Toaster />
-            <Router />
-            <WhatsAppFloat />
+            <RegistrationProvider>
+              <Toaster />
+              <Router />
+              <WhatsAppFloat />
+            </RegistrationProvider>
           </TooltipProvider>
         </QueryClientProvider>
       </ThemeProvider>

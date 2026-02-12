@@ -3,17 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useTheme } from "@/components/theme-provider";
 import { useLocation } from "wouter";
+import { useRegistration } from "@/contexts/registration-context";
 import { Menu, X, Sun, Moon } from "lucide-react";
 
 const navLinks = [
   { label: "Home", href: "#home" },
-  { label: "About", href: "#about" },
   { label: "Speakers", href: "#speakers" },
   { label: "Program", href: "#program" },
-  { label: "Venue", href: "#venue" },
-  { label: "Gallery", href: "#gallery" },
   { label: "Partners", href: "#partners" },
-  { label: "Contact", href: "#footer" },
 ];
 
 export function Navigation() {
@@ -22,6 +19,7 @@ export function Navigation() {
   const { theme, toggleTheme } = useTheme();
   const [location] = useLocation();
   const isHomePage = location === "/";
+  const { openRegistration } = useRegistration();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -61,7 +59,7 @@ export function Navigation() {
           : "py-4 bg-transparent"
       }`}
     >
-      <div className="container mx-auto px-4 flex items-center justify-between gap-4">
+      <div className="max-w-6xl mx-auto px-4 w-full flex items-center justify-between gap-4">
         <a
           href="/"
           onClick={(e) => {
@@ -75,15 +73,15 @@ export function Navigation() {
           className="flex items-center gap-3"
           data-testid="link-logo"
         >
-          {/* Main KNCCI Logo */}
+          {/* County Logo */}
           <img 
-            src="/kncci_logo-removebg-preview.png" 
-            alt="KNCCI - Kenya National Chamber of Commerce and Industry" 
-            className="h-8 sm:h-10 w-auto object-contain"
-            width={140}
-            height={40}
+            src="/county-removebg-preview.png" 
+            alt="Uasin Gishu County" 
+            className="h-12 sm:h-16 w-auto object-contain"
+            width={220}
+            height={64}
             loading="eager"
-            fetchPriority="high"
+            fetchpriority="high"
           />
           {/* Divider */}
           <div className={`h-8 sm:h-10 w-px mx-1 transition-colors duration-300 ${
@@ -97,7 +95,7 @@ export function Navigation() {
             width={220}
             height={64}
             loading="eager"
-            fetchPriority="high"
+            fetchpriority="high"
           />
         </a>
 
@@ -135,24 +133,9 @@ export function Navigation() {
 
           <Button
             onClick={() => {
-              if (location === "/partnership") {
-                return; // Already on partnership page
-              }
-              window.location.href = "/partnership";
+              openRegistration();
+              setMobileOpen(false);
             }}
-            variant="outline"
-            className={`hidden sm:flex ${
-              isScrolled || !isHomePage
-                ? "border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-                : "border-white/30 text-white hover:bg-white/20 hover:text-white"
-            }`}
-            data-testid="button-become-partner-nav"
-          >
-            Become a Partner
-          </Button>
-
-          <Button
-            onClick={() => scrollToSection("#registration")}
             className={`hidden sm:flex ${
               isScrolled || !isHomePage
                 ? "bg-primary text-primary-foreground"
@@ -193,19 +176,9 @@ export function Navigation() {
                 <div className="border-t border-border my-4" />
                 <Button
                   onClick={() => {
+                    openRegistration();
                     setMobileOpen(false);
-                    if (location !== "/partnership") {
-                      window.location.href = "/partnership";
-                    }
                   }}
-                  variant="outline"
-                  className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-                  data-testid="button-become-partner-mobile"
-                >
-                  Become a Partner
-                </Button>
-                <Button
-                  onClick={() => scrollToSection("#registration")}
                   className="w-full bg-primary text-primary-foreground"
                   data-testid="button-register-mobile"
                 >
