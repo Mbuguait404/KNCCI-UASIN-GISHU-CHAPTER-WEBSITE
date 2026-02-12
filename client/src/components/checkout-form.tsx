@@ -4,7 +4,7 @@ import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { Loader2, ArrowLeft, Phone } from "lucide-react";
 import { TicketType } from "@/lib/ticketing";
 
 const formSchema = z.object({
@@ -109,7 +109,10 @@ export function CheckoutForm({ quantities, ticketTypes, onBack, onSubmit, isSubm
                             <FormItem>
                                 <FormLabel>Phone Number</FormLabel>
                                 <FormControl>
-                                    <Input type="tel" placeholder="+254..." {...field} />
+                                    <div className="relative">
+                                        <Phone className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                                        <Input type="tel" placeholder="+254..." className="pl-9" {...field} />
+                                    </div>
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
