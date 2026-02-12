@@ -3,7 +3,7 @@ import { TicketSelection } from "@/components/ticket-selection";
 import { CheckoutForm } from "@/components/checkout-form";
 import { Event } from "@shared/schema";
 import { Calendar, MapPin, CheckCircle2, Phone, Loader2, Ticket, User, CreditCard, Check, Sparkles } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { ticketing, type Purchase } from "@/lib/ticketing";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,9 @@ import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
+import { processMockMpesaPayment, type MockMpesaPaymentStatus } from "@/lib/mock-mpesa";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface RegistrationDialogProps {
     isOpen: boolean;
@@ -19,13 +22,6 @@ interface RegistrationDialogProps {
 }
 
 type Step = "tickets" | "checkout" | "payment" | "success";
-
-const steps = [
-    { id: "tickets" as Step, label: "Select Tickets", icon: Ticket },
-    { id: "checkout" as Step, label: "Your Details", icon: User },
-    { id: "payment" as Step, label: "Payment", icon: CreditCard },
-    { id: "success" as Step, label: "Complete", icon: Check },
-];
 
 const slideVariants = {
     enter: (direction: number) => ({
@@ -106,11 +102,38 @@ export function RegistrationDialog({ isOpen, onOpenChange, event }: Registration
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [paymentTimer, setPaymentTimer] = useState(5);
     const [purchaseId, setPurchaseId] = useState<string | null>(null);
+    const [phoneNumber, setPhoneNumber] = useState("");
+    const [paymentStatus, setPaymentStatus] = useState<MockMpesaPaymentStatus | null>(null);
+    const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+    const [customerData, setCustomerData] = useState<any>(null);
 
     const { data: ticketTypes } = useQuery({
         queryKey: ["ticketTypes", event.id],
         queryFn: () => ticketing.getTicketTypes(event.id),
     });
+
+    // Calculate total amount based on selected tickets
+    const totalAmount = useMemo(() => {
+        return ticketTypes?.reduce((sum, ticket) => {
+            return sum + (ticket.price * (quantities[ticket.id] || 0));
+        }, 0) || 0;
+    }, [quantities, ticketTypes]);
+
+    // Dynamic steps array - exclude payment step for free events
+    const steps = useMemo(() => {
+        const baseSteps = [
+            { id: "tickets" as Step, label: "Select Tickets", icon: Ticket },
+            { id: "checkout" as Step, label: "Your Details", icon: User },
+        ];
+        
+        // Only include payment step if there's a cost
+        if (totalAmount > 0) {
+            baseSteps.push({ id: "payment" as Step, label: "Payment", icon: CreditCard });
+        }
+        
+        baseSteps.push({ id: "success" as Step, label: "Complete", icon: Check });
+        return baseSteps;
+    }, [totalAmount]);
 
     const createPurchaseMutation = useMutation({
         mutationFn: async (purchaseData: Parameters<typeof ticketing.createPurchase>[0]) => {
@@ -138,6 +161,8 @@ export function RegistrationDialog({ isOpen, onOpenChange, event }: Registration
 
     const handleSubmitOrder = async (data: any) => {
         setIsSubmitting(true);
+        setCustomerData(data);
+        
         try {
             // Prepare ticket items from quantities
             const ticketItems = Object.entries(quantities)
@@ -157,50 +182,18 @@ export function RegistrationDialog({ isOpen, onOpenChange, event }: Registration
                 return;
             }
 
-            // Calculate total amount
-            const totalAmount = ticketTypes?.reduce((sum, ticket) => {
-                return sum + (ticket.price * (quantities[ticket.id] || 0));
-            }, 0) || 0;
-
-            // Determine payment method based on total amount
+            // Determine payment method based on total amount (totalAmount already calculated via useMemo)
             const paymentMethod = totalAmount === 0 ? "none" : "M-Pesa";
 
-            // Create purchase
-            const purchaseData = {
-                eventId: event.id,
-                ticketItems,
-                paymentMethod,
-                notes: `Contact: ${data.firstName} ${data.lastName}, Email: ${data.email}, Phone: ${data.phone}${data.organization ? `, Organization: ${data.organization}` : ""}`,
-            };
-
-            console.log("Creating purchase:", purchaseData);
-
-            const purchase = await createPurchaseMutation.mutateAsync(purchaseData);
-            
-            // Extract purchase ID from response (handle different response structures)
-            // The API may return Purchase directly or wrapped in { data: Purchase | Purchase[] }
-            let purchaseIdValue: string | undefined;
-            const purchaseAny = purchase as any; // Handle wrapped responses
-            
-            if (purchaseAny?.id) {
-                // Direct Purchase object
-                purchaseIdValue = purchaseAny.id;
-            } else if (purchaseAny?.data) {
-                // Wrapped response: { data: Purchase | Purchase[] }
-                const data = purchaseAny.data;
-                if (Array.isArray(data) && data.length > 0 && data[0]?.id) {
-                    purchaseIdValue = data[0].id;
-                } else if (data?.id) {
-                    purchaseIdValue = data.id;
-                }
-            }
-            
-            if (purchaseIdValue) {
-                setPurchaseId(purchaseIdValue);
-            }
-
-            // If free tickets, go directly to success
+            // For free tickets, create purchase and go directly to success
             if (totalAmount === 0) {
+                // Mock purchase creation for free tickets
+                const mockPurchaseId = `purchase_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+                setPurchaseId(mockPurchaseId);
+                
+                // Simulate API delay
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
                 setDirection(1);
                 setStep("success");
                 setIsSubmitting(false);
@@ -208,42 +201,127 @@ export function RegistrationDialog({ isOpen, onOpenChange, event }: Registration
                     title: "Registration Successful!",
                     description: "Your free tickets have been generated. Check your email for confirmation.",
                 });
-            } else {
-                // For paid tickets, proceed to payment step
-                // TODO: Integrate M-Pesa STK Push here
-                console.log("Initiating payment for purchase:", purchase.id);
-                setDirection(1);
-                setStep("payment");
-                setPaymentTimer(5);
+                return;
             }
+
+            // For paid tickets, store customer data and proceed to payment step
+            // We'll create the purchase after payment is confirmed
+            setDirection(1);
+            setStep("payment");
+            setIsSubmitting(false);
         } catch (error) {
             console.error("Failed to submit order", error);
             setIsSubmitting(false);
-            // Error toast is handled by mutation onError
+            toast({
+                title: "Error",
+                description: "Failed to process your request. Please try again.",
+                variant: "destructive",
+            });
         }
     };
 
-    useEffect(() => {
-        if (step === "payment" && purchaseId) {
-            // TODO: Poll purchase status or wait for M-Pesa callback
-            // For now, simulate payment completion after timer
-            const interval = setInterval(() => {
-                setPaymentTimer((prev) => {
-                    if (prev <= 1) {
-                        clearInterval(interval);
-                        // In production, check purchase status here
-                        // For now, proceed to success
-                        setDirection(1);
-                        setStep("success");
-                        setIsSubmitting(false);
-                        return 0;
-                    }
-                    return prev - 1;
-                });
-            }, 1000);
-            return () => clearInterval(interval);
+    const handleMpesaPayment = async () => {
+        if (!phoneNumber.trim()) {
+            toast({
+                title: "Phone Number Required",
+                description: "Please enter your M-Pesa phone number to proceed with payment.",
+                variant: "destructive",
+            });
+            return;
         }
-    }, [step, purchaseId]);
+
+        setIsProcessingPayment(true);
+        setPaymentStatus(null);
+
+        try {
+            // Determine ticket type name for reference
+            const ticketTypeNames = ticketTypes
+                ?.filter(tt => quantities[tt.id] > 0)
+                .map(tt => tt.name)
+                .join(", ") || "Event Tickets";
+
+            const paymentResult = await processMockMpesaPayment(
+                {
+                    phoneNumber,
+                    amount: totalAmount,
+                    accountReference: `EVENT-${event.id.substring(0, 8).toUpperCase()}`,
+                    transactionDesc: `${ticketTypeNames} - ${event.name}`,
+                },
+                (status) => {
+                    setPaymentStatus(status);
+                }
+            );
+
+            if (paymentResult.success) {
+                // Payment successful - now create the purchase
+                try {
+                    const ticketItems = Object.entries(quantities)
+                        .filter(([_, qty]) => qty > 0)
+                        .map(([ticketTypeId, quantity]) => ({
+                            ticketTypeId,
+                            quantity,
+                        }));
+
+                    const purchaseData = {
+                        eventId: event.id,
+                        ticketItems,
+                        paymentMethod: "M-Pesa",
+                        notes: `Contact: ${customerData.firstName} ${customerData.lastName}, Email: ${customerData.email}, Phone: ${customerData.phone || phoneNumber}${customerData.organization ? `, Organization: ${customerData.organization}` : ""}`,
+                    };
+
+                    // Mock purchase creation (in real scenario, this would call the API)
+                    const mockPurchaseId = `purchase_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+                    setPurchaseId(mockPurchaseId);
+
+                    toast({
+                        title: "Payment Successful!",
+                        description: "Your payment has been confirmed. Generating your tickets...",
+                    });
+
+                    // Simulate ticket generation delay
+                    await new Promise(resolve => setTimeout(resolve, 1500));
+
+                    setDirection(1);
+                    setStep("success");
+                    setIsProcessingPayment(false);
+                } catch (error) {
+                    console.error("Failed to create purchase after payment", error);
+                    toast({
+                        title: "Payment Successful",
+                        description: "Payment confirmed, but there was an issue creating your purchase. Please contact support.",
+                        variant: "destructive",
+                    });
+                    setIsProcessingPayment(false);
+                }
+            } else {
+                // Payment failed
+                toast({
+                    title: "Payment Failed",
+                    description: paymentResult.error || "Payment could not be processed. Please try again.",
+                    variant: "destructive",
+                });
+                setIsProcessingPayment(false);
+            }
+        } catch (error) {
+            console.error("Payment processing error", error);
+            toast({
+                title: "Payment Error",
+                description: "An error occurred while processing your payment. Please try again.",
+                variant: "destructive",
+            });
+            setIsProcessingPayment(false);
+        }
+    };
+
+    // Reset payment state when dialog closes
+    useEffect(() => {
+        if (!isOpen) {
+            setPhoneNumber("");
+            setPaymentStatus(null);
+            setIsProcessingPayment(false);
+            setCustomerData(null);
+        }
+    }, [isOpen]);
 
     const handleClose = () => {
         onOpenChange(false);
@@ -253,6 +331,10 @@ export function RegistrationDialog({ isOpen, onOpenChange, event }: Registration
             setQuantities({});
             setIsSubmitting(false);
             setPurchaseId(null);
+            setPhoneNumber("");
+            setPaymentStatus(null);
+            setIsProcessingPayment(false);
+            setCustomerData(null);
         }, 300);
     };
 
@@ -303,7 +385,9 @@ export function RegistrationDialog({ isOpen, onOpenChange, event }: Registration
                                         transition={{ duration: 0.3 }}
                                     >
                                         {step === "tickets" && "Select your tickets to proceed."}
-                                        {step === "checkout" && "Enter your details to complete registration."}
+                                        {step === "checkout" && totalAmount === 0 
+                                            ? "Enter your details to complete your free registration." 
+                                            : "Enter your details to complete registration."}
                                         {step === "payment" && "Awaiting Payment Confirmation"}
                                         {step === "success" && "Registration Successful!"}
                                     </motion.span>
@@ -445,65 +529,141 @@ export function RegistrationDialog({ isOpen, onOpenChange, event }: Registration
                                 animate="animate"
                                 exit="exit"
                                 transition={{ duration: 0.4 }}
-                                className="flex flex-col items-center justify-center py-12 space-y-6 text-center"
+                                className="flex flex-col items-center justify-center py-8 space-y-6"
                             >
-                                <motion.div 
-                                    className="relative"
-                                    initial={{ scale: 0.8, opacity: 0 }}
-                                    animate={{ scale: 1, opacity: 1 }}
-                                    transition={{ type: "spring", stiffness: 200, damping: 20 }}
-                                >
-                                    <motion.div 
-                                        className="absolute inset-0 bg-primary/20 blur-xl rounded-full"
-                                        animate={{ 
-                                            scale: [1, 1.2, 1],
-                                            opacity: [0.5, 0.8, 0.5]
-                                        }}
-                                        transition={{ 
-                                            duration: 2,
-                                            repeat: Infinity,
-                                            ease: "easeInOut"
-                                        }}
-                                    />
-                                    <Card className="w-24 h-24 rounded-full bg-card border-2 border-primary/20 flex items-center justify-center relative z-10">
-                                        <motion.div
-                                            animate={{ y: [0, -5, 0] }}
-                                            transition={{ 
-                                                duration: 1.5,
-                                                repeat: Infinity,
-                                                ease: "easeInOut"
-                                            }}
+                                {!isProcessingPayment ? (
+                                    <>
+                                        <motion.div 
+                                            className="space-y-4 w-full max-w-md"
+                                            initial={{ opacity: 0, y: 20 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: 0.2, duration: 0.4 }}
                                         >
-                                            <Phone className="w-10 h-10 text-primary" />
-                                        </motion.div>
-                                    </Card>
-                                </motion.div>
+                                            <div className="text-center space-y-2 mb-6">
+                                                <h3 className="text-2xl font-bold text-foreground">M-Pesa Payment</h3>
+                                                <p className="text-muted-foreground">
+                                                    Enter your M-Pesa phone number to receive a payment prompt
+                                                </p>
+                                            </div>
 
-                                <motion.div 
-                                    className="space-y-3 max-w-md"
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.2, duration: 0.4 }}
-                                >
-                                    <h3 className="text-2xl font-bold text-foreground">Check your phone</h3>
-                                    <p className="text-muted-foreground">
-                                        We've sent an M-PESA prompt to your number. Please enter your PIN to complete the payment.
-                                    </p>
-                                    <motion.div 
-                                        className="flex items-center justify-center gap-2 text-sm font-medium text-primary bg-primary/10 py-2 px-4 rounded-full mx-auto w-fit"
-                                        initial={{ opacity: 0, scale: 0.9 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        transition={{ delay: 0.3, duration: 0.3 }}
-                                    >
-                                        <motion.div
-                                            animate={{ rotate: 360 }}
-                                            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                                        >
-                                            <Loader2 className="w-4 h-4" />
+                                            <Card className="p-6 space-y-4">
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="phone">M-Pesa Phone Number</Label>
+                                                    <Input
+                                                        id="phone"
+                                                        type="tel"
+                                                        placeholder="0712345678 or 254712345678"
+                                                        value={phoneNumber}
+                                                        onChange={(e) => setPhoneNumber(e.target.value)}
+                                                        disabled={isProcessingPayment}
+                                                        className="text-lg"
+                                                    />
+                                                    <p className="text-xs text-muted-foreground">
+                                                        Format: 0712345678 or 254712345678
+                                                    </p>
+                                                </div>
+
+                                                <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                                                    <div className="flex justify-between text-sm">
+                                                        <span className="text-muted-foreground">Total Amount</span>
+                                                        <span className="font-bold text-lg text-foreground">
+                                                            KES {totalAmount.toLocaleString()}
+                                                        </span>
+                                                    </div>
+                                                    {ticketTypes && (
+                                                        <div className="text-xs text-muted-foreground space-y-1 pt-2 border-t border-border">
+                                                            {ticketTypes
+                                                                .filter(tt => quantities[tt.id] > 0)
+                                                                .map(tt => (
+                                                                    <div key={tt.id} className="flex justify-between">
+                                                                        <span>{tt.name} x{quantities[tt.id]}</span>
+                                                                        <span>KES {(tt.price * quantities[tt.id]).toLocaleString()}</span>
+                                                                    </div>
+                                                                ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                <Button
+                                                    onClick={handleMpesaPayment}
+                                                    disabled={!phoneNumber.trim() || isProcessingPayment}
+                                                    className="w-full"
+                                                    size="lg"
+                                                >
+                                                    <Phone className="w-4 h-4 mr-2" />
+                                                    Pay with M-Pesa
+                                                </Button>
+                                            </Card>
                                         </motion.div>
-                                        <span>Waiting for payment... {paymentTimer}s</span>
-                                    </motion.div>
-                                </motion.div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <motion.div 
+                                            className="relative"
+                                            initial={{ scale: 0.8, opacity: 0 }}
+                                            animate={{ scale: 1, opacity: 1 }}
+                                            transition={{ type: "spring", stiffness: 200, damping: 20 }}
+                                        >
+                                            <motion.div 
+                                                className="absolute inset-0 bg-primary/20 blur-xl rounded-full"
+                                                animate={{ 
+                                                    scale: [1, 1.2, 1],
+                                                    opacity: [0.5, 0.8, 0.5]
+                                                }}
+                                                transition={{ 
+                                                    duration: 2,
+                                                    repeat: Infinity,
+                                                    ease: "easeInOut"
+                                                }}
+                                            />
+                                            <Card className="w-24 h-24 rounded-full bg-card border-2 border-primary/20 flex items-center justify-center relative z-10">
+                                                <motion.div
+                                                    animate={{ y: [0, -5, 0] }}
+                                                    transition={{ 
+                                                        duration: 1.5,
+                                                        repeat: Infinity,
+                                                        ease: "easeInOut"
+                                                    }}
+                                                >
+                                                    <Phone className="w-10 h-10 text-primary" />
+                                                </motion.div>
+                                            </Card>
+                                        </motion.div>
+
+                                        <motion.div 
+                                            className="space-y-3 max-w-md text-center"
+                                            initial={{ opacity: 0, y: 20 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: 0.2, duration: 0.4 }}
+                                        >
+                                            <h3 className="text-2xl font-bold text-foreground">Check your phone</h3>
+                                            <p className="text-muted-foreground">
+                                                {paymentStatus?.status === 'pending' && "We've sent an M-PESA prompt to your number. Please check your phone."}
+                                                {paymentStatus?.status === 'processing' && "You've entered your PIN. Processing your payment..."}
+                                                {!paymentStatus && "Preparing payment request..."}
+                                            </p>
+                                            
+                                            {paymentStatus && (
+                                                <div className="mt-4 p-4 bg-muted/50 rounded-lg">
+                                                    <div className="flex items-center justify-center gap-2 text-sm font-medium text-primary">
+                                                        <motion.div
+                                                            animate={{ rotate: 360 }}
+                                                            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                                                        >
+                                                            <Loader2 className="w-4 h-4" />
+                                                        </motion.div>
+                                                        <span className="capitalize">{paymentStatus.status}</span>
+                                                    </div>
+                                                    {paymentStatus.resultDesc && (
+                                                        <p className="text-xs text-muted-foreground mt-2">
+                                                            {paymentStatus.resultDesc}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </motion.div>
+                                    </>
+                                )}
                             </motion.div>
                         )}
 

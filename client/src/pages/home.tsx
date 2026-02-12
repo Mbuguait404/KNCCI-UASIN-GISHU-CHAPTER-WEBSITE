@@ -37,7 +37,7 @@ export default function Home() {
     date: staticEvent.date, // Always use correct date: April 23, 2026
     endDate: staticEvent.endDate, // Always use correct end date: April 25, 2026
     location: apiEvent.location.city,
-    venue: apiEvent.location.name,
+    venue: "Rupaz mall Grounds", // Always use correct venue
     // Keep static highlights/stats if API doesn't provide them yet
   } : staticEvent;
 

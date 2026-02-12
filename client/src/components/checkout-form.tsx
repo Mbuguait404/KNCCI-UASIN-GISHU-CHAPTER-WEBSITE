@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Loader2, ArrowLeft, Phone, Mail, User, Building } from "lucide-react";
+import { Loader2, ArrowLeft, Mail, User, Building } from "lucide-react";
 import { TicketType } from "@/lib/ticketing";
 import { motion } from "framer-motion";
 
@@ -228,7 +228,6 @@ export function CheckoutForm({ quantities, ticketTypes, onBack, onSubmit, isSubm
                                                 variants={inputVariants}
                                                 whileFocus="focus"
                                             >
-                                                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10 transition-colors" />
                                                 <div className="flex w-full">
                                                     <span className="inline-flex items-center px-3 py-2 text-sm text-muted-foreground bg-muted border border-r-0 border-input rounded-l-md">
                                                         +254

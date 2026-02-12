@@ -178,7 +178,10 @@ export function TicketSelection({ eventId, quantities, onQuantitiesChange, onPro
                                     )}
                                     onClick={(e) => {
                                         if (e.target === e.currentTarget || (e.target as HTMLElement).closest('.card-click-area')) {
-                                            if (!isSelected) {
+                                            // Toggle selection: if selected, deselect; if not selected, select
+                                            if (isSelected) {
+                                                updateQuantity(ticket.id, -quantity); // Deselect by setting to 0
+                                            } else {
                                                 updateQuantity(ticket.id, 1);
                                             }
                                         }

@@ -53,6 +53,17 @@ export function HeroSection({ event: propEvent }: HeroSectionProps) {
   const event = propEvent || staticEvent;
   const { openRegistration } = useRegistration();
 
+  // Remove "4th Edition" and variations from event name for display
+  const displayName = useMemo(() => {
+    if (!event?.name) return "";
+    return event.name
+      .replace(/\s*4th\s+Edition\s*/gi, " ")
+      .replace(/\s*4TH\s+EDITION\s*/gi, " ")
+      .replace(/\s*4th\s+edition\s*/gi, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }, [event?.name]);
+
   const eventDate = useMemo(() => {
     if (!event?.date) return null;
     // Parse date string and create date at 9 AM local time
@@ -124,7 +135,7 @@ export function HeroSection({ event: propEvent }: HeroSectionProps) {
       {/* Static Background Image */}
       <div className="absolute inset-0">
         <img
-          src="https://solby.sfo3.digitaloceanspaces.com/1769497085040-WhatsApp%20Image%202026-01-27%20at%2009.10.56.jpeg"
+          src="https://solby.sfo3.digitaloceanspaces.com/1770897937932-WhatsApp%20Image%202026-02-12%20at%2015.03.53.jpeg"
           alt="The Eldoret International Business Summit 2026 - Business networking and exhibition activities"
           className="h-full w-full object-cover"
           loading="eager"
@@ -134,11 +145,12 @@ export function HeroSection({ event: propEvent }: HeroSectionProps) {
         />
       </div>
 
-      {/* Vignette Overlay - darker at edges, clearer in center */}
+      {/* Vignette Overlay - darker at center, lighter towards edges for better text contrast */}
       <div
         className="absolute inset-0"
         style={{
-          background: 'radial-gradient(ellipse 80% 80% at center, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.4) 40%, rgba(0, 0, 0, 0.65) 70%, rgba(0, 0, 0, 0.85) 100%)'
+          background:
+            'radial-gradient(ellipse 80% 80% at center, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.6) 35%, rgba(0, 0, 0, 0.35) 70%, rgba(0, 0, 0, 0.15) 100%)',
         }}
       />
 
@@ -152,7 +164,7 @@ export function HeroSection({ event: propEvent }: HeroSectionProps) {
               </div>
 
               <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight px-2" data-testid="text-event-name">
-                {event.name}
+                {displayName}
               </h1>
 
               <div className="inline-flex items-center gap-2 bg-primary backdrop-blur-sm border-2 border-white/30 rounded-full px-4 py-1.5 sm:px-5 sm:py-2 shadow-lg shadow-primary/50" data-testid="text-event-edition">

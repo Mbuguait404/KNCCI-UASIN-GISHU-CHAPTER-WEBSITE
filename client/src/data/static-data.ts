@@ -11,7 +11,7 @@ export const staticEvent: Event = {
   date: "2026-04-23",
   endDate: "2026-04-25",
   location: "Eldoret City",
-  venue: "RUPA Mall Grounds",
+  venue: "Rupaz mall Grounds",
   highlights: [
     "Networking with 1000+ business leaders",
     "200+ industry speakers",
