@@ -4,7 +4,7 @@ import type { Event, Speaker, Session, Partner, GalleryImage, Testimonial, Venue
 
 // Event data
 export const staticEvent: Event = {
-  id: "eldoret-international-business-summit-2026",
+  id: "6982fa650137a4e5f55a0b86",
   name: "The Eldoret International Business Summit 2026",
   subtitle: "Eldoret City: Gateway to Africa's Trade, Innovation and Economic Future",
   description: "Eldoret is a thriving business hub in the North Rift and a key gateway to East and Central Africa. Following the success of the previous summit (which attracted over 10,000 attendees and 200+ exhibitors), the 2026 edition aims to unite key stakeholders to explore innovative strategies for sustainable business growth. The Eldoret International Business Summit 2026 is the flagship event organized by the Kenya National Chamber of Commerce and Industry (KNCCI) Uasin Gishu Chapter. This three-day summit brings together the nation's brightest minds in business, government, and civil society to drive economic growth and foster international partnerships. Join us in Eldoret as we explore Africa's trade and economic future.",
