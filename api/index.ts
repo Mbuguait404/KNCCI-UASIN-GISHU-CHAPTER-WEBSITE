@@ -23,21 +23,48 @@ async function ticketingFetch(endpoint: string, options?: RequestInit) {
   if (TICKETING_API_KEY) {
     headers["x-api-key"] = TICKETING_API_KEY;
   }
+  
+  console.log(`[Ticketing] Request: ${options?.method || "GET"} ${url}`);
+  console.log(`[Ticketing] Headers: x-api-key=${headers["x-api-key"] ? "PRESENT" : "MISSING"}, Content-Type=${headers["Content-Type"]}`);
+  
   const { headers: _, ...restOptions } = options || {};
-  const response = await fetch(url, { headers, ...restOptions });
-  if (!response.ok) {
-    const errorText = await response.text();
-    let errorMessage = `API error: ${response.status} ${response.statusText}`;
-    const contentType = response.headers.get("content-type") || "";
-    if (contentType.includes("application/json")) {
-      try {
-        const errorJson = JSON.parse(errorText);
-        errorMessage = errorJson.message || errorJson.error || errorMessage;
-      } catch {}
+  
+  try {
+    const response = await fetch(url, { headers, ...restOptions });
+    console.log(`[Ticketing] Response: ${response.status} ${response.statusText}`);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[Ticketing] Error response body: ${errorText.substring(0, 500)}`);
+      
+      let errorMessage = `API error: ${response.status} ${response.statusText}`;
+      const contentType = response.headers.get("content-type") || "";
+      
+      if (contentType.includes("application/json")) {
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.message || errorJson.error || errorMessage;
+        } catch {}
+      } else if (errorText) {
+        errorMessage = `API returned ${contentType}. Status: ${response.status}. Body: ${errorText.substring(0, 200)}`;
+      }
+      
+      throw new Error(errorMessage);
     }
-    throw new Error(errorMessage);
+    
+    const contentType = response.headers.get("content-type") || "";
+    if (!contentType.includes("application/json")) {
+      const text = await response.text();
+      console.warn(`[Ticketing] Warning: API returned non-JSON response (${contentType})`);
+      console.warn(`[Ticketing] Response body (first 200 chars): ${text.substring(0, 200)}`);
+      throw new Error(`API returned ${contentType} instead of JSON`);
+    }
+    
+    return response.json();
+  } catch (error) {
+    console.error(`[Ticketing] Fetch error:`, error);
+    throw error;
   }
-  return response.json();
 }
 
 const app = express();
@@ -167,11 +194,21 @@ app.get("/api/newsletter", async (req, res) => {
 // Ticketing API Proxy Endpoints
 app.get("/api/ticketing/events", async (req, res) => {
   try {
-    const data = await ticketingFetch("/events");
+    // Build query string if id parameter is provided
+    const eventId = req.query.id as string;
+    let endpoint = "/events";
+    if (eventId) {
+      endpoint = `/events?id=${encodeURIComponent(eventId)}`;
+    }
+    console.log(`[Ticketing] Fetching events from: ${TICKETING_API_URL}${endpoint}`);
+    console.log(`[Ticketing] API Key configured: ${TICKETING_API_KEY ? `${TICKETING_API_KEY.substring(0, 15)}...` : "MISSING"}`);
+    
+    const data = await ticketingFetch(endpoint);
     res.json(data);
   } catch (error) {
-    console.error("Error fetching events:", error);
-    res.status(500).json({ error: "Failed to fetch event data" });
+    console.error("[Ticketing] Error fetching events:", error);
+    const errorMessage = error instanceof Error ? error.message : "Failed to fetch event data";
+    res.status(500).json({ error: errorMessage });
   }
 });
 
@@ -179,14 +216,18 @@ app.get("/api/ticketing/ticket-types", async (req, res) => {
   try {
     const eventId = req.query.eventId as string;
     if (!eventId) {
+      console.error("[Ticketing] Error: eventId is required");
       return res.status(400).json({ error: "eventId is required" });
     }
+    console.log(`[Ticketing] Fetching ticket types for event: ${eventId}`);
+    console.log(`[Ticketing] API Key configured: ${TICKETING_API_KEY ? `${TICKETING_API_KEY.substring(0, 15)}...` : "MISSING"}`);
+    
     const data = await ticketingFetch(
-      `/ticket-types/public?eventId=${eventId}`,
+      `/ticket-types/public?eventId=${encodeURIComponent(eventId)}`,
     );
     res.json(data);
   } catch (error) {
-    console.error("Error fetching ticket types:", error);
+    console.error("[Ticketing] Error fetching ticket types:", error);
     const errorMessage =
       error instanceof Error ? error.message : "Failed to fetch ticket types";
     res.status(500).json({ error: errorMessage });
@@ -196,7 +237,10 @@ app.get("/api/ticketing/ticket-types", async (req, res) => {
 app.post("/api/ticketing/purchases", async (req, res) => {
   try {
     const purchaseData = req.body;
+    console.log(`[Ticketing] Creating purchase for event: ${purchaseData.eventId}`);
+    
     if (!purchaseData.eventId) {
+      console.error("[Ticketing] Error: eventId is required");
       return res.status(400).json({ error: "eventId is required" });
     }
     if (
@@ -204,20 +248,24 @@ app.post("/api/ticketing/purchases", async (req, res) => {
       !Array.isArray(purchaseData.ticketItems) ||
       purchaseData.ticketItems.length === 0
     ) {
+      console.error("[Ticketing] Error: ticketItems array is required");
       return res
         .status(400)
         .json({ error: "ticketItems array is required and must not be empty" });
     }
     if (!purchaseData.paymentMethod) {
+      console.error("[Ticketing] Error: paymentMethod is required");
       return res.status(400).json({ error: "paymentMethod is required" });
     }
+    
     const data = await ticketingFetch("/purchases", {
       method: "POST",
       body: JSON.stringify(purchaseData),
     });
+    console.log(`[Ticketing] Purchase created successfully`);
     res.json(data);
   } catch (error) {
-    console.error("Error creating purchase:", error);
+    console.error("[Ticketing] Error creating purchase:", error);
     const errorMessage =
       error instanceof Error ? error.message : "Failed to create purchase";
     res.status(500).json({ error: errorMessage });
