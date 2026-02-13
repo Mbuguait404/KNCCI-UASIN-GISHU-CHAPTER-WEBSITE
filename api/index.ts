@@ -1,6 +1,6 @@
 // Vercel serverless function entry point
 import express, { type Request, Response, NextFunction } from "express";
-import { storage } from "../server/storage";
+import { storage } from "./storage";
 import {
   insertRegistrationSchema,
   insertNewsletterSchema,
