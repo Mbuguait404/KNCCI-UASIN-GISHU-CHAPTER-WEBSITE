@@ -1,5 +1,5 @@
 // Serverless-compatible storage for Vercel functions
-// This is a simplified version that only includes methods used by api/index.ts
+// Lives in shared/ so it gets bundled with api/index.ts (not deployed as separate function)
 
 import { randomUUID } from "crypto";
 
@@ -149,7 +149,7 @@ class MemStorage implements IStorage {
     if (existing) {
       return existing;
     }
-    
+
     const id = randomUUID();
     const subscription: NewsletterSubscription = {
       id,

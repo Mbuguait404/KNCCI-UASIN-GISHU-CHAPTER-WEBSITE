@@ -1,6 +1,6 @@
 // Vercel serverless function entry point
 import express, { type Request, Response, NextFunction } from "express";
-import { storage } from "./storage";
+import { storage } from "../shared/vercel-storage";
 import path from "path";
 import fs from "fs";
 
