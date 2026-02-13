@@ -185,15 +185,16 @@ export function RegistrationDialog({ isOpen, onOpenChange, event }: Registration
             // Determine payment method based on total amount (totalAmount already calculated via useMemo)
             const paymentMethod = totalAmount === 0 ? "none" : "M-Pesa";
 
-            // For free tickets, create purchase and go directly to success
+            // For free tickets, create purchase via API and go directly to success
             if (totalAmount === 0) {
-                // Mock purchase creation for free tickets
-                const mockPurchaseId = `purchase_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-                setPurchaseId(mockPurchaseId);
-                
-                // Simulate API delay
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                
+                const purchaseData = {
+                    eventId: event.id,
+                    ticketItems,
+                    paymentMethod: "none",
+                    notes: `Contact: ${data.firstName} ${data.lastName}, Email: ${data.email}${data.phone ? `, Phone: ${data.phone}` : ""}${data.organization ? `, Organization: ${data.organization}` : ""}`,
+                };
+                const purchase = await createPurchaseMutation.mutateAsync(purchaseData);
+                setPurchaseId(purchase.id);
                 setDirection(1);
                 setStep("success");
                 setIsSubmitting(false);
@@ -253,7 +254,7 @@ export function RegistrationDialog({ isOpen, onOpenChange, event }: Registration
             );
 
             if (paymentResult.success) {
-                // Payment successful - now create the purchase
+                // Payment successful - create the purchase via API
                 try {
                     const ticketItems = Object.entries(quantities)
                         .filter(([_, qty]) => qty > 0)
@@ -269,16 +270,14 @@ export function RegistrationDialog({ isOpen, onOpenChange, event }: Registration
                         notes: `Contact: ${customerData.firstName} ${customerData.lastName}, Email: ${customerData.email}, Phone: ${customerData.phone || phoneNumber}${customerData.organization ? `, Organization: ${customerData.organization}` : ""}`,
                     };
 
-                    // Mock purchase creation (in real scenario, this would call the API)
-                    const mockPurchaseId = `purchase_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-                    setPurchaseId(mockPurchaseId);
+                    const purchase = await createPurchaseMutation.mutateAsync(purchaseData);
+                    setPurchaseId(purchase.id);
 
                     toast({
                         title: "Payment Successful!",
                         description: "Your payment has been confirmed. Generating your tickets...",
                     });
 
-                    // Simulate ticket generation delay
                     await new Promise(resolve => setTimeout(resolve, 1500));
 
                     setDirection(1);

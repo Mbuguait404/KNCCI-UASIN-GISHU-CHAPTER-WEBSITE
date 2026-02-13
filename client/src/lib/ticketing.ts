@@ -81,15 +81,41 @@ export const ticketing = {
     },
 
     getTicketTypes: async (eventId: string): Promise<TicketType[]> => {
-        console.log("[ticketing.getTicketTypes] Fetching ticket types", { eventId, url: `/api/ticketing/ticket-types?eventId=${eventId}` });
-        const response = await fetch(`/api/ticketing/ticket-types?eventId=${eventId}`);
-        console.log("[ticketing.getTicketTypes] Response status:", response.status);
-        if (!response.ok) {
-            throw new Error("Failed to fetch ticket types");
+        const requestId = `client_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+        console.log(`[${requestId}] [CLIENT] getTicketTypes called`);
+        console.log(`[${requestId}] [CLIENT] EventId:`, eventId);
+        console.log(`[${requestId}] [CLIENT] EventId type:`, typeof eventId);
+        console.log(`[${requestId}] [CLIENT] Full URL:`, `/api/ticketing/ticket-types?eventId=${eventId}`);
+        
+        try {
+            console.log(`[${requestId}] [CLIENT] Making fetch request...`);
+            const response = await fetch(`/api/ticketing/ticket-types?eventId=${eventId}`);
+            console.log(`[${requestId}] [CLIENT] Response received`);
+            console.log(`[${requestId}] [CLIENT] Response status:`, response.status);
+            console.log(`[${requestId}] [CLIENT] Response statusText:`, response.statusText);
+            console.log(`[${requestId}] [CLIENT] Response ok:`, response.ok);
+            console.log(`[${requestId}] [CLIENT] Response headers:`, Object.fromEntries(response.headers.entries()));
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error(`[${requestId}] [CLIENT] Response not OK. Error text:`, errorText);
+                throw new Error(`Failed to fetch ticket types: ${response.status} ${response.statusText}`);
+            }
+            
+            console.log(`[${requestId}] [CLIENT] Parsing JSON response...`);
+            const json = await response.json();
+            console.log(`[${requestId}] [CLIENT] JSON parsed successfully`);
+            console.log(`[${requestId}] [CLIENT] Response keys:`, Object.keys(json || {}));
+            console.log(`[${requestId}] [CLIENT] Response data:`, json.data);
+            console.log(`[${requestId}] [CLIENT] Response data length:`, json.data?.length || 0);
+            console.log(`[${requestId}] [CLIENT] Returning ticket types:`, json.data || []);
+            return json.data || [];
+        } catch (error) {
+            console.error(`[${requestId}] [CLIENT] Error in getTicketTypes:`, error);
+            console.error(`[${requestId}] [CLIENT] Error type:`, error instanceof Error ? error.constructor.name : typeof error);
+            console.error(`[${requestId}] [CLIENT] Error message:`, error instanceof Error ? error.message : String(error));
+            throw error;
         }
-        const json = await response.json();
-        console.log("[ticketing.getTicketTypes] Response keys:", Object.keys(json || {}));
-        return json.data || [];
     },
 
     createPurchase: async (purchaseData: CreatePurchaseRequest): Promise<Purchase> => {
@@ -109,10 +135,9 @@ export const ticketing = {
         console.log("[ticketing.createPurchase] Response status:", response.status);
 
         if (!response.ok) {
-            const errorBody = await response.json().catch(() => null);
+            const errorBody = await response.json().catch(() => ({ error: "Failed to create purchase" }));
             console.error("[ticketing.createPurchase] Error response body:", errorBody);
-            const error = await response.json().catch(() => ({ error: "Failed to create purchase" }));
-            throw new Error(error.error || error.message || "Failed to create purchase");
+            throw new Error(errorBody.error || errorBody.message || "Failed to create purchase");
         }
 
         const json = await response.json();
