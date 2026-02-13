@@ -13,13 +13,14 @@ interface TicketingConfig {
   apiKey: string;
 }
 
+const PRODUCTION_API_URL = "https://ticketing-system-server-v-production.up.railway.app";
+
 const config: TicketingConfig = {
   // Base URL for the external ticketing API
-  // Use environment variable if set, otherwise fallback to default
-  // Note: The base URL should include /api if the API is hosted at /api path
+  // Use TICKETING_API_URL env var if set; otherwise localhost for dev, Railway for production
   apiUrl:
     process.env.TICKETING_API_URL ||
-    "https://ticketing-system-server-v-production.up.railway.app",
+    (process.env.NODE_ENV === "production" ? PRODUCTION_API_URL : "http://localhost:3000"),
   apiKey:
     process.env.TICKETING_API_KEY || "pk_HdZLAcfFFatoCyRT1HTATxzmXwKVM3vz",
 };

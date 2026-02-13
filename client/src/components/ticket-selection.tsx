@@ -100,14 +100,39 @@ export function TicketSelection({ eventId, quantities, onQuantitiesChange, onPro
 
     const { data: ticketTypes, isLoading, error } = useQuery({
         queryKey: ["ticketTypes", eventId],
-        queryFn: () => ticketing.getTicketTypes(eventId),
+        queryFn: () => {
+            console.log("[TicketSelection] useQuery queryFn called with eventId:", eventId);
+            console.log("[TicketSelection] EventId type:", typeof eventId);
+            return ticketing.getTicketTypes(eventId);
+        },
+        onError: (err) => {
+            console.error("[TicketSelection] useQuery onError triggered");
+            console.error("[TicketSelection] Error:", err);
+            console.error("[TicketSelection] Error type:", err instanceof Error ? err.constructor.name : typeof err);
+            console.error("[TicketSelection] Error message:", err instanceof Error ? err.message : String(err));
+            console.error("[TicketSelection] Error stack:", err instanceof Error ? err.stack : 'No stack');
+        },
+        onSuccess: (data) => {
+            console.log("[TicketSelection] useQuery onSuccess triggered");
+            console.log("[TicketSelection] Success data:", data);
+            console.log("[TicketSelection] Data length:", data?.length || 0);
+        },
     });
 
+    console.log("[TicketSelection] Render - isLoading:", isLoading, "error:", error, "data:", ticketTypes);
+    console.log("[TicketSelection] EventId:", eventId);
+
     if (isLoading) {
+        console.log("[TicketSelection] Showing loading state");
         return <LoadingState />;
     }
 
     if (error) {
+        console.error("[TicketSelection] Showing error state");
+        console.error("[TicketSelection] Error details:", {
+            message: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined,
+        });
         return (
             <motion.div 
                 className="flex flex-col items-center justify-center p-12 space-y-4 text-red-500 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-100 dark:border-red-900/30"
