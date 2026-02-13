@@ -1,12 +1,41 @@
 // Vercel serverless function entry point
 import express, { type Request, Response, NextFunction } from "express";
 import { storage } from "./storage";
-import {
-  insertRegistrationSchema,
-  insertNewsletterSchema,
-} from "../shared/schema";
 import path from "path";
 import fs from "fs";
+
+// Simple validation functions (inline to avoid external dependencies)
+function validateRegistration(data: any): { success: boolean; error?: string; data?: any } {
+  if (!data || typeof data !== 'object') {
+    return { success: false, error: "Invalid registration data" };
+  }
+  if (!data.firstName || typeof data.firstName !== 'string' || data.firstName.length < 2) {
+    return { success: false, error: "First name is required (minimum 2 characters)" };
+  }
+  if (!data.lastName || typeof data.lastName !== 'string' || data.lastName.length < 2) {
+    return { success: false, error: "Last name is required (minimum 2 characters)" };
+  }
+  if (!data.email || typeof data.email !== 'string' || !data.email.includes('@')) {
+    return { success: false, error: "Valid email is required" };
+  }
+  if (!data.phone || typeof data.phone !== 'string' || data.phone.length < 5) {
+    return { success: false, error: "Phone number is required" };
+  }
+  if (!data.ticketType || typeof data.ticketType !== 'string') {
+    return { success: false, error: "Ticket type is required" };
+  }
+  return { success: true, data };
+}
+
+function validateNewsletter(data: any): { success: boolean; error?: string; data?: any } {
+  if (!data || typeof data !== 'object') {
+    return { success: false, error: "Invalid data" };
+  }
+  if (!data.email || typeof data.email !== 'string' || !data.email.includes('@')) {
+    return { success: false, error: "Valid email is required" };
+  }
+  return { success: true, data };
+}
 
 // Inline ticketing proxy config (avoids import issues on Vercel)
 const TICKETING_API_URL =
@@ -145,15 +174,15 @@ app.get("/api/venue", (req, res) => {
 
 app.post("/api/registrations", async (req, res) => {
   try {
-    const validatedData = insertRegistrationSchema.parse(req.body);
-    const registration = await storage.createRegistration(validatedData);
+    const validation = validateRegistration(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: validation.error });
+    }
+    const registration = await storage.createRegistration(validation.data);
     res.status(201).json(registration);
   } catch (error) {
-    if (error instanceof Error) {
-      res.status(400).json({ error: error.message });
-    } else {
-      res.status(400).json({ error: "Invalid registration data" });
-    }
+    console.error("Error in /api/registrations:", error);
+    res.status(500).json({ error: "Failed to create registration" });
   }
 });
 
@@ -169,15 +198,15 @@ app.get("/api/registrations", async (req, res) => {
 
 app.post("/api/newsletter", async (req, res) => {
   try {
-    const validatedData = insertNewsletterSchema.parse(req.body);
-    const subscription = await storage.subscribeNewsletter(validatedData);
+    const validation = validateNewsletter(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: validation.error });
+    }
+    const subscription = await storage.subscribeNewsletter(validation.data);
     res.status(201).json(subscription);
   } catch (error) {
-    if (error instanceof Error) {
-      res.status(400).json({ error: error.message });
-    } else {
-      res.status(400).json({ error: "Invalid email" });
-    }
+    console.error("Error in /api/newsletter:", error);
+    res.status(500).json({ error: "Failed to subscribe to newsletter" });
   }
 });
 
