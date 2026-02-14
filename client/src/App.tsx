@@ -9,6 +9,7 @@ import { RegistrationProvider } from "@/contexts/registration-context";
 import { WhatsAppFloat } from "@/components/whatsapp-float";
 import Home from "@/pages/home";
 import Partnership from "@/pages/partnership";
+import Membership from "@/pages/membership";
 import HotelDetail from "@/pages/hotel-detail";
 import ExhibitionBooking from "@/pages/exhibition-booking";
 import NotFound from "@/pages/not-found";
@@ -18,6 +19,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/partnership" component={Partnership} />
+      <Route path="/membership" component={Membership} />
       <Route path="/hotels/:id" component={HotelDetail} />
       <Route path="/exhibition-booking" component={ExhibitionBooking} />
       <Route component={NotFound} />

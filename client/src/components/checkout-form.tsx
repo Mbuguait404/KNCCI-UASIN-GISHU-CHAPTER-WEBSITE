@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Loader2, ArrowLeft, Mail, User, Building } from "lucide-react";
-import { TicketType } from "@/lib/ticketing";
+import type { HardcodedTicketType } from "@/data/registration-data";
 import { motion } from "framer-motion";
 
 const formSchema = z.object({
@@ -19,7 +19,7 @@ const formSchema = z.object({
 
 interface CheckoutFormProps {
     quantities: Record<string, number>;
-    ticketTypes: TicketType[];
+    ticketTypes: HardcodedTicketType[];
     onBack: () => void;
     onSubmit: (data: z.infer<typeof formSchema>) => void;
     isSubmitting: boolean;

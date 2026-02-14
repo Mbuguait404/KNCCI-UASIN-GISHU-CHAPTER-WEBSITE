@@ -1,10 +1,7 @@
-import { useQuery } from "@tanstack/react-query";
-import { ticketing } from "@/lib/ticketing";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { HARDCODED_TICKET_TYPES } from "@/data/registration-data";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, Ticket, Check, ArrowRight, Plus, Minus, CheckCircle2 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { Ticket, Check, ArrowRight, Plus, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -14,6 +11,8 @@ interface TicketSelectionProps {
     onQuantitiesChange: (quantities: Record<string, number>) => void;
     onProceed: () => void;
 }
+
+// Ticket types are hardcoded - no loading/error states
 
 const cardVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -47,104 +46,8 @@ const checkmarkVariants = {
     }
 };
 
-function TicketCardSkeleton({ index }: { index: number }) {
-    return (
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1, duration: 0.4 }}
-        >
-            <Card className="relative overflow-hidden border border-border bg-card">
-                <CardHeader className="pb-3">
-                    <div className="flex items-start gap-4">
-                        <Skeleton className="flex-shrink-0 w-12 h-12 rounded-lg" />
-                        <div className="flex-1 pr-8 space-y-2">
-                            <Skeleton className="h-5 w-3/4" />
-                            <Skeleton className="h-4 w-full" />
-                            <Skeleton className="h-4 w-2/3" />
-                        </div>
-                    </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <Skeleton className="h-8 w-1/3" />
-                    <div className="space-y-2">
-                        <Skeleton className="h-4 w-full" />
-                        <Skeleton className="h-4 w-full" />
-                        <Skeleton className="h-4 w-2/3" />
-                    </div>
-                    <Skeleton className="h-12 w-full rounded-lg" />
-                </CardContent>
-            </Card>
-        </motion.div>
-    );
-}
-
-function LoadingState() {
-    return (
-        <div className="space-y-6">
-            <div className="text-center space-y-2 mb-8">
-                <Skeleton className="h-8 w-64 mx-auto" />
-                <Skeleton className="h-4 w-96 mx-auto" />
-            </div>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[0, 1, 2].map((i) => (
-                    <TicketCardSkeleton key={i} index={i} />
-                ))}
-            </div>
-        </div>
-    );
-}
-
 export function TicketSelection({ eventId, quantities, onQuantitiesChange, onProceed }: TicketSelectionProps) {
-    const { toast } = useToast();
-
-    const { data: ticketTypes, isLoading, error } = useQuery({
-        queryKey: ["ticketTypes", eventId],
-        queryFn: () => {
-            console.log("[TicketSelection] useQuery queryFn called with eventId:", eventId);
-            console.log("[TicketSelection] EventId type:", typeof eventId);
-            return ticketing.getTicketTypes(eventId);
-        },
-        onError: (err) => {
-            console.error("[TicketSelection] useQuery onError triggered");
-            console.error("[TicketSelection] Error:", err);
-            console.error("[TicketSelection] Error type:", err instanceof Error ? err.constructor.name : typeof err);
-            console.error("[TicketSelection] Error message:", err instanceof Error ? err.message : String(err));
-            console.error("[TicketSelection] Error stack:", err instanceof Error ? err.stack : 'No stack');
-        },
-        onSuccess: (data) => {
-            console.log("[TicketSelection] useQuery onSuccess triggered");
-            console.log("[TicketSelection] Success data:", data);
-            console.log("[TicketSelection] Data length:", data?.length || 0);
-        },
-    });
-
-    console.log("[TicketSelection] Render - isLoading:", isLoading, "error:", error, "data:", ticketTypes);
-    console.log("[TicketSelection] EventId:", eventId);
-
-    if (isLoading) {
-        console.log("[TicketSelection] Showing loading state");
-        return <LoadingState />;
-    }
-
-    if (error) {
-        console.error("[TicketSelection] Showing error state");
-        console.error("[TicketSelection] Error details:", {
-            message: error instanceof Error ? error.message : String(error),
-            stack: error instanceof Error ? error.stack : undefined,
-        });
-        return (
-            <motion.div 
-                className="flex flex-col items-center justify-center p-12 space-y-4 text-red-500 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-100 dark:border-red-900/30"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.3 }}
-            >
-                <p className="font-medium">Failed to load ticket options.</p>
-                <Button variant="outline" onClick={() => window.location.reload()}>Retry</Button>
-            </motion.div>
-        );
-    }
+    const ticketTypes = HARDCODED_TICKET_TYPES;
 
     const updateQuantity = (id: string, delta: number) => {
         const current = quantities[id] || 0;
@@ -160,10 +63,10 @@ export function TicketSelection({ eventId, quantities, onQuantitiesChange, onPro
     };
 
     const totalTickets = Object.values(quantities).reduce((sum, q) => sum + q, 0);
-    const totalPrice = ticketTypes?.reduce((sum, ticket) => {
+    const totalPrice = ticketTypes.reduce((sum, ticket) => {
         return sum + (ticket.price * (quantities[ticket.id] || 0));
-    }, 0) || 0;
-    const currency = ticketTypes?.[0]?.currency || 'KES';
+    }, 0);
+    const currency = ticketTypes[0]?.currency || 'KES';
 
     return (
         <div className="space-y-6">
@@ -178,7 +81,7 @@ export function TicketSelection({ eventId, quantities, onQuantitiesChange, onPro
             </motion.div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {ticketTypes?.map((ticket, index) => {
+                {ticketTypes.map((ticket, index) => {
                     const quantity = quantities[ticket.id] || 0;
                     const isSelected = quantity > 0;
 

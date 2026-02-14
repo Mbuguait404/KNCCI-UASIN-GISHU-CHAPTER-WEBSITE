@@ -56,7 +56,9 @@ export function Navigation() {
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         isScrolled
           ? "pt-4 pb-2 bg-background/80 backdrop-blur-xl border-b border-border/50 shadow-sm"
-          : "pt-6 pb-4 bg-transparent"
+          : isHomePage
+            ? "pt-6 pb-4 bg-black/40 backdrop-blur-md border-b border-white/10"
+            : "pt-6 pb-4 bg-transparent"
       }`}
     >
       <div className="max-w-6xl mx-auto px-4 w-full flex items-center justify-between gap-4">
@@ -77,11 +79,11 @@ export function Navigation() {
           <img 
             src="https://solby.sfo3.digitaloceanspaces.com/1770900740026-kncci_logo-removebg-preview.png" 
             alt="KNCCI Uasin Gishu Chapter" 
-            className="h-12 sm:h-16 w-auto object-contain"
+            className="h-12 sm:h-16 w-auto object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]"
             width={220}
             height={64}
             loading="eager"
-            fetchpriority="high"
+            fetchPriority="high"
           />
           {/* Divider */}
           <div className={`h-8 sm:h-10 w-px mx-1 transition-colors duration-300 ${
@@ -91,11 +93,11 @@ export function Navigation() {
           <img 
             src="/county-removebg-preview.png" 
             alt="Uasin Gishu County" 
-            className="h-12 sm:h-16 w-auto object-contain"
+            className="h-12 sm:h-16 w-auto object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]"
             width={220}
             height={64}
             loading="eager"
-            fetchpriority="high"
+            fetchPriority="high"
           />
         </a>
 
@@ -117,6 +119,20 @@ export function Navigation() {
         </div>
 
         <div className="flex items-center gap-2">
+          <a href="/membership" className="hidden sm:inline-flex">
+            <Button
+              variant="outline"
+              size="sm"
+              className={`font-medium ${
+                isScrolled || !isHomePage
+                  ? "border-border text-foreground hover:bg-accent"
+                  : "border-white/30 text-white hover:bg-white/10"
+              }`}
+              data-testid="button-become-member"
+            >
+              Become a KNCCI Member
+            </Button>
+          </a>
           <Button
             size="icon"
             variant="ghost"
@@ -174,6 +190,15 @@ export function Navigation() {
                   </button>
                 ))}
                 <div className="border-t border-border my-4" />
+                <a href="/membership" onClick={() => setMobileOpen(false)}>
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    data-testid="button-become-member-mobile"
+                  >
+                    Become a KNCCI Member
+                  </Button>
+                </a>
                 <Button
                   onClick={() => {
                     openRegistration();

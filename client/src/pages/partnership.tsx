@@ -1,12 +1,12 @@
+import { useState, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Navigation } from "@/components/navigation";
 import { Footer } from "@/components/footer";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -14,7 +14,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { insertSponsorRequestSchema, type InsertSponsorRequest } from "@shared/schema";
-import { Check, TrendingUp, Users, Mic, Building2, Loader2, Send } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Check, TrendingUp, Users, Mic, Building2, Loader2, Send, CheckCircle2, CreditCard, Smartphone, Copy, Presentation, LayoutGrid, UtensilsCrossed, Sparkles } from "lucide-react";
 import { SEOHead } from "@/components/seo/seo-head";
 import { Helmet } from "react-helmet-async";
 import { RegistrationDialog } from "@/components/registration-dialog";
@@ -31,6 +32,8 @@ const partnershipPackages = [
     branding: "Unlimited",
     color: "from-slate-300 to-slate-100",
     textColor: "text-slate-700 dark:text-slate-800",
+    description:
+      "Our flagship partnership package offers maximum visibility and engagement. Enjoy a 45-minute presentation slot, the largest exhibition space (12×3m), a corporate dinner table for 10, and unlimited branding opportunities across the venue. Ideal for enterprises seeking premium positioning at the summit.",
   },
   {
     tier: "Gold",
@@ -41,6 +44,8 @@ const partnershipPackages = [
     branding: "Limited",
     color: "from-amber-300 to-amber-100",
     textColor: "text-amber-700 dark:text-amber-800",
+    description:
+      "A strong partnership tier with substantial benefits. Includes a 25-minute presentation, 9×3m exhibition space, corporate dinner table for 8, and limited branding. Perfect for established businesses looking to connect with key decision-makers.",
   },
   {
     tier: "Silver",
@@ -51,6 +56,8 @@ const partnershipPackages = [
     branding: "Limited",
     color: "from-gray-300 to-gray-100",
     textColor: "text-gray-700 dark:text-gray-800",
+    description:
+      "A balanced package for growing businesses. Features a 10-minute presentation, 6×3m exhibition booth, one corporate dinner seat, and limited branding. Includes KNCCI membership and access to high-level networking.",
   },
   {
     tier: "Bronze",
@@ -61,6 +68,8 @@ const partnershipPackages = [
     branding: "Minimum",
     color: "from-orange-300 to-orange-100",
     textColor: "text-orange-700 dark:text-orange-800",
+    description:
+      "An accessible entry point for SMEs. Includes a 5-minute presentation, 3×3m exhibition space, 5 dinner cards, and minimum branding. KNCCI membership and networking opportunities included.",
   },
   {
     tier: "Brass",
@@ -71,6 +80,8 @@ const partnershipPackages = [
     branding: "Minimum",
     color: "from-yellow-300 to-yellow-100",
     textColor: "text-yellow-700 dark:text-yellow-800",
+    description:
+      "Our most affordable partnership option. Includes a 3×3m exhibition booth, 3 dinner cards, and minimum branding. Ideal for small businesses and startups looking to establish presence at the summit.",
   },
 ];
 
@@ -122,6 +133,12 @@ export default function Partnership() {
   const pageUrl = `${siteUrl}/partnership`;
   const { toast } = useToast();
   const { isOpen, closeRegistration } = useRegistration();
+  const [selectedTier, setSelectedTier] = useState<string | null>(null);
+  const formRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   const sponsorForm = useForm<InsertSponsorRequest>({
     resolver: zodResolver(insertSponsorRequestSchema),
@@ -145,6 +162,7 @@ export default function Partnership() {
         description: "Thank you for your interest in becoming a sponsor. We will contact you shortly.",
       });
       sponsorForm.reset();
+      setSelectedTier(null);
     },
     onError: (error: Error) => {
       toast({
@@ -159,6 +177,15 @@ export default function Partnership() {
     sponsorMutation.mutate(data);
   };
 
+  const selectPackage = (tier: string) => {
+    const newSelection = selectedTier === tier ? null : tier;
+    setSelectedTier(newSelection);
+    sponsorForm.setValue("tier", newSelection ? (newSelection as InsertSponsorRequest["tier"]) : undefined);
+    if (newSelection) {
+      formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
   // Partnership packages schema
   const offersSchema = {
     "@context": "https://schema.org",
@@ -169,7 +196,7 @@ export default function Partnership() {
       "@type": "Offer",
       position: index + 1,
       name: `${pkg.tier} Partnership Package`,
-      description: `Partnership package including ${pkg.presentation} presentation, ${pkg.exhibitionSpace} exhibition space, ${pkg.dinnerCards} dinner cards, and ${pkg.branding} branding opportunities`,
+      description: pkg.description ?? `Partnership package including ${pkg.presentation} presentation, ${pkg.exhibitionSpace} exhibition space, ${pkg.dinnerCards} dinner cards, and ${pkg.branding} branding opportunities`,
       price: pkg.value.replace(/,/g, ""),
       priceCurrency: "KES",
       availability: "https://schema.org/InStock",
@@ -228,43 +255,86 @@ export default function Partnership() {
                 <p className="text-muted-foreground">
                   All prices are in Kenyan Shillings (KES)
                 </p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Click a package to select and view details
+                </p>
               </div>
 
-              <div className="overflow-x-auto mb-12">
-                <Card className="border border-border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="font-semibold">Package</TableHead>
-                        <TableHead className="font-semibold">Value (KES)</TableHead>
-                        <TableHead className="font-semibold">Presentation</TableHead>
-                        <TableHead className="font-semibold">Exhibition Space</TableHead>
-                        <TableHead className="font-semibold">Dinner Cards</TableHead>
-                        <TableHead className="font-semibold">Branding</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {partnershipPackages.map((pkg) => (
-                        <TableRow key={pkg.tier}>
-                          <TableCell>
-                            <Badge className={`bg-gradient-to-br ${pkg.color} ${pkg.textColor} border-0 font-semibold`}>
-                              {pkg.tier}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="font-semibold">{pkg.value}</TableCell>
-                          <TableCell>{pkg.presentation}</TableCell>
-                          <TableCell>{pkg.exhibitionSpace}</TableCell>
-                          <TableCell>{pkg.dinnerCards}</TableCell>
-                          <TableCell>{pkg.branding}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </Card>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5 mb-12">
+                {partnershipPackages.map((pkg) => {
+                  const isSelected = selectedTier === pkg.tier;
+                  return (
+                    <Card
+                      key={pkg.tier}
+                      className={cn(
+                        "cursor-pointer border-2 transition-all duration-300 hover-elevate overflow-hidden",
+                        "bg-gradient-to-b from-background to-muted/30",
+                        "hover:border-primary/40 hover:shadow-lg",
+                        isSelected && "ring-2 ring-primary ring-offset-2 ring-offset-background border-primary shadow-lg"
+                      )}
+                      onClick={() => selectPackage(pkg.tier)}
+                    >
+                      <div className={cn(
+                        "h-1.5 w-full bg-gradient-to-r opacity-80",
+                        pkg.color
+                      )} />
+                      <CardHeader className="p-5 pb-3">
+                        <div className="flex items-center justify-between gap-2">
+                          <Badge className={`bg-gradient-to-br ${pkg.color} ${pkg.textColor} border-0 font-semibold shadow-sm`}>
+                            {pkg.tier}
+                          </Badge>
+                          {isSelected && (
+                            <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0" aria-hidden />
+                          )}
+                        </div>
+                        <p className="text-2xl font-bold text-foreground mt-3 tracking-tight">{pkg.value}</p>
+                        <p className="text-xs text-muted-foreground font-medium">KES</p>
+                      </CardHeader>
+                      <CardContent className="p-5 pt-0 space-y-3">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Presentation className="w-3.5 h-3.5 text-primary/70 flex-shrink-0" />
+                          <span>{pkg.presentation}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <LayoutGrid className="w-3.5 h-3.5 text-primary/70 flex-shrink-0" />
+                          <span>{pkg.exhibitionSpace} m</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <UtensilsCrossed className="w-3.5 h-3.5 text-primary/70 flex-shrink-0" />
+                          <span>{pkg.dinnerCards}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Sparkles className="w-3.5 h-3.5 text-primary/70 flex-shrink-0" />
+                          <span>{pkg.branding}</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
+
+              {selectedTier && (() => {
+                const pkg = partnershipPackages.find((p) => p.tier === selectedTier);
+                if (!pkg) return null;
+                return (
+                  <Card className="mb-12 border-2 border-primary/20 bg-gradient-to-b from-primary/5 to-transparent overflow-hidden">
+                    <div className={cn("h-1 w-full bg-gradient-to-r", pkg.color)} />
+                    <CardHeader className="pb-2">
+                      <Badge className={`bg-gradient-to-br ${pkg.color} ${pkg.textColor} border-0 font-semibold w-fit shadow-sm`}>
+                        {selectedTier} Package
+                      </Badge>
+                    </CardHeader>
+                    <CardContent className="pt-0 pb-6">
+                      <p className="text-muted-foreground leading-relaxed">
+                        {pkg.description}
+                      </p>
+                    </CardContent>
+                  </Card>
+                );
+              })()}
 
               {/* Sponsor sign-up / request form */}
-              <div id="sponsor-form" className="max-w-2xl mx-auto mb-12">
+              <div id="sponsor-form" ref={formRef} className="max-w-2xl mx-auto mb-12">
                 <div className="text-center mb-8">
                   <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
                     Request to become a sponsor
@@ -272,6 +342,11 @@ export default function Partnership() {
                   <p className="text-muted-foreground">
                     Submit your details and preferred tier. Our team will get in touch to discuss next steps.
                   </p>
+                  {selectedTier && (
+                    <p className="mt-3 text-sm text-primary font-medium">
+                      Selected package: {selectedTier}
+                    </p>
+                  )}
                 </div>
                 <Card className="p-6 sm:p-8 border border-border">
                   <Form {...sponsorForm}>
@@ -338,7 +413,13 @@ export default function Partnership() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Partnership tier of interest</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
+                            <Select
+                              onValueChange={(val) => {
+                                field.onChange(val);
+                                setSelectedTier(val ?? null);
+                              }}
+                              value={field.value}
+                            >
                               <FormControl>
                                 <SelectTrigger data-testid="select-sponsor-tier">
                                   <SelectValue placeholder="Select a tier" />
@@ -390,6 +471,93 @@ export default function Partnership() {
                       </Button>
                     </form>
                   </Form>
+                </Card>
+
+                {/* Payment Information */}
+                <Card className="mt-8 p-6 sm:p-8 border border-border bg-gradient-to-br from-primary/5 to-secondary/5 border-primary/20">
+                  <div className="flex items-center gap-2 mb-4">
+                    <CreditCard className="h-5 w-5 text-primary" />
+                    <h3 className="font-bold text-lg text-primary">Payment Information</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    After submitting your request, please make payment using one of the methods below. Include your organization name as the payment reference.
+                  </p>
+
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    {/* M-Pesa Paybill */}
+                    <div className="bg-background border border-border rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Smartphone className="h-4 w-4 text-green-600" />
+                        <span className="text-sm font-semibold text-foreground">M-Pesa Paybill</span>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">Paybill Number:</span>
+                          <div className="flex items-center gap-2">
+                            <code className="text-sm font-mono font-bold text-foreground bg-muted px-2 py-1 rounded">7056475</code>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigator.clipboard.writeText("7056475");
+                                toast({ title: "Copied!", description: "Paybill number copied to clipboard" });
+                              }}
+                              className="text-primary hover:text-primary/80 transition-colors"
+                              title="Copy paybill number"
+                            >
+                              <Copy className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          M-Pesa → Pay Bill → <strong>7056475</strong> → Account: <strong>Your Organization Name</strong>
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Bank Transfer */}
+                    <div className="bg-background border border-border rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <CreditCard className="h-4 w-4 text-blue-600" />
+                        <span className="text-sm font-semibold text-foreground">Bank Transfer</span>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">Bank:</span>
+                          <span className="text-sm font-semibold text-foreground">KCB Bank</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">Account Number:</span>
+                          <div className="flex items-center gap-2">
+                            <code className="text-sm font-mono font-bold text-foreground bg-muted px-2 py-1 rounded">1181182263</code>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigator.clipboard.writeText("1181182263");
+                                toast({ title: "Copied!", description: "Account number copied to clipboard" });
+                              }}
+                              className="text-primary hover:text-primary/80 transition-colors"
+                              title="Copy account number"
+                            >
+                              <Copy className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          Transfer to KCB Bank Account: <strong>1181182263</strong>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 pt-4 border-t border-border">
+                    <div className="flex items-start gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                      <p className="text-xs text-muted-foreground">
+                        <strong className="text-foreground">Note:</strong> Include your organization name as the payment reference.
+                        Payment confirmation will be sent via email within 24 hours after we receive your payment.
+                      </p>
+                    </div>
+                  </div>
                 </Card>
               </div>
             </div>
