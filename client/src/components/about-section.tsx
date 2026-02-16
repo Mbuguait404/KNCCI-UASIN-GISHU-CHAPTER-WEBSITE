@@ -1,5 +1,6 @@
 import { Card } from "@/components/ui/card";
-import { Check, Building2, Mic, Users, Handshake, UtensilsCrossed, GraduationCap } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Check, Building2, Mic, Users, Handshake, UtensilsCrossed, GraduationCap, Download } from "lucide-react";
 import { staticEvent } from "@/data/static-data";
 
 export function AboutSection() {
@@ -24,6 +25,17 @@ export function AboutSection() {
               <p className="text-lg text-muted-foreground leading-relaxed" data-testid="text-about-description">
                 {event.description}
               </p>
+              <Button
+                variant="outline"
+                size="lg"
+                className="gap-2.5 mt-6 border-primary bg-primary/5 hover:border-primary/40 hover:bg-transparent transition-colors shadow-sm"
+                asChild
+              >
+                <a href="/kncci%20concept%20note.pptx" download="KNCCI Concept Note.pptx">
+                  <Download className="w-4 h-4" />
+                  Download Concept Note
+                </a>
+              </Button>
             </>
           )}
         </div>

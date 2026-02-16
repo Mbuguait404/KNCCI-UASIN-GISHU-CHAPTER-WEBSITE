@@ -26,7 +26,7 @@ export const staticEvent: Event = {
     delegates: "1000+",
     participatingNations: "50",
     speakers: "50+",
-    sessions: "50+",
+    sessions: "10",
   },
 };
 
