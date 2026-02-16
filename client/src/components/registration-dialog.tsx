@@ -2,7 +2,7 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogHeader } f
 import { TicketSelection } from "@/components/ticket-selection";
 import { CheckoutForm } from "@/components/checkout-form";
 import { Event } from "@shared/schema";
-import { Calendar, MapPin, CheckCircle2, Phone, Loader2, Ticket, User, CreditCard, Check, Sparkles } from "lucide-react";
+import { Calendar, MapPin, CheckCircle2, Phone, Loader2, Ticket, User, CreditCard, Check, Mail } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { submitRegistration } from "@/lib/registration-api";
 import { REGISTRATION_EVENT, HARDCODED_TICKET_TYPES } from "@/data/registration-data";
@@ -348,9 +348,9 @@ export function RegistrationDialog({ isOpen, onOpenChange, event }: Registration
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[900px] p-0 overflow-hidden gap-0 bg-background w-[95vw] max-h-[90vh] sm:max-h-[85vh]">
+            <DialogContent className="sm:max-w-[900px] p-0 overflow-hidden gap-0 bg-background w-[95vw] max-h-[90vh] sm:max-h-[85vh] z-[100] flex flex-col">
                 <motion.div 
-                    className="p-3 sm:p-4 border-b border-border bg-muted/30"
+                    className="p-3 sm:p-4 border-b border-border bg-muted/30 shrink-0"
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, ease: "easeOut" }}
@@ -484,7 +484,7 @@ export function RegistrationDialog({ isOpen, onOpenChange, event }: Registration
                     </motion.div>
                 </motion.div>
 
-                <div className="p-4 sm:p-6 bg-background max-h-[75vh] overflow-y-auto overflow-x-hidden">
+                <div className="flex-1 min-h-0 p-4 sm:p-6 pb-12 bg-background overflow-y-auto overflow-x-hidden">
                     <AnimatePresence mode="wait" custom={direction}>
                         {step === "tickets" && (
                             <motion.div
@@ -679,137 +679,57 @@ export function RegistrationDialog({ isOpen, onOpenChange, event }: Registration
                                 animate="animate"
                                 exit="exit"
                                 transition={{ duration: 0.5 }}
-                                className="flex flex-col items-center justify-center py-12 space-y-6 text-center"
+                                className="flex flex-col items-center py-8 sm:py-10"
                             >
                                 <motion.div 
-                                    className="relative"
-                                    initial={{ scale: 0, rotate: -180 }}
-                                    animate={{ scale: 1, rotate: 0 }}
+                                    className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 dark:text-green-400 border-2 border-green-200 dark:border-green-800"
+                                    initial={{ scale: 0, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 1 }}
                                     transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.1 }}
                                 >
-                                    {/* Confetti particles */}
-                                    <div className="absolute inset-0 pointer-events-none">
-                                        {[...Array(8)].map((_, i) => (
-                                            <motion.div
-                                                key={i}
-                                                custom={i}
-                                                variants={confettiVariants}
-                                                initial="hidden"
-                                                animate="visible"
-                                                className="absolute"
-                                                style={{
-                                                    left: `${50 + Math.cos(i * 45 * Math.PI / 180) * 60}%`,
-                                                    top: `${50 + Math.sin(i * 45 * Math.PI / 180) * 60}%`,
-                                                }}
-                                            >
-                                                <Sparkles 
-                                                    className={`w-5 h-5 ${
-                                                        i % 3 === 0 ? 'text-yellow-500' : 
-                                                        i % 3 === 1 ? 'text-green-500' : 'text-primary'
-                                                    }`}
-                                                />
-                                            </motion.div>
-                                        ))}
-                                    </div>
-                                    
-                                    <motion.div 
-                                        className="w-24 h-24 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 dark:text-green-400 shadow-xl shadow-green-100 dark:shadow-green-900/30"
-                                        variants={circleVariants}
-                                        initial="hidden"
-                                        animate="visible"
-                                    >
-                                        <svg 
-                                            width="48" 
-                                            height="48" 
-                                            viewBox="0 0 48 48" 
-                                            fill="none" 
-                                            className="text-green-600 dark:text-green-400"
-                                        >
-                                            <motion.circle
-                                                cx="24"
-                                                cy="24"
-                                                r="20"
-                                                stroke="currentColor"
-                                                strokeWidth="2"
-                                                fill="none"
-                                                initial={{ pathLength: 0 }}
-                                                animate={{ pathLength: 1 }}
-                                                transition={{ duration: 0.5, ease: "easeOut" }}
-                                            />
-                                            <motion.path
-                                                d="M14 24L20 30L34 16"
-                                                stroke="currentColor"
-                                                strokeWidth="3"
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                variants={checkmarkVariants}
-                                                initial="hidden"
-                                                animate="visible"
-                                            />
-                                        </svg>
-                                    </motion.div>
+                                    <Check className="w-8 h-8" strokeWidth={2.5} />
                                 </motion.div>
 
                                 <motion.div 
-                                    className="space-y-2"
+                                    className="space-y-3 text-center max-w-md"
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.4, duration: 0.4 }}
+                                    transition={{ delay: 0.2, duration: 0.4 }}
                                 >
-                                    <h3 className="text-2xl font-bold text-foreground">You're all set!</h3>
-                                    <p className="text-muted-foreground max-w-md mx-auto">
-                                        {purchaseId 
-                                            ? "Your purchase has been confirmed. We've sent your tickets to your email."
-                                            : "Payment received and registration confirmed. We've sent your tickets to your email."}
+                                    <h3 className="text-xl sm:text-2xl font-semibold text-foreground">Registration Successful</h3>
+                                    <p className="text-sm text-muted-foreground leading-relaxed">
+                                        Your purchase has been confirmed. We&apos;ve sent your tickets to your email.
                                     </p>
-                                    {purchaseId && (
-                                        <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 text-xs text-muted-foreground mt-3">
-                                            <p className="font-medium text-foreground mb-1">Purchase Confirmed</p>
-                                            <p>Purchase ID: <code className="text-primary">{purchaseId}</code></p>
-                                        </div>
-                                    )}
+                                    <div className="flex items-center justify-center gap-2 py-3 px-4 bg-muted/50 rounded-lg border border-border">
+                                        <Mail className="w-4 h-4 text-primary flex-shrink-0" />
+                                        <p className="text-sm font-medium text-foreground">
+                                            Please check your email inbox for your tickets
+                                        </p>
+                                    </div>
                                 </motion.div>
 
                                 <motion.div
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.5, duration: 0.4 }}
+                                    transition={{ delay: 0.35, duration: 0.4 }}
+                                    className="w-full max-w-sm"
                                 >
-                                    <Card className="p-4 w-full max-w-sm space-y-2 text-sm border border-border bg-card">
-                                        <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Tickets</span>
-                                            <motion.span 
-                                                className="font-medium text-foreground"
-                                                initial={{ opacity: 0 }}
-                                                animate={{ opacity: 1 }}
-                                                transition={{ delay: 0.7 }}
-                                            >
-                                                {totalTickets}
-                                            </motion.span>
-                                        </div>
-                                        {purchaseId && (
-                                            <div className="flex justify-between">
-                                                <span className="text-muted-foreground">Purchase ID</span>
-                                                <motion.span 
-                                                    className="font-mono text-xs text-foreground"
-                                                    initial={{ opacity: 0 }}
-                                                    animate={{ opacity: 1 }}
-                                                    transition={{ delay: 0.75 }}
-                                                >
-                                                    {purchaseId.slice(0, 8)}...
-                                                </motion.span>
+                                    <Card className="p-5 border border-border bg-card/50">
+                                        <div className="space-y-3">
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-sm text-muted-foreground">Tickets</span>
+                                                <span className="font-medium text-foreground">{totalTickets}</span>
                                             </div>
-                                        )}
-                                        <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Status</span>
-                                            <motion.span 
-                                                className="text-green-600 dark:text-green-400 font-bold"
-                                                initial={{ opacity: 0, scale: 0.8 }}
-                                                animate={{ opacity: 1, scale: 1 }}
-                                                transition={{ delay: 0.8, type: "spring", stiffness: 300 }}
-                                            >
-                                                Confirmed
-                                            </motion.span>
+                                            {purchaseId && (
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-sm text-muted-foreground">Reference</span>
+                                                    <span className="font-mono text-xs text-foreground">{purchaseId}</span>
+                                                </div>
+                                            )}
+                                            <div className="flex justify-between items-center pt-2 border-t border-border">
+                                                <span className="text-sm text-muted-foreground">Status</span>
+                                                <span className="text-sm font-medium text-green-600 dark:text-green-400">Confirmed</span>
+                                            </div>
                                         </div>
                                     </Card>
                                 </motion.div>
@@ -817,14 +737,15 @@ export function RegistrationDialog({ isOpen, onOpenChange, event }: Registration
                                 <motion.div
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.6, duration: 0.4 }}
+                                    transition={{ delay: 0.5, duration: 0.4 }}
+                                    className="pt-4"
                                 >
                                     <Button 
                                         onClick={handleClose} 
                                         size="lg" 
-                                        className="min-w-[200px] shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-shadow"
+                                        className="min-w-[200px]"
                                     >
-                                        View My Tickets
+                                        Close
                                     </Button>
                                 </motion.div>
                             </motion.div>

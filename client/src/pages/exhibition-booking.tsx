@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Navigation } from "@/components/navigation";
 import { Footer } from "@/components/footer";
 import { MemberSearch, type Member } from "@/components/member-search";
-import { ArrowLeft, Building2, Users, Check, Lock, Tag, CreditCard, Smartphone, Copy, CheckCircle2, UserPlus } from "lucide-react";
+import { ArrowLeft, Building2, Users, Check, Lock, CreditCard, Smartphone, Copy, CheckCircle2, UserPlus } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { SEOHead } from "@/components/seo/seo-head";
@@ -479,124 +479,73 @@ export default function ExhibitionBookingPage() {
                   {/* Form */}
                   <div className="lg:col-span-2">
                     <Card className="p-6 sm:p-8 border border-border">
-                      <form onSubmit={handleSubmit} className="space-y-6">
+                      <form onSubmit={handleSubmit} className="space-y-8">
+                        {/* Step 1: Registration Type - Always first */}
                         <div>
-                          <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
-                            <Building2 className="h-5 w-5 text-primary" />
-                            Company Information
-                          </h2>
-                          
-                          <div className="space-y-5">
-                            <div className="space-y-2">
-                              <Label htmlFor="companyName" className="mb-2 block">Company Name *</Label>
-                              <Input
-                                id="companyName"
-                                value={formData.companyName}
-                                onChange={(e) => handleChange("companyName", e.target.value)}
-                                placeholder="Enter your company name"
-                                className="w-full"
-                                required
-                              />
-                            </div>
-
-                            <div className="grid sm:grid-cols-2 gap-4">
-                              <div className="space-y-2">
-                                <Label htmlFor="contactPerson" className="mb-2 block flex items-center gap-2">
-                                  Contact Person *
-                                  {formData.isMember && formData.selectedMember && (
-                                    <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
-                                      Auto-filled
-                                    </Badge>
-                                  )}
-                                </Label>
-                                <Input
-                                  id="contactPerson"
-                                  value={formData.contactPerson}
-                                  onChange={(e) => handleChange("contactPerson", e.target.value)}
-                                  placeholder={formData.isMember ? "Auto-filled from member record" : "Full name"}
-                                  disabled={formData.isMember && !!formData.selectedMember}
-                                  className="w-full"
-                                  required={!formData.isMember || !formData.selectedMember}
-                                />
-                                {formData.isMember && formData.selectedMember && (
-                                  <p className="text-xs text-muted-foreground mt-1.5">
-                                    Contact person auto-populated from member record
-                                  </p>
-                                )}
-                              </div>
-                              
-                              <div className="space-y-2">
-                                <Label htmlFor="phone" className="mb-2 block">Phone Number *</Label>
-                                <Input
-                                  id="phone"
-                                  type="tel"
-                                  value={formData.phone}
-                                  onChange={(e) => handleChange("phone", e.target.value)}
-                                  placeholder="+254 XXX XXX XXX"
-                                  className="w-full"
-                                  required
-                                />
-                              </div>
-                            </div>
+                          <div className="flex items-center gap-2 mb-4">
+                            <span className="flex items-center justify-center w-5 h-5 rounded-full bg-primary text-primary-foreground text-xs font-bold">1</span>
+                            <h2 className="text-base font-medium text-foreground">How are you registering?</h2>
                           </div>
+                          {registrationMode === null ? (
+                            <div className="grid sm:grid-cols-2 gap-4">
+                              <button
+                                type="button"
+                                onClick={handleSelectMemberMode}
+                                className="flex flex-col items-center justify-center gap-3 p-6 bg-muted/30 border-2 border-primary/30 hover:border-primary rounded-xl transition-all hover:shadow-md"
+                              >
+                                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                                  <Users className="h-6 w-6 text-primary" />
+                                </div>
+                                <div className="text-center">
+                                  <div className="font-semibold text-foreground">I am a KNCCI Member</div>
+                                  <div className="text-sm text-muted-foreground mt-1">KES 30,000 per booth</div>
+                                </div>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={handleSelectNonMemberMode}
+                                className="flex flex-col items-center justify-center gap-3 p-6 bg-muted/30 border-2 border-border hover:border-muted-foreground/50 rounded-xl transition-all hover:shadow-md"
+                              >
+                                <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center">
+                                  <Users className="h-6 w-6 text-muted-foreground" />
+                                </div>
+                                <div className="text-center">
+                                  <div className="font-semibold text-foreground">I am not a member</div>
+                                  <div className="text-sm text-muted-foreground mt-1">KES 40,000 per booth</div>
+                                </div>
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border">
+                              <span className="font-medium text-foreground">
+                                {registrationMode === "member" ? "KNCCI Member" : "Non-Member"} — KES {formData.pricePerBooth.toLocaleString()}/booth
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => setRegistrationMode(null)}
+                                className="text-sm text-primary hover:underline"
+                              >
+                                Change
+                              </button>
+                            </div>
+                          )}
                         </div>
 
-                        <div className="border-t border-border pt-6">
-                          <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
-                            <Users className="h-5 w-5 text-primary" />
-                            Exhibition Details
-                          </h2>
-                          
-                          <div className="space-y-5">
-                            {/* Registration Mode Selection */}
-                            {registrationMode === null && (
-                              <div className="bg-muted/30 border border-border rounded-lg p-6">
-                                <h3 className="text-lg font-medium mb-4 text-center">Select Registration Type</h3>
-                                <div className="grid sm:grid-cols-2 gap-4">
-                                  <button
-                                    type="button"
-                                    onClick={handleSelectMemberMode}
-                                    className="flex flex-col items-center justify-center gap-3 p-6 bg-background border-2 border-primary/20 hover:border-primary rounded-lg transition-all hover:shadow-md"
-                                  >
-                                    <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                                      <Users className="h-6 w-6 text-primary" />
-                                    </div>
-                                    <div className="text-center">
-                                      <div className="font-semibold text-foreground">I am a KNCCI Member</div>
-                                      <div className="text-sm text-muted-foreground mt-1">KES 30,000 per booth</div>
-                                    </div>
-                                  </button>
-                                  
-                                  <button
-                                    type="button"
-                                    onClick={handleSelectNonMemberMode}
-                                    className="flex flex-col items-center justify-center gap-3 p-6 bg-background border-2 border-muted hover:border-muted-foreground/50 rounded-lg transition-all hover:shadow-md"
-                                  >
-                                    <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center">
-                                      <Users className="h-6 w-6 text-muted-foreground" />
-                                    </div>
-                                    <div className="text-center">
-                                      <div className="font-semibold text-foreground">I am not a member</div>
-                                      <div className="text-sm text-muted-foreground mt-1">KES 40,000 per booth</div>
-                                    </div>
-                                  </button>
-                                </div>
-                              </div>
-                            )}
+                        {/* Step 2: Your Information - Shown when registration type selected */}
+                        {registrationMode !== null && (
+                          <div>
+                            <div className="flex items-center gap-2 mb-4">
+                              <span className="flex items-center justify-center w-5 h-5 rounded-full bg-primary text-primary-foreground text-xs font-bold">2</span>
+                              <h2 className="text-base font-medium text-foreground flex items-center gap-2">
+                                <Building2 className="h-5 w-5 text-primary" />
+                                Your Information
+                              </h2>
+                            </div>
 
-                            {/* Member Search - Only shown when member mode selected */}
+                            {/* Member Search - Only when member mode */}
                             {registrationMode === "member" && (
-                              <div className="space-y-4">
-                                <div className="flex items-center justify-between">
-                                  <h3 className="font-medium">Member Verification</h3>
-                                  <button
-                                    type="button"
-                                    onClick={() => setRegistrationMode(null)}
-                                    className="text-sm text-primary hover:underline"
-                                  >
-                                    Change registration type
-                                  </button>
-                                </div>
+                              <div className="space-y-3 mb-5">
+                                <Label className="text-sm font-medium">Member Verification</Label>
                                 <MemberSearch
                                   value={formData.selectedMember}
                                   onChange={handleMemberChange}
@@ -605,202 +554,190 @@ export default function ExhibitionBookingPage() {
                               </div>
                             )}
 
-                            {/* Non-Member Notice - Only shown when non-member mode selected */}
+                            {/* Non-Member compact notice */}
                             {registrationMode === "non-member" && (
-                              <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
-                                <div className="flex items-center justify-between mb-2">
-                                  <div className="flex items-center gap-2">
-                                    <Users className="h-5 w-5 text-amber-600" />
-                                    <span className="font-medium text-amber-800 dark:text-amber-200">Non-Member Registration</span>
-                                  </div>
-                                  <button
-                                    type="button"
-                                    onClick={() => setRegistrationMode(null)}
-                                    className="text-sm text-amber-700 dark:text-amber-300 hover:underline"
-                                  >
-                                    Change registration type
-                                  </button>
-                                </div>
-                                <p className="text-sm text-amber-700 dark:text-amber-300 mb-4">
-                                  You are registering as a non-member. The rate is KES 40,000 per booth.
-                                  Consider becoming a KNCCI member to save KES 10,000 per booth on this and future events.
+                              <div className="flex items-center justify-between gap-4 p-3 mb-5 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
+                                <p className="text-sm text-amber-800 dark:text-amber-200">
+                                  Non-member rate applies. <Link href="/membership" className="text-primary hover:underline font-medium">Become a KNCCI member</Link> to save KES 10,000 per booth.
                                 </p>
-                                <Link href="/membership">
-                                  <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    className="border-amber-400 text-amber-800 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/50"
-                                  >
-                                    <UserPlus className="h-4 w-4 mr-2" />
-                                    Become a KNCCI Member
-                                  </Button>
-                                </Link>
                               </div>
                             )}
 
+                            {/* Company & Contact fields - shown when (member + selected) OR non-member */}
                             {((registrationMode === "member" && formData.selectedMember !== null) || registrationMode === "non-member") && (
-                              <div className="bg-muted/50 border rounded-lg p-4 space-y-2">
-                                <div className="flex items-center justify-between mb-2">
-                                  <Label htmlFor="email" className="flex items-center gap-2">
-                                    Email Address
-                                    {formData.isMember && <Lock className="h-3 w-3 text-muted-foreground" />}
-                                  </Label>
-                                  {formData.isMember && (
-                                    <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
-                                      Auto-filled
-                                    </Badge>
-                                  )}
+                              <div className="space-y-4">
+                                <div className="grid sm:grid-cols-2 gap-4">
+                                  <div className="space-y-2">
+                                    <Label htmlFor="companyName">Company Name *</Label>
+                                    <Input
+                                      id="companyName"
+                                      value={formData.companyName}
+                                      onChange={(e) => handleChange("companyName", e.target.value)}
+                                      placeholder="Enter your company name"
+                                      className="w-full"
+                                      required
+                                    />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label htmlFor="contactPerson" className="flex items-center gap-2">
+                                      Contact Person *
+                                      {formData.isMember && formData.selectedMember && (
+                                        <Badge variant="outline" className="text-xs">Auto-filled</Badge>
+                                      )}
+                                    </Label>
+                                    <Input
+                                      id="contactPerson"
+                                      value={formData.contactPerson}
+                                      onChange={(e) => handleChange("contactPerson", e.target.value)}
+                                      placeholder={formData.isMember ? "From member record" : "Full name"}
+                                      disabled={formData.isMember && !!formData.selectedMember}
+                                      className="w-full"
+                                      required={!formData.isMember || !formData.selectedMember}
+                                    />
+                                  </div>
                                 </div>
-                                <Input
-                                  id="email"
-                                  type="email"
-                                  value={formData.email}
-                                  onChange={(e) => handleChange("email", e.target.value)}
-                                  placeholder="company@example.com"
-                                  disabled={formData.isMember}
-                                  className="w-full"
-                                  required
-                                />
-                                {formData.isMember && (
-                                  <p className="text-xs text-muted-foreground mt-1.5">
-                                    Email auto-populated from member record
-                                  </p>
-                                )}
+                                <div className="grid sm:grid-cols-2 gap-4">
+                                  <div className="space-y-2">
+                                    <Label htmlFor="phone">Phone Number *</Label>
+                                    <Input
+                                      id="phone"
+                                      type="tel"
+                                      value={formData.phone}
+                                      onChange={(e) => handleChange("phone", e.target.value)}
+                                      placeholder="+254 XXX XXX XXX"
+                                      className="w-full"
+                                      required
+                                    />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label htmlFor="email" className="flex items-center gap-2">
+                                      Email Address *
+                                      {formData.isMember && <Lock className="h-3 w-3 text-muted-foreground" />}
+                                    </Label>
+                                    <Input
+                                      id="email"
+                                      type="email"
+                                      value={formData.email}
+                                      onChange={(e) => handleChange("email", e.target.value)}
+                                      placeholder="company@example.com"
+                                      disabled={formData.isMember}
+                                      className="w-full"
+                                      required
+                                    />
+                                  </div>
+                                </div>
                               </div>
                             )}
+                          </div>
+                        )}
 
-                            <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
-                              <div className="flex items-center justify-between mb-2">
-                                <Label className="flex items-center gap-2">
-                                  <Tag className="h-4 w-4 text-primary" />
-                                  Price Per Booth
-                                </Label>
-                                <Badge 
-                                  className={formData.isMember 
-                                    ? "bg-green-100 text-green-700 border-green-300" 
-                                    : "bg-amber-100 text-amber-700 border-amber-300"
-                                  }
+                        {/* Step 3: Exhibition Details - Shown when ready */}
+                        {((registrationMode === "member" && formData.selectedMember !== null) || registrationMode === "non-member") && (
+                          <div>
+                            <div className="flex items-center gap-2 mb-4">
+                              <span className="flex items-center justify-center w-5 h-5 rounded-full bg-primary text-primary-foreground text-xs font-bold">3</span>
+                              <h2 className="text-base font-medium text-foreground flex items-center gap-2">
+                                <Users className="h-5 w-5 text-primary" />
+                                Exhibition Details
+                              </h2>
+                            </div>
+                            <div className="space-y-4">
+                              <div className="space-y-2">
+                                <Label htmlFor="boothCount">Number of Booths *</Label>
+                                <Select 
+                                  value={formData.boothCount} 
+                                  onValueChange={(value) => handleChange("boothCount", value)}
                                 >
-                                  {formData.isMember ? "Member Rate" : "Non-Member Rate"}
-                                </Badge>
+                                  <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Select number of booths" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="1">1 Booth (3x3 meters)</SelectItem>
+                                    <SelectItem value="2">2 Booths (6x3 meters)</SelectItem>
+                                    <SelectItem value="3">3 Booths (9x3 meters)</SelectItem>
+                                    <SelectItem value="4+">4+ Booths (Contact for pricing)</SelectItem>
+                                  </SelectContent>
+                                </Select>
                               </div>
-                              <div className="flex items-baseline gap-1">
-                                <span className="text-2xl font-bold text-foreground">
-                                  KES {formData.pricePerBooth.toLocaleString()}
-                                </span>
-                                <span className="text-sm text-muted-foreground">/booth</span>
+                              <div className="space-y-2">
+                                <Label htmlFor="additionalRequirements">Additional Requirements</Label>
+                                <Textarea
+                                  id="additionalRequirements"
+                                  value={formData.additionalRequirements}
+                                  onChange={(e) => handleChange("additionalRequirements", e.target.value)}
+                                  placeholder="Any special requirements, equipment needs, or questions..."
+                                  rows={3}
+                                  className="w-full"
+                                />
                               </div>
-                              <p className="text-xs text-muted-foreground mt-2">
-                                {formData.isMember 
-                                  ? "You are receiving the KNCCI member discount of KES 10,000 off the standard rate."
-                                  : "Standard non-member rate applies. Become a KNCCI member to save KES 10,000 per booth."
-                                }
-                              </p>
-                            </div>
-
-                            <div className="space-y-2">
-                              <Label htmlFor="boothCount" className="mb-2 block">Number of Booths *</Label>
-                              <Select 
-                                value={formData.boothCount} 
-                                onValueChange={(value) => handleChange("boothCount", value)}
-                              >
-                                <SelectTrigger className="w-full">
-                                  <SelectValue placeholder="Select number of booths" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="1">1 Booth (3x3 meters)</SelectItem>
-                                  <SelectItem value="2">2 Booths (6x3 meters)</SelectItem>
-                                  <SelectItem value="3">3 Booths (9x3 meters)</SelectItem>
-                                  <SelectItem value="4+">4+ Booths (Contact for pricing)</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-
-                            <div className="space-y-2">
-                              <Label htmlFor="additionalRequirements" className="mb-2 block">Additional Requirements</Label>
-                              <Textarea
-                                id="additionalRequirements"
-                                value={formData.additionalRequirements}
-                                onChange={(e) => handleChange("additionalRequirements", e.target.value)}
-                                placeholder="Any special requirements, equipment needs, or questions..."
-                                rows={4}
-                                className="w-full"
-                              />
                             </div>
                           </div>
-                        </div>
+                        )}
 
-                        <div className="border-t border-border pt-6">
-                          <div className="flex items-start space-x-3">
+                        {/* Terms & Submit */}
+                        <div className="border-t border-border pt-6 space-y-6">
+                          <div className="flex items-start gap-3">
                             <Checkbox
                               id="terms"
                               checked={formData.agreeTerms}
                               onCheckedChange={(checked) => handleChange("agreeTerms", checked as boolean)}
                               required
                             />
-                            <div className="space-y-1 leading-none">
-                              <Label htmlFor="terms" className="text-sm font-normal">
-                                I agree to the terms and conditions. I understand that submission of this form 
-                                does not guarantee space allocation until payment is confirmed. *
-                              </Label>
+                            <Label htmlFor="terms" className="text-sm font-normal leading-relaxed cursor-pointer">
+                              I agree to the terms and conditions. I understand that submission of this form does not guarantee space allocation until payment is confirmed. *
+                            </Label>
+                          </div>
+
+                          {registrationMode === null && (
+                            <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3 text-sm text-amber-800 dark:text-amber-200">
+                              Please select your registration type above to continue.
                             </div>
-                          </div>
+                          )}
+
+                          {registrationMode === "member" && formData.selectedMember === null && (
+                            <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-sm text-blue-800 dark:text-blue-200">
+                              Please search and select your name from the member list to continue.
+                            </div>
+                          )}
+
+                          <Button 
+                            type="submit" 
+                            className="w-full bg-primary text-primary-foreground py-6 text-lg"
+                            disabled={
+                              isSubmitting || 
+                              !formData.agreeTerms || 
+                              registrationMode === null ||
+                              (registrationMode === "member" && formData.selectedMember === null) ||
+                              (registrationMode === "non-member" && !formData.email.trim())
+                            }
+                          >
+                            {isSubmitting ? "Submitting..." : `Submit Request${formData.boothCount !== "4+" ? ` (KES ${(formData.pricePerBooth * parseInt(formData.boothCount)).toLocaleString()})` : ""}`}
+                          </Button>
                         </div>
-
-                        {/* Show warning only when registration mode hasn't been selected */}
-                        {registrationMode === null && (
-                          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
-                            <p className="font-medium">Registration Type Required</p>
-                            <p className="text-xs text-amber-700 mt-1">
-                              Please select whether you are a KNCCI member or not to continue.
-                            </p>
-                          </div>
-                        )}
-
-                        {/* Show warning for members who haven't selected themselves */}
-                        {registrationMode === "member" && formData.selectedMember === null && (
-                          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
-                            <p className="font-medium">Member Verification Required</p>
-                            <p className="text-xs text-blue-700 mt-1">
-                              Please search and select your name from the member list above.
-                            </p>
-                          </div>
-                        )}
-
-                        <Button 
-                          type="submit" 
-                          className="w-full bg-primary text-primary-foreground py-6 text-lg"
-                          disabled={
-                            isSubmitting || 
-                            !formData.agreeTerms || 
-                            registrationMode === null ||
-                            (registrationMode === "member" && formData.selectedMember === null) ||
-                            (registrationMode === "non-member" && !formData.email.trim())
-                          }
-                        >
-                          {isSubmitting ? "Submitting..." : `Submit Request${formData.boothCount !== "4+" ? ` (KES ${(formData.pricePerBooth * parseInt(formData.boothCount)).toLocaleString()})` : ""}`}
-                        </Button>
                       </form>
                     </Card>
                   </div>
 
                   {/* Sidebar Info */}
-                  <div className="space-y-6">
+                  <div className="space-y-6 lg:sticky lg:top-24">
                     <Card className="p-6 bg-primary/5 border-primary/20">
                       <h3 className="font-bold text-lg mb-4 text-primary">Pricing Summary</h3>
                       <div className="space-y-3 text-sm">
                         <div className="bg-background border rounded-lg p-3 mb-3">
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-muted-foreground">Your Rate:</span>
-                            <Badge 
-                              className={formData.isMember 
-                                ? "bg-green-100 text-green-700 border-green-300" 
-                                : "bg-amber-100 text-amber-700 border-amber-300"
-                              }
-                            >
-                              {formData.isMember ? "Member" : "Non-Member"}
-                            </Badge>
+                            {registrationMode ? (
+                              <Badge 
+                                className={registrationMode === "member" 
+                                  ? "bg-green-100 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-400 dark:border-green-700" 
+                                  : "bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-700"
+                                }
+                              >
+                                {registrationMode === "member" ? "Member" : "Non-Member"}
+                              </Badge>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">Select type</span>
+                            )}
                           </div>
                           <div className="flex items-baseline gap-1">
                             <span className="text-xl font-bold text-foreground">
@@ -854,19 +791,19 @@ export default function ExhibitionBookingPage() {
                     </Card>
 
                     {/* KNCCI Membership CTA - especially relevant for non-members */}
-                    <Card className={`p-6 border-2 ${!formData.isMember ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800" : "bg-muted/50 border-border"}`}>
+                    <Card className={`p-6 border-2 ${registrationMode === "non-member" ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800" : "bg-muted/50 border-border"}`}>
                       <div className="flex items-center gap-2 mb-3">
-                        <UserPlus className={`h-5 w-5 ${!formData.isMember ? "text-green-600" : "text-primary"}`} />
-                        <h3 className={`font-bold text-lg ${!formData.isMember ? "text-green-800 dark:text-green-200" : "text-foreground"}`}>
-                          {formData.isMember ? "KNCCI Member Benefits" : "Save KES 10,000 per Booth"}
+                        <UserPlus className={`h-5 w-5 ${registrationMode === "non-member" ? "text-green-600" : "text-primary"}`} />
+                        <h3 className={`font-bold text-lg ${registrationMode === "non-member" ? "text-green-800 dark:text-green-200" : "text-foreground"}`}>
+                          {registrationMode === "member" ? "KNCCI Member Benefits" : "Save KES 10,000 per Booth"}
                         </h3>
                       </div>
                       <p className="text-sm text-muted-foreground mb-4">
-                        {formData.isMember
+                        {registrationMode === "member"
                           ? "You're enjoying member rates. Thank you for being part of KNCCI!"
                           : "Become a KNCCI member to get the discounted rate of KES 30,000 per booth—that's KES 10,000 in savings."}
                       </p>
-                      {!formData.isMember && (
+                      {registrationMode === "non-member" && (
                         <Link href="/membership">
                           <Button
                             size="sm"
@@ -962,32 +899,6 @@ export default function ExhibitionBookingPage() {
                             Payment confirmation will be sent via email within 24 hours.
                           </p>
                         </div>
-                      </div>
-                    </Card>
-
-                    <Card className="p-6 border border-border">
-                      <h3 className="font-bold text-lg mb-4">Need Help?</h3>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        Have questions about exhibiting? Contact our team:
-                      </p>
-                      <div className="space-y-2 text-sm">
-                        <p className="text-muted-foreground">
-                          <strong>Email:</strong><br />
-                          exhibitions@eldoretsummit.co.ke
-                        </p>
-                        <p className="text-muted-foreground">
-                          <strong>Phone:</strong><br />
-                          +254 712 345 678
-                        </p>
-                      </div>
-                    </Card>
-
-                    <Card className="p-6 bg-muted">
-                      <h3 className="font-bold text-lg mb-2">Event Details</h3>
-                      <div className="space-y-2 text-sm text-muted-foreground">
-                        <p><strong>Dates:</strong> April 23-25, 2026</p>
-                        <p><strong>Venue:</strong> RUPA Mall Grounds</p>
-                        <p><strong>Expected:</strong> 10,000+ visitors</p>
                       </div>
                     </Card>
                   </div>

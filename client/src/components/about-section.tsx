@@ -1,5 +1,5 @@
 import { Card } from "@/components/ui/card";
-import { Check, Star, Building2, Mic, Users, Handshake, UtensilsCrossed, GraduationCap } from "lucide-react";
+import { Check, Building2, Mic, Users, Handshake, UtensilsCrossed, GraduationCap } from "lucide-react";
 import { staticEvent } from "@/data/static-data";
 
 export function AboutSection() {
@@ -27,29 +27,6 @@ export function AboutSection() {
             </>
           )}
         </div>
-
-        {event?.highlights && event.highlights.length > 0 && (
-          <div className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto">
-            {event.highlights.map((highlight, index) => (
-              <Card
-                key={index}
-                className="p-6 border border-border bg-card hover-elevate"
-                data-testid={`card-highlight-${index}`}
-              >
-                <div className="flex gap-4">
-                  <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <Star className="w-6 h-6 text-primary" />
-                  </div>
-                  <div className="flex items-center">
-                    <p className="text-foreground font-medium">
-                      {highlight}
-                    </p>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        )}
 
         <div className="mt-16 max-w-6xl mx-auto">
           <div className="text-center mb-12">

@@ -39,40 +39,43 @@ export function GalaDinnerSection() {
             </p>
           </div>
 
-          {/* Pricing – unified ticket price */}
+          {/* Pricing – ticket options */}
           <div className="mb-16">
             <p className="text-center text-sm font-medium text-muted-foreground uppercase tracking-wider mb-6 flex items-center justify-center gap-2">
               <Tag className="w-4 h-4" />
               Gala dinner ticket
             </p>
-            <div className="max-w-sm mx-auto">
-              <Card
-                className="relative overflow-hidden border-2 border-primary/50 bg-primary/5 hover:border-primary hover-elevate transition-colors cursor-pointer"
-                data-testid="card-gala-ticket"
-                onClick={openRegistration}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    openRegistration();
-                  }
-                }}
-              >
-                <div className="p-6 text-center">
-                  <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-primary/20 mb-4">
-                    <Ticket className="w-5 h-5 text-primary" />
+            <div className="grid sm:grid-cols-2 gap-6 max-w-2xl mx-auto">
+              {gala.pricingTiers.map((tier, index) => (
+                <Card
+                  key={index}
+                  className="relative overflow-hidden border-2 border-primary/50 bg-primary/5 hover:border-primary hover-elevate transition-colors cursor-pointer"
+                  data-testid={`card-gala-ticket-${index}`}
+                  onClick={openRegistration}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      openRegistration();
+                    }
+                  }}
+                >
+                  <div className="p-6 text-center">
+                    <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-primary/20 mb-4">
+                      <Ticket className="w-5 h-5 text-primary" />
+                    </div>
+                    <p className="text-sm font-medium text-primary mb-1">{tier.label}</p>
+                    <p className="text-2xl sm:text-3xl font-bold text-foreground tabular-nums">
+                      {formatPrice(gala.currency, tier.price)}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-2">Per person</p>
                   </div>
-                  <p className="text-sm font-medium text-primary mb-1">Standard Admission</p>
-                  <p className="text-2xl sm:text-3xl font-bold text-foreground tabular-nums">
-                    {formatPrice(gala.currency, gala.priceMember)}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-2">Per person</p>
-                </div>
-              </Card>
+                </Card>
+              ))}
             </div>
             <p className="text-center text-sm text-muted-foreground mt-4 max-w-md mx-auto">
-              One ticket per person. Available for all attendees.
+              One ticket per person. Book early to lock in the early bird rate.
             </p>
           </div>
 

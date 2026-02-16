@@ -6,6 +6,7 @@ import { NearbyHotelsSection } from "@/components/nearby-hotels-section";
 import { RegistrationSection } from "@/components/registration-section";
 import { PartnersSection } from "@/components/partners-section";
 import { ExhibitionRatesSection } from "@/components/exhibition-rates-section";
+import { PartnershipPackagesSection } from "@/components/partnership-packages-section";
 import { GallerySection } from "@/components/gallery-section";
 import { TestimonialsSection } from "@/components/testimonials-section";
 import { Footer } from "@/components/footer";
@@ -53,8 +54,9 @@ export default function Home() {
         <Navigation />
         <main>
           <HeroSection event={displayEvent} />
+          <PartnershipPackagesSection />
           <AboutSection />
-          <PartnersSection />
+          <ExhibitionRatesSection />
           {/* <SpeakersSection />
         <ProgramSection /> */}
           {/* <VenueSection /> */}
@@ -62,7 +64,7 @@ export default function Home() {
           <NearbyHotelsSection />
           <RegistrationSection />
           <GallerySection />
-          <ExhibitionRatesSection />
+          <PartnersSection />
           <TestimonialsSection />
         </main>
         <Footer />

@@ -272,7 +272,7 @@ export function CheckoutForm({ quantities, ticketTypes, onBack, onSubmit, isSubm
                             />
 
                             <motion.div 
-                                className="flex gap-4 pt-4"
+                                className="flex gap-4 pt-6 pb-4"
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.4 }}

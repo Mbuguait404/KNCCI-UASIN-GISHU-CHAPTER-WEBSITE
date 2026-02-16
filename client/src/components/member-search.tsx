@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Search, X, Check, User, UserX, Loader2 } from "lucide-react";
-import { membersList, memberCount } from "@/data/members";
+import { membersList } from "@/data/members";
 
 export interface Member {
   name: string;
@@ -92,7 +92,7 @@ export function MemberSearch({ value, onChange, disabled }: MemberSearchProps) {
       <div className="flex items-center justify-between mb-1">
         <Label htmlFor="member-search">Search Member Name *</Label>
         <Badge variant="secondary" className="text-xs">
-          {memberCount} members available
+          3000+ members available
         </Badge>
       </div>
 

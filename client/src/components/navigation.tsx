@@ -72,14 +72,20 @@ export function Navigation() {
               window.location.href = "/";
             }
           }}
-          className="flex items-center gap-3"
+          className={`flex items-center gap-3 rounded-lg px-2 py-1.5 transition-all duration-300 ${
+            isScrolled || !isHomePage ? "bg-transparent" : "bg-white/10 backdrop-blur-sm"
+          }`}
           data-testid="link-logo"
         >
           {/* Chapter Logo */}
           <img 
             src="https://solby.sfo3.digitaloceanspaces.com/1770900740026-kncci_logo-removebg-preview.png" 
             alt="KNCCI Uasin Gishu Chapter" 
-            className="h-12 sm:h-16 w-auto object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]"
+            className={`h-12 sm:h-16 w-auto object-contain transition-all duration-300 ${
+              isScrolled || !isHomePage
+                ? "drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]"
+                : "drop-shadow-[0_0_2px_rgba(255,255,255,0.9)] drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]"
+            }`}
             width={220}
             height={64}
             loading="eager"
@@ -93,7 +99,11 @@ export function Navigation() {
           <img 
             src="/county-removebg-preview.png" 
             alt="Uasin Gishu County" 
-            className="h-12 sm:h-16 w-auto object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]"
+            className={`h-12 sm:h-16 w-auto object-contain transition-all duration-300 ${
+              isScrolled || !isHomePage
+                ? "drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]"
+                : "drop-shadow-[0_0_2px_rgba(255,255,255,0.9)] drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]"
+            }`}
             width={220}
             height={64}
             loading="eager"
