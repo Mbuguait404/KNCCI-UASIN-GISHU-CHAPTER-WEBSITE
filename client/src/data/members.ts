@@ -151,7 +151,7 @@ export const membersList: Member[] = [
   { name: "Patroba Jesang", email: "patrobaruto@gmail.com" },
   { name: "Eisen Distributors", email: "eisendistributors@gmail.com" },
   { name: "Tecla Sang", email: "teclasang@yahoo.com" },
-  { name: "Lancola Company", email: "lancola@gmail.com" },
+  { name: "Allan Rop", email: "allanrop@gmail.com" },
   { name: "Stima Sacco", email: "customercare@stima-sacco.com" },
   { name: "Rebecca Korir", email: "rebeccakorir@gmail.com" },
   { name: "Ptroba Barno", email: "batrobabarno@gmail.com" },

@@ -54,8 +54,8 @@ export default function Home() {
         <Navigation />
         <main>
           <HeroSection event={displayEvent} />
-          <PartnershipPackagesSection />
           <AboutSection />
+          <PartnershipPackagesSection />
           <ExhibitionRatesSection />
           {/* <SpeakersSection />
         <ProgramSection /> */}

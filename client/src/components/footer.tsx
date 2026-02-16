@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { insertNewsletterSchema, type InsertNewsletter } from "@shared/schema";
-import { Mail, Phone, MapPin, Loader2, Facebook, Twitter, Linkedin, Instagram, Youtube, Globe } from "lucide-react";
+import { Mail, Phone, MapPin, Loader2, Facebook, Twitter, Linkedin, Instagram, Youtube, Globe, ExternalLink } from "lucide-react";
 
 const quickLinks = [
   { label: "About KNCCI", href: "#about" },
@@ -227,11 +227,21 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="border-t border-white/10 mt-8 pt-8 text-center text-white/50 text-sm">
-          <p data-testid="text-copyright">
-            &copy; {new Date().getFullYear()} Kenya National Chamber of Commerce and Industry. 
-            All rights reserved.
-          </p>
+        <div className="border-t border-white/10 mt-8 pt-8">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-white/50">
+            <p data-testid="text-copyright">
+              &copy; {new Date().getFullYear()} Kenya National Chamber of Commerce and Industry. All rights reserved.
+            </p>
+            <a
+              href="https://the-cube.co.ke/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-colors border border-white/10 text-xs"
+            >
+              <span>Built by The Cube Innovation Hub</span>
+              <ExternalLink className="w-3.5 h-3.5 opacity-70" />
+            </a>
+          </div>
         </div>
       </div>
     </footer>
