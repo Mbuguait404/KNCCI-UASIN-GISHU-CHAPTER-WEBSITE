@@ -1,12 +1,22 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { Presentation, LayoutGrid, UtensilsCrossed, Sparkles, ArrowRight } from "lucide-react";
-import { partnershipPackages } from "@/data/partnership-data";
+import { partnershipPackages, type PartnershipPackage } from "@/data/partnership-data";
+import { PartnershipModal } from "@/components/partnership-modal";
 import { cn } from "@/lib/utils";
 
 export function PartnershipPackagesSection() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedPackage, setSelectedPackage] = useState<PartnershipPackage | null>(null);
+
+  const openModal = (pkg: PartnershipPackage) => {
+    setSelectedPackage(pkg);
+    setIsModalOpen(true);
+  };
+
   return (
     <section
       id="partnership-packages"
@@ -28,18 +38,30 @@ export function PartnershipPackagesSection() {
                 View full details
               </Link>
             </p>
+            <p className="text-sm text-muted-foreground mt-2">
+              Click a package to create a partnership request
+            </p>
           </div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5 mb-12">
             {partnershipPackages.map((pkg) => (
-              <Link key={pkg.tier} href="/partnership">
-                <Card
-                  className={cn(
-                    "border-2 transition-all duration-300 overflow-hidden cursor-pointer h-full",
-                    "bg-gradient-to-b from-background to-muted/30",
-                    "hover:border-primary/40 hover:shadow-lg"
-                  )}
-                >
+              <Card
+                key={pkg.tier}
+                role="button"
+                tabIndex={0}
+                onClick={() => openModal(pkg)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    openModal(pkg);
+                  }
+                }}
+                className={cn(
+                  "border-2 transition-all duration-300 overflow-hidden cursor-pointer h-full",
+                  "bg-gradient-to-b from-background to-muted/30",
+                  "hover:border-primary/40 hover:shadow-lg"
+                )}
+              >
                   <div className={cn("h-1.5 w-full bg-gradient-to-r opacity-80", pkg.color)} />
                   <CardHeader className="p-5 pb-3">
                     <Badge
@@ -69,7 +91,6 @@ export function PartnershipPackagesSection() {
                     </div>
                   </CardContent>
                 </Card>
-              </Link>
             ))}
           </div>
 
@@ -83,6 +104,12 @@ export function PartnershipPackagesSection() {
           </div>
         </div>
       </div>
+
+      <PartnershipModal
+        isOpen={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        selectedPackage={selectedPackage}
+      />
     </section>
   );
 }
