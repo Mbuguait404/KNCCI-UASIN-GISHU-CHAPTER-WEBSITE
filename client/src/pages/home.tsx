@@ -12,8 +12,6 @@ import { Footer } from "@/components/footer";
 import { SEOHead } from "@/components/seo/seo-head";
 import { StructuredData } from "@/components/seo/structured-data";
 import { staticEvent, staticSpeakers, staticVenue, staticTestimonials } from "@/data/static-data";
-import { useQuery } from "@tanstack/react-query";
-import { ticketing } from "@/lib/ticketing";
 import { Event } from "@shared/schema";
 import { RegistrationDialog } from "@/components/registration-dialog";
 import { useRegistration } from "@/contexts/registration-context";
@@ -21,26 +19,8 @@ import { useRegistration } from "@/contexts/registration-context";
 export default function Home() {
   const { isOpen, closeRegistration } = useRegistration();
 
-  const { data: apiEvents } = useQuery({
-    queryKey: ["events"],
-    queryFn: ticketing.getEvents
-  });
-
-  const apiEvent = apiEvents?.[0];
-
-  // Map API event to Schema Event
-  // Use API event ID if available, otherwise use static event with valid database ID
-  const displayEvent: Event = apiEvent ? {
-    ...staticEvent, // Fallback to static data for missing fields
-    id: apiEvent.id, // Use actual database ID from API
-    name: apiEvent.title,
-    description: apiEvent.description,
-    date: staticEvent.date, // Always use correct date: April 23, 2026
-    endDate: staticEvent.endDate, // Always use correct end date: April 25, 2026
-    location: apiEvent.location.city,
-    venue: "Rupaz mall Grounds", // Always use correct venue
-    // Keep static highlights/stats if API doesn't provide them yet
-  } : staticEvent; // staticEvent now has the correct database ID
+  // Use static event - no API fetch
+  const displayEvent: Event = staticEvent;
 
   return (
     <>
@@ -74,6 +54,7 @@ export default function Home() {
         <main>
           <HeroSection event={displayEvent} />
           <AboutSection />
+          <PartnersSection />
           {/* <SpeakersSection />
         <ProgramSection /> */}
           {/* <VenueSection /> */}
@@ -81,7 +62,6 @@ export default function Home() {
           <NearbyHotelsSection />
           <RegistrationSection />
           <GallerySection />
-          <PartnersSection />
           <ExhibitionRatesSection />
           <TestimonialsSection />
         </main>

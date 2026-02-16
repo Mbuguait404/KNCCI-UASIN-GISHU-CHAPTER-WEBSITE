@@ -98,7 +98,51 @@ export async function registerRoutes(
     res.json(venue);
   });
 
-  // Registration endpoint
+  // Registration endpoint - proxies to KNCCI messaging (same as api/index.ts for Vercel)
+  const KNCCI_MESSAGING_URL =
+    process.env.KNCCI_MESSAGING_URL ||
+    "https://kncci-messaging.onrender.com/notifications/event-registration/sendgrid";
+
+  app.post("/api/registration", async (req, res) => {
+    try {
+      const payload = req.body;
+      if (!payload?.event?.id || !payload?.attendee?.email || !Array.isArray(payload?.tickets) || payload.tickets.length === 0) {
+        return res.status(400).json({ error: "Invalid registration payload: event, attendee, and tickets required" });
+      }
+
+      const kncciResponse = await fetch(KNCCI_MESSAGING_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const responseText = await kncciResponse.text();
+      let responseData: unknown;
+      try {
+        responseData = responseText ? JSON.parse(responseText) : {};
+      } catch {
+        responseData = { message: responseText };
+      }
+
+      if (!kncciResponse.ok) {
+        console.error("[Registration] KNCCI proxy error:", kncciResponse.status, responseData);
+        return res.status(kncciResponse.status).json(
+          typeof responseData === "object" && responseData !== null && "error" in (responseData as object)
+            ? responseData
+            : { error: "Registration service error", details: responseData }
+        );
+      }
+
+      res.status(kncciResponse.status).json(
+        typeof responseData === "object" && responseData !== null ? responseData : { success: true }
+      );
+    } catch (error) {
+      console.error("Error in /api/registration:", error);
+      res.status(500).json({ error: "Failed to create registration" });
+    }
+  });
+
+  // Legacy registration endpoint (plural)
   app.post("/api/registrations", async (req, res) => {
     try {
       const validatedData = insertRegistrationSchema.parse(req.body);

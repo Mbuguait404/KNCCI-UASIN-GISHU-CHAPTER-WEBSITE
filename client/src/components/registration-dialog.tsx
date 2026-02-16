@@ -4,8 +4,8 @@ import { CheckoutForm } from "@/components/checkout-form";
 import { Event } from "@shared/schema";
 import { Calendar, MapPin, CheckCircle2, Phone, Loader2, Ticket, User, CreditCard, Check, Sparkles } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
-import { ticketing, type Purchase } from "@/lib/ticketing";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { submitRegistration } from "@/lib/registration-api";
+import { REGISTRATION_EVENT, HARDCODED_TICKET_TYPES } from "@/data/registration-data";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -107,10 +107,7 @@ export function RegistrationDialog({ isOpen, onOpenChange, event }: Registration
     const [isProcessingPayment, setIsProcessingPayment] = useState(false);
     const [customerData, setCustomerData] = useState<any>(null);
 
-    const { data: ticketTypes } = useQuery({
-        queryKey: ["ticketTypes", event.id],
-        queryFn: () => ticketing.getTicketTypes(event.id),
-    });
+    const ticketTypes = HARDCODED_TICKET_TYPES;
 
     // Calculate total amount based on selected tickets
     const totalAmount = useMemo(() => {
@@ -135,20 +132,6 @@ export function RegistrationDialog({ isOpen, onOpenChange, event }: Registration
         return baseSteps;
     }, [totalAmount]);
 
-    const createPurchaseMutation = useMutation({
-        mutationFn: async (purchaseData: Parameters<typeof ticketing.createPurchase>[0]) => {
-            return ticketing.createPurchase(purchaseData);
-        },
-        onError: (error: Error) => {
-            console.error("Purchase creation error:", error);
-            toast({
-                title: "Purchase Failed",
-                description: error.message || "Failed to create purchase. Please try again.",
-                variant: "destructive",
-            });
-        },
-    });
-
     const handleProceedToCheckout = () => {
         setDirection(1);
         setStep("checkout");
@@ -159,19 +142,52 @@ export function RegistrationDialog({ isOpen, onOpenChange, event }: Registration
         setStep("tickets");
     };
 
+    const buildRegistrationPayload = (
+        data: { firstName: string; lastName: string; email: string; phone: string; organization?: string },
+        payment: { method: string; amount: number; status: string; currency?: string; transactionId?: string; phoneNumber?: string; paidAt?: string }
+    ) => ({
+        event: { id: REGISTRATION_EVENT.id, name: REGISTRATION_EVENT.name },
+        attendee: {
+            firstName: data.firstName,
+            lastName: data.lastName,
+            email: data.email,
+            phone: data.phone,
+            organization: data.organization || undefined,
+        },
+        tickets: Object.entries(quantities)
+            .filter(([_, qty]) => qty > 0)
+            .map(([ticketTypeId, qty]) => {
+                const tt = ticketTypes.find(t => t.id === ticketTypeId)!;
+                return {
+                    ticketTypeId,
+                    name: tt.name,
+                    quantity: qty,
+                    price: tt.price,
+                    currency: tt.currency,
+                };
+            }),
+        payment: {
+            method: payment.method,
+            amount: payment.amount,
+            status: payment.status,
+            currency: payment.currency || "KES",
+            transactionId: payment.transactionId,
+            phoneNumber: payment.phoneNumber,
+            paidAt: payment.paidAt,
+        },
+        metadata: {
+            source: "event-sphere-web",
+            userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "",
+            timestamp: new Date().toISOString(),
+        },
+    });
+
     const handleSubmitOrder = async (data: any) => {
         setIsSubmitting(true);
         setCustomerData(data);
         
         try {
-            // Prepare ticket items from quantities
-            const ticketItems = Object.entries(quantities)
-                .filter(([_, qty]) => qty > 0)
-                .map(([ticketTypeId, quantity]) => ({
-                    ticketTypeId,
-                    quantity,
-                }));
-
+            const ticketItems = Object.entries(quantities).filter(([_, qty]) => qty > 0);
             if (ticketItems.length === 0) {
                 toast({
                     title: "No Tickets Selected",
@@ -182,31 +198,26 @@ export function RegistrationDialog({ isOpen, onOpenChange, event }: Registration
                 return;
             }
 
-            // Determine payment method based on total amount (totalAmount already calculated via useMemo)
-            const paymentMethod = totalAmount === 0 ? "none" : "M-Pesa";
-
-            // For free tickets, create purchase via API and go directly to success
+            // For free tickets, submit registration and go directly to success
             if (totalAmount === 0) {
-                const purchaseData = {
-                    eventId: event.id,
-                    ticketItems,
-                    paymentMethod: "none",
-                    notes: `Contact: ${data.firstName} ${data.lastName}, Email: ${data.email}${data.phone ? `, Phone: ${data.phone}` : ""}${data.organization ? `, Organization: ${data.organization}` : ""}`,
-                };
-                const purchase = await createPurchaseMutation.mutateAsync(purchaseData);
-                setPurchaseId(purchase.id);
+                const payload = buildRegistrationPayload(data, {
+                    method: "none",
+                    amount: 0,
+                    status: "completed",
+                });
+                await submitRegistration(payload);
+                setPurchaseId(`reg-${Date.now()}`);
                 setDirection(1);
                 setStep("success");
                 setIsSubmitting(false);
                 toast({
                     title: "Registration Successful!",
-                    description: "Your free tickets have been generated. Check your email for confirmation.",
+                    description: "Your free tickets have been confirmed. Check your email for details.",
                 });
                 return;
             }
 
-            // For paid tickets, store customer data and proceed to payment step
-            // We'll create the purchase after payment is confirmed
+            // For paid tickets, proceed to payment step
             setDirection(1);
             setStep("payment");
             setIsSubmitting(false);
@@ -215,7 +226,7 @@ export function RegistrationDialog({ isOpen, onOpenChange, event }: Registration
             setIsSubmitting(false);
             toast({
                 title: "Error",
-                description: "Failed to process your request. Please try again.",
+                description: error instanceof Error ? error.message : "Failed to process your request. Please try again.",
                 variant: "destructive",
             });
         }
@@ -254,28 +265,22 @@ export function RegistrationDialog({ isOpen, onOpenChange, event }: Registration
             );
 
             if (paymentResult.success) {
-                // Payment successful - create the purchase via API
                 try {
-                    const ticketItems = Object.entries(quantities)
-                        .filter(([_, qty]) => qty > 0)
-                        .map(([ticketTypeId, quantity]) => ({
-                            ticketTypeId,
-                            quantity,
-                        }));
-
-                    const purchaseData = {
-                        eventId: event.id,
-                        ticketItems,
-                        paymentMethod: "M-Pesa",
-                        notes: `Contact: ${customerData.firstName} ${customerData.lastName}, Email: ${customerData.email}, Phone: ${customerData.phone || phoneNumber}${customerData.organization ? `, Organization: ${customerData.organization}` : ""}`,
-                    };
-
-                    const purchase = await createPurchaseMutation.mutateAsync(purchaseData);
-                    setPurchaseId(purchase.id);
+                    const payload = buildRegistrationPayload(customerData, {
+                        method: "M-Pesa",
+                        amount: totalAmount,
+                        status: "completed",
+                        currency: "KES",
+                        transactionId: paymentResult.status?.transactionId,
+                        phoneNumber: phoneNumber.trim(),
+                        paidAt: new Date().toISOString(),
+                    });
+                    await submitRegistration(payload);
+                    setPurchaseId(`reg-${Date.now()}`);
 
                     toast({
                         title: "Payment Successful!",
-                        description: "Your payment has been confirmed. Generating your tickets...",
+                        description: "Your payment has been confirmed. Registration complete.",
                     });
 
                     await new Promise(resolve => setTimeout(resolve, 1500));
@@ -284,10 +289,10 @@ export function RegistrationDialog({ isOpen, onOpenChange, event }: Registration
                     setStep("success");
                     setIsProcessingPayment(false);
                 } catch (error) {
-                    console.error("Failed to create purchase after payment", error);
+                    console.error("Failed to submit registration after payment", error);
                     toast({
                         title: "Payment Successful",
-                        description: "Payment confirmed, but there was an issue creating your purchase. Please contact support.",
+                        description: "Payment confirmed, but there was an issue completing registration. Please contact support.",
                         variant: "destructive",
                     });
                     setIsProcessingPayment(false);

@@ -6,6 +6,7 @@ import { randomUUID } from "crypto";
 
 // --- Inlined storage (no external imports - avoids Vercel module resolution issues) ---
 const registrations = new Map<string, any>();
+const registrationPayloads = new Map<string, any>(); // New format (event, attendee, tickets, payment)
 const newsletterSubscriptions = new Map<string, any>();
 
 const storage = {
@@ -26,6 +27,16 @@ const storage = {
   },
   async getRegistrations() {
     return Array.from(registrations.values());
+  },
+  async createRegistrationPayload(payload: any) {
+    const id = randomUUID();
+    const record = {
+      id,
+      ...payload,
+      receivedAt: new Date().toISOString(),
+    };
+    registrationPayloads.set(id, record);
+    return { id, success: true };
   },
   async subscribeNewsletter(data: any) {
     const existing = Array.from(newsletterSubscriptions.values()).find(
@@ -373,6 +384,55 @@ app.get("/api/newsletter", async (req, res) => {
   } catch (error) {
     console.error("Error in /api/newsletter:", error);
     res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// KNCCI messaging endpoint - proxy to avoid CORS
+const KNCCI_MESSAGING_URL =
+  process.env.KNCCI_MESSAGING_URL ||
+  "https://kncci-messaging.onrender.com/notifications/event-registration/sendgrid";
+
+// Registration endpoint - proxies to KNCCI messaging, stores locally for backup
+app.post("/api/registration", async (req, res) => {
+  try {
+    const payload = req.body;
+    if (!payload?.event?.id || !payload?.attendee?.email || !Array.isArray(payload?.tickets) || payload.tickets.length === 0) {
+      return res.status(400).json({ error: "Invalid registration payload: event, attendee, and tickets required" });
+    }
+
+    // Proxy to KNCCI messaging endpoint
+    const kncciResponse = await fetch(KNCCI_MESSAGING_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const responseText = await kncciResponse.text();
+    let responseData: unknown;
+    try {
+      responseData = responseText ? JSON.parse(responseText) : {};
+    } catch {
+      responseData = { message: responseText };
+    }
+
+    if (!kncciResponse.ok) {
+      console.error("[Registration] KNCCI proxy error:", kncciResponse.status, responseData);
+      return res.status(kncciResponse.status).json(
+        typeof responseData === "object" && responseData !== null && "error" in (responseData as object)
+          ? responseData
+          : { error: "Registration service error", details: responseData }
+      );
+    }
+
+    // Store locally for backup/audit
+    await storage.createRegistrationPayload(payload);
+
+    res.status(kncciResponse.status).json(
+      typeof responseData === "object" && responseData !== null ? responseData : { success: true }
+    );
+  } catch (error) {
+    console.error("Error in /api/registration:", error);
+    res.status(500).json({ error: "Failed to create registration" });
   }
 });
 

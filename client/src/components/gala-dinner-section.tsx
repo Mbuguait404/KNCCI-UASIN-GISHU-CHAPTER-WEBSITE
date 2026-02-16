@@ -6,6 +6,7 @@ import {
   Tag,
 } from "lucide-react";
 import { staticGalaDinner } from "@/data/static-data";
+import { useRegistration } from "@/contexts/registration-context";
 
 function formatPrice(currency: string, amount: number) {
   return `${currency} ${amount.toLocaleString()}`;
@@ -13,6 +14,7 @@ function formatPrice(currency: string, amount: number) {
 
 export function GalaDinnerSection() {
   const gala = staticGalaDinner;
+  const { openRegistration } = useRegistration();
 
   return (
     <section
@@ -45,8 +47,17 @@ export function GalaDinnerSection() {
             </p>
             <div className="max-w-sm mx-auto">
               <Card
-                className="relative overflow-hidden border-2 border-primary/50 bg-primary/5 hover:border-primary hover-elevate transition-colors"
+                className="relative overflow-hidden border-2 border-primary/50 bg-primary/5 hover:border-primary hover-elevate transition-colors cursor-pointer"
                 data-testid="card-gala-ticket"
+                onClick={openRegistration}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    openRegistration();
+                  }
+                }}
               >
                 <div className="p-6 text-center">
                   <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-primary/20 mb-4">

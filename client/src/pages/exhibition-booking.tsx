@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Navigation } from "@/components/navigation";
 import { Footer } from "@/components/footer";
 import { MemberSearch, type Member } from "@/components/member-search";
-import { ArrowLeft, Building2, Users, Check, Lock, Tag, CreditCard, Smartphone, Copy, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Building2, Users, Check, Lock, Tag, CreditCard, Smartphone, Copy, CheckCircle2, UserPlus } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { SEOHead } from "@/components/seo/seo-head";
@@ -41,6 +41,10 @@ export default function ExhibitionBookingPage() {
   });
 
   const [registrationMode, setRegistrationMode] = useState<"member" | "non-member" | null>(null);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -603,24 +607,35 @@ export default function ExhibitionBookingPage() {
 
                             {/* Non-Member Notice - Only shown when non-member mode selected */}
                             {registrationMode === "non-member" && (
-                              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                              <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
                                 <div className="flex items-center justify-between mb-2">
                                   <div className="flex items-center gap-2">
                                     <Users className="h-5 w-5 text-amber-600" />
-                                    <span className="font-medium text-amber-800">Non-Member Registration</span>
+                                    <span className="font-medium text-amber-800 dark:text-amber-200">Non-Member Registration</span>
                                   </div>
                                   <button
                                     type="button"
                                     onClick={() => setRegistrationMode(null)}
-                                    className="text-sm text-amber-700 hover:underline"
+                                    className="text-sm text-amber-700 dark:text-amber-300 hover:underline"
                                   >
                                     Change registration type
                                   </button>
                                 </div>
-                                <p className="text-sm text-amber-700">
+                                <p className="text-sm text-amber-700 dark:text-amber-300 mb-4">
                                   You are registering as a non-member. The rate is KES 40,000 per booth.
-                                  Consider becoming a KNCCI member for discounted rates on future events.
+                                  Consider becoming a KNCCI member to save KES 10,000 per booth on this and future events.
                                 </p>
+                                <Link href="/membership">
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    className="border-amber-400 text-amber-800 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/50"
+                                  >
+                                    <UserPlus className="h-4 w-4 mr-2" />
+                                    Become a KNCCI Member
+                                  </Button>
+                                </Link>
                               </div>
                             )}
 
@@ -836,6 +851,32 @@ export default function ExhibitionBookingPage() {
                           </ul>
                         </div>
                       </div>
+                    </Card>
+
+                    {/* KNCCI Membership CTA - especially relevant for non-members */}
+                    <Card className={`p-6 border-2 ${!formData.isMember ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800" : "bg-muted/50 border-border"}`}>
+                      <div className="flex items-center gap-2 mb-3">
+                        <UserPlus className={`h-5 w-5 ${!formData.isMember ? "text-green-600" : "text-primary"}`} />
+                        <h3 className={`font-bold text-lg ${!formData.isMember ? "text-green-800 dark:text-green-200" : "text-foreground"}`}>
+                          {formData.isMember ? "KNCCI Member Benefits" : "Save KES 10,000 per Booth"}
+                        </h3>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        {formData.isMember
+                          ? "You're enjoying member rates. Thank you for being part of KNCCI!"
+                          : "Become a KNCCI member to get the discounted rate of KES 30,000 per booth—that's KES 10,000 in savings."}
+                      </p>
+                      {!formData.isMember && (
+                        <Link href="/membership">
+                          <Button
+                            size="sm"
+                            className="w-full bg-green-600 hover:bg-green-700 text-white"
+                          >
+                            <UserPlus className="h-4 w-4 mr-2" />
+                            Become a KNCCI Member
+                          </Button>
+                        </Link>
+                      )}
                     </Card>
 
                     <Card className="p-6 bg-gradient-to-br from-primary/5 to-secondary/5 border-2 border-primary/20">
