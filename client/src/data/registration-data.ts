@@ -1,5 +1,5 @@
 // Hardcoded registration data - no backend fetching
-// Two ticket types: Delegate Registration (free) and Gala Night (paid)
+// Two ticket types: Delegate Registration (free) and Gala Dinner (paid)
 
 export const REGISTRATION_EVENT = {
   id: "6982fa650137a4e5f55a0b86",
@@ -24,8 +24,8 @@ export const HARDCODED_TICKET_TYPES: HardcodedTicketType[] = [
   },
   {
     id: "tt_vip_premium",
-    name: "Gala Night",
-    description: "Gala dinner ticket – exclusive evening access",
+    name: "Gala Dinner",
+    description: "Ticket for the gala dinner held after the summit",
     price: 1500,
     currency: "KES",
   },

@@ -22,11 +22,11 @@ export const staticEvent: Event = {
   tagline: "Days of Strategic Dialogue",
   stats: {
     visitors: "10,000+",
-    exhibitors: "200+",
-    delegates: "700+",
-    participatingNations: "10+",
+    exhibitors: "500",
+    delegates: "1000+",
+    participatingNations: "50",
     speakers: "50+",
-    sessions: "30+",
+    sessions: "50+",
   },
 };
 
@@ -236,6 +236,11 @@ export const staticTestimonials: Testimonial[] = [
 ];
 
 // Gala Dinner data
+export interface GalaDinnerPricingTier {
+  label: string;
+  price: number;
+}
+
 export interface GalaDinner {
   title: string;
   subtitle: string;
@@ -247,6 +252,7 @@ export interface GalaDinner {
   dressCode: string;
   priceNonMember: number;
   priceMember: number;
+  pricingTiers: GalaDinnerPricingTier[];
   currency: string;
   highlights: string[];
   included: string[];
@@ -263,6 +269,10 @@ export const staticGalaDinner: GalaDinner = {
   dressCode: "Black tie / Business formal",
   priceNonMember: 1500,
   priceMember: 1500,
+  pricingTiers: [
+    { label: "Early Bird", price: 1500 },
+    { label: "Standard", price: 3000 },
+  ],
   currency: "KES",
   highlights: [
     "Three-course dinner with premium catering",

@@ -21,69 +21,7 @@ import { Helmet } from "react-helmet-async";
 import { RegistrationDialog } from "@/components/registration-dialog";
 import { useRegistration } from "@/contexts/registration-context";
 import { staticEvent } from "@/data/static-data";
-
-const partnershipPackages = [
-  {
-    tier: "Platinum",
-    value: "2,000,000",
-    presentation: "45-Min",
-    exhibitionSpace: "12×3",
-    dinnerCards: "5 (Corp Table)",
-    branding: "Unlimited",
-    color: "from-slate-300 to-slate-100",
-    textColor: "text-slate-700 dark:text-slate-800",
-    description:
-      "Our flagship partnership package offers maximum visibility and engagement. Enjoy a 45-minute presentation slot, the largest exhibition space (12×3m), a corporate dinner table for 10, and unlimited branding opportunities across the venue. Ideal for enterprises seeking premium positioning at the summit.",
-  },
-  {
-    tier: "Gold",
-    value: "1,000,000",
-    presentation: "25-Min",
-    exhibitionSpace: "9×3",
-    dinnerCards: "3 (Corp Table)",
-    branding: "Limited",
-    color: "from-amber-300 to-amber-100",
-    textColor: "text-amber-700 dark:text-amber-800",
-    description:
-      "A strong partnership tier with substantial benefits. Includes a 25-minute presentation, 9×3m exhibition space, corporate dinner table for 8, and limited branding. Perfect for established businesses looking to connect with key decision-makers.",
-  },
-  {
-    tier: "Silver",
-    value: "500,000",
-    presentation: "10-Min",
-    exhibitionSpace: "6×3",
-    dinnerCards: "1 (Corp Table)",
-    branding: "Limited",
-    color: "from-gray-300 to-gray-100",
-    textColor: "text-gray-700 dark:text-gray-800",
-    description:
-      "A balanced package for growing businesses. Features a 10-minute presentation, 6×3m exhibition booth, one corporate dinner seat, and limited branding. Includes KNCCI membership and access to high-level networking.",
-  },
-  {
-    tier: "Bronze",
-    value: "250,000",
-    presentation: "5-Min",
-    exhibitionSpace: "3×3",
-    dinnerCards: "5 Cards",
-    branding: "Minimum",
-    color: "from-orange-300 to-orange-100",
-    textColor: "text-orange-700 dark:text-orange-800",
-    description:
-      "An accessible entry point for SMEs. Includes a 5-minute presentation, 3×3m exhibition space, 5 dinner cards, and minimum branding. KNCCI membership and networking opportunities included.",
-  },
-  {
-    tier: "Brass",
-    value: "100,000",
-    presentation: "N/A",
-    exhibitionSpace: "3×3",
-    dinnerCards: "3 Cards",
-    branding: "Minimum",
-    color: "from-yellow-300 to-yellow-100",
-    textColor: "text-yellow-700 dark:text-yellow-800",
-    description:
-      "Our most affordable partnership option. Includes a 3×3m exhibition booth, 3 dinner cards, and minimum branding. Ideal for small businesses and startups looking to establish presence at the summit.",
-  },
-];
+import { partnershipPackages } from "@/data/partnership-data";
 
 const benefits = [
   {
@@ -334,7 +272,7 @@ export default function Partnership() {
               })()}
 
               {/* Sponsor sign-up / request form */}
-              <div id="sponsor-form" ref={formRef} className="max-w-2xl mx-auto mb-12">
+              <div id="sponsor-form" ref={formRef} className="mb-12">
                 <div className="text-center mb-8">
                   <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
                     Request to become a sponsor
@@ -348,6 +286,7 @@ export default function Partnership() {
                     </p>
                   )}
                 </div>
+                <div className="grid lg:grid-cols-2 gap-8 items-start">
                 <Card className="p-6 sm:p-8 border border-border">
                   <Form {...sponsorForm}>
                     <form onSubmit={sponsorForm.handleSubmit(onSponsorSubmit)} className="space-y-4">
@@ -474,7 +413,7 @@ export default function Partnership() {
                 </Card>
 
                 {/* Payment Information */}
-                <Card className="mt-8 p-6 sm:p-8 border border-border bg-gradient-to-br from-primary/5 to-secondary/5 border-primary/20">
+                <Card className="p-6 sm:p-8 border border-border bg-gradient-to-br from-primary/5 to-secondary/5 border-primary/20 lg:sticky lg:top-24">
                   <div className="flex items-center gap-2 mb-4">
                     <CreditCard className="h-5 w-5 text-primary" />
                     <h3 className="font-bold text-lg text-primary">Payment Information</h3>
@@ -559,6 +498,7 @@ export default function Partnership() {
                     </div>
                   </div>
                 </Card>
+                </div>
               </div>
             </div>
           </div>

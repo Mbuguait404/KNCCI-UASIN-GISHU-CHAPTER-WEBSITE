@@ -69,9 +69,9 @@ export function TicketSelection({ eventId, quantities, onQuantitiesChange, onPro
     const currency = ticketTypes[0]?.currency || 'KES';
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
             <motion.div 
-                className="text-center space-y-2 mb-8"
+                className="text-center space-y-2 mb-6"
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4 }}
@@ -80,7 +80,10 @@ export function TicketSelection({ eventId, quantities, onQuantitiesChange, onPro
                 <p className="text-muted-foreground">Choose the tickets that best suit your participation needs.</p>
             </motion.div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className={cn(
+                "grid gap-4 sm:gap-6",
+                ticketTypes.length === 2 ? "grid-cols-2" : "md:grid-cols-2 lg:grid-cols-3"
+            )}>
                 {ticketTypes.map((ticket, index) => {
                     const quantity = quantities[ticket.id] || 0;
                     const isSelected = quantity > 0;
@@ -181,42 +184,14 @@ export function TicketSelection({ eventId, quantities, onQuantitiesChange, onPro
                                             )}
                                         </div>
 
-                                        {/* Benefits */}
+                                        {/* Benefits - Gala Dinner is dinner-only; Delegate Registration includes full summit */}
                                         <div className="space-y-2 text-sm">
-                                            <motion.div 
-                                                className="flex items-center gap-2"
-                                                initial={{ opacity: 0, x: -10 }}
-                                                animate={{ opacity: 1, x: 0 }}
-                                                transition={{ delay: index * 0.05 + 0.2 }}
-                                            >
-                                                <motion.div 
-                                                    className="w-4 h-4 rounded-full bg-secondary/20 flex items-center justify-center flex-shrink-0"
-                                                    whileHover={{ scale: 1.2 }}
-                                                >
-                                                    <Check className="w-2.5 h-2.5 text-secondary" />
-                                                </motion.div>
-                                                <span className="text-muted-foreground">Full Event Access</span>
-                                            </motion.div>
-                                            <motion.div 
-                                                className="flex items-center gap-2"
-                                                initial={{ opacity: 0, x: -10 }}
-                                                animate={{ opacity: 1, x: 0 }}
-                                                transition={{ delay: index * 0.05 + 0.3 }}
-                                            >
-                                                <motion.div 
-                                                    className="w-4 h-4 rounded-full bg-secondary/20 flex items-center justify-center flex-shrink-0"
-                                                    whileHover={{ scale: 1.2 }}
-                                                >
-                                                    <Check className="w-2.5 h-2.5 text-secondary" />
-                                                </motion.div>
-                                                <span className="text-muted-foreground">Networking Sessions</span>
-                                            </motion.div>
-                                            {ticket.price > 0 && (
+                                            {ticket.id === "tt_vip_premium" ? (
                                                 <motion.div 
                                                     className="flex items-center gap-2"
                                                     initial={{ opacity: 0, x: -10 }}
                                                     animate={{ opacity: 1, x: 0 }}
-                                                    transition={{ delay: index * 0.05 + 0.4 }}
+                                                    transition={{ delay: index * 0.05 + 0.2 }}
                                                 >
                                                     <motion.div 
                                                         className="w-4 h-4 rounded-full bg-secondary/20 flex items-center justify-center flex-shrink-0"
@@ -224,8 +199,39 @@ export function TicketSelection({ eventId, quantities, onQuantitiesChange, onPro
                                                     >
                                                         <Check className="w-2.5 h-2.5 text-secondary" />
                                                     </motion.div>
-                                                    <span className="text-muted-foreground">Gala Dinner Access</span>
+                                                    <span className="text-muted-foreground">Post-summit gala dinner</span>
                                                 </motion.div>
+                                            ) : (
+                                                <>
+                                                    <motion.div 
+                                                        className="flex items-center gap-2"
+                                                        initial={{ opacity: 0, x: -10 }}
+                                                        animate={{ opacity: 1, x: 0 }}
+                                                        transition={{ delay: index * 0.05 + 0.2 }}
+                                                    >
+                                                        <motion.div 
+                                                            className="w-4 h-4 rounded-full bg-secondary/20 flex items-center justify-center flex-shrink-0"
+                                                            whileHover={{ scale: 1.2 }}
+                                                        >
+                                                            <Check className="w-2.5 h-2.5 text-secondary" />
+                                                        </motion.div>
+                                                        <span className="text-muted-foreground">Full Event Access</span>
+                                                    </motion.div>
+                                                    <motion.div 
+                                                        className="flex items-center gap-2"
+                                                        initial={{ opacity: 0, x: -10 }}
+                                                        animate={{ opacity: 1, x: 0 }}
+                                                        transition={{ delay: index * 0.05 + 0.3 }}
+                                                    >
+                                                        <motion.div 
+                                                            className="w-4 h-4 rounded-full bg-secondary/20 flex items-center justify-center flex-shrink-0"
+                                                            whileHover={{ scale: 1.2 }}
+                                                        >
+                                                            <Check className="w-2.5 h-2.5 text-secondary" />
+                                                        </motion.div>
+                                                        <span className="text-muted-foreground">Networking Sessions</span>
+                                                    </motion.div>
+                                                </>
                                             )}
                                         </div>
 
@@ -310,15 +316,18 @@ export function TicketSelection({ eventId, quantities, onQuantitiesChange, onPro
                 })}
             </div>
 
-            {/* Total Summary */}
+            {/* Total Summary - sticky footer */}
             <motion.div 
-                className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-border pt-6"
+                className="sticky bottom-0 mt-6 sm:mt-8 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-border pt-6 bg-background/95 backdrop-blur-sm z-10 -mx-1 px-1"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3, duration: 0.4 }}
             >
                 <div className="flex flex-col items-center sm:items-start text-sm">
                     <span className="text-muted-foreground font-medium">Total Summary</span>
+                    {totalTickets === 0 && (
+                        <span className="text-xs text-muted-foreground mt-0.5">Select at least one ticket to continue</span>
+                    )}
                     <div className="flex items-baseline gap-2">
                         <motion.span 
                             className="text-2xl font-bold text-foreground"
