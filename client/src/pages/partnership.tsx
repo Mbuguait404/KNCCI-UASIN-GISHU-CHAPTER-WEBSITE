@@ -334,7 +334,7 @@ export default function Partnership() {
               })()}
 
               {/* Sponsor sign-up / request form */}
-              <div id="sponsor-form" ref={formRef} className="max-w-2xl mx-auto mb-12">
+              <div id="sponsor-form" ref={formRef} className="mb-12">
                 <div className="text-center mb-8">
                   <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
                     Request to become a sponsor
@@ -348,6 +348,7 @@ export default function Partnership() {
                     </p>
                   )}
                 </div>
+                <div className="grid lg:grid-cols-2 gap-8 items-start">
                 <Card className="p-6 sm:p-8 border border-border">
                   <Form {...sponsorForm}>
                     <form onSubmit={sponsorForm.handleSubmit(onSponsorSubmit)} className="space-y-4">
@@ -474,7 +475,7 @@ export default function Partnership() {
                 </Card>
 
                 {/* Payment Information */}
-                <Card className="mt-8 p-6 sm:p-8 border border-border bg-gradient-to-br from-primary/5 to-secondary/5 border-primary/20">
+                <Card className="p-6 sm:p-8 border border-border bg-gradient-to-br from-primary/5 to-secondary/5 border-primary/20 lg:sticky lg:top-24">
                   <div className="flex items-center gap-2 mb-4">
                     <CreditCard className="h-5 w-5 text-primary" />
                     <h3 className="font-bold text-lg text-primary">Payment Information</h3>
@@ -559,6 +560,7 @@ export default function Partnership() {
                     </div>
                   </div>
                 </Card>
+                </div>
               </div>
             </div>
           </div>

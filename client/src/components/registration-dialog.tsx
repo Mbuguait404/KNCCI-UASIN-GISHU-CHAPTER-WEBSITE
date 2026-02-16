@@ -348,9 +348,9 @@ export function RegistrationDialog({ isOpen, onOpenChange, event }: Registration
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[900px] p-0 overflow-hidden gap-0 bg-background w-[95vw]">
+            <DialogContent className="sm:max-w-[900px] p-0 overflow-hidden gap-0 bg-background w-[95vw] max-h-[90vh] sm:max-h-[85vh]">
                 <motion.div 
-                    className="p-3 sm:p-4 border-b border-border bg-card"
+                    className="p-3 sm:p-4 border-b border-border bg-muted/30"
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, ease: "easeOut" }}
@@ -419,7 +419,7 @@ export function RegistrationDialog({ isOpen, onOpenChange, event }: Registration
                                             <motion.div
                                                 className={cn(
                                                     "w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-colors duration-300 flex-shrink-0",
-                                                    isActive && "text-primary-foreground shadow-lg shadow-primary/20",
+                                                    isActive && "text-primary-foreground shadow-lg shadow-primary/25 ring-2 ring-primary/30",
                                                     isCompleted && "text-secondary-foreground",
                                                     isPending && "text-muted-foreground border border-border"
                                                 )}
@@ -484,7 +484,7 @@ export function RegistrationDialog({ isOpen, onOpenChange, event }: Registration
                     </motion.div>
                 </motion.div>
 
-                <div className="p-4 sm:p-6 bg-background max-h-[60vh] overflow-y-auto overflow-x-hidden">
+                <div className="p-4 sm:p-6 bg-background max-h-[75vh] overflow-y-auto overflow-x-hidden">
                     <AnimatePresence mode="wait" custom={direction}>
                         {step === "tickets" && (
                             <motion.div
