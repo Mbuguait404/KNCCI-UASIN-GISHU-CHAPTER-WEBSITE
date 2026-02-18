@@ -2,15 +2,60 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useTheme } from "@/components/theme-provider";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { useRegistration } from "@/contexts/registration-context";
-import { Menu, X, Sun, Moon } from "lucide-react";
+import { Menu, Moon, Sun, ChevronDown } from "lucide-react";
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+  navigationMenuTriggerStyle,
+} from "@/components/ui/navigation-menu";
+import { cn } from "@/lib/utils";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
-const navLinks = [
-  { label: "Home", href: "#home" },
-  { label: "Speakers", href: "#speakers" },
-  { label: "Program", href: "#program" },
-  { label: "Partners", href: "#partners" },
+interface NavItem {
+  label: string;
+  href?: string;
+  children?: { label: string; href: string; description?: string }[];
+}
+
+const navItems: NavItem[] = [
+  { label: "Home", href: "/" },
+  {
+    label: "About Us",
+    children: [
+      { label: "About", href: "/about", description: "Learn about our mission and vision." },
+      { label: "Who We Are", href: "/about#who-we-are", description: "Membership, Governance, and Partnerships." },
+      { label: "Chairman's Word", href: "/about#chairman-message", description: "A message from Willy K. Kenei." },
+      { label: "Board of Directors", href: "/board", description: "Meet our leadership team." },
+    ],
+  },
+  { label: "Our Work", href: "/work" },
+  { label: "Events", href: "/events" },
+  {
+    label: "Media",
+    children: [
+      { label: "Blog", href: "/blog", description: "Latest news and updates." },
+      { label: "Gallery", href: "/gallery", description: "Photos from our events." },
+    ],
+  },
+  {
+    label: "Marketplace",
+    children: [
+      { label: "Marketplace", href: "/marketplace", description: "Discover local products and services." },
+      { label: "Member Directory", href: "/member-directory", description: "Browse and connect with verified members." },
+    ],
+  },
+  { label: "Contact", href: "/contact" },
 ];
 
 export function Navigation() {
@@ -19,6 +64,7 @@ export function Navigation() {
   const { theme, toggleTheme } = useTheme();
   const [location] = useLocation();
   const isHomePage = location === "/";
+  // preserving context usage just in case, primarily for mobile or if needed later
   const { openRegistration } = useRegistration();
 
   useEffect(() => {
@@ -29,212 +75,220 @@ export function Navigation() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const scrollToSection = (href: string) => {
-    setMobileOpen(false);
-    if (!isHomePage && href.startsWith("#")) {
-      // If not on home page, navigate to home first, then scroll
-      window.location.href = `/${href}`;
-      return;
-    }
-    const element = document.querySelector(href);
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth" });
-    }
-  };
-
-  const handleNavClick = (href: string) => {
-    if (isHomePage) {
-      scrollToSection(href);
-    } else {
-      window.location.href = `/${href}`;
-    }
-  };
+  const navTriggerClass = (isActive: boolean) => cn(
+    navigationMenuTriggerStyle(),
+    "bg-transparent hover:bg-white/10 focus:bg-white/10 transition-colors cursor-pointer",
+    isScrolled || !isHomePage
+      ? "text-foreground hover:text-foreground/80 focus:text-foreground/80 data-[active]:bg-primary/10 data-[state=open]:bg-primary/10"
+      : "text-white hover:text-white/80 focus:text-white/80 hover:bg-white/10 data-[active]:bg-white/20 data-[state=open]:bg-white/20"
+  );
 
   return (
     <nav
       data-testid="navigation-bar"
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled
-          ? "pt-4 pb-2 bg-background/80 backdrop-blur-xl border-b border-border/50 shadow-sm"
-          : isHomePage
-            ? "pt-6 pb-4 bg-black/40 backdrop-blur-md border-b border-white/10"
-            : "pt-6 pb-4 bg-transparent"
-      }`}
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled
+        ? "pt-4 pb-2 bg-background/80 backdrop-blur-xl border-b border-border/50 shadow-sm"
+        : isHomePage
+          ? "pt-6 pb-4 bg-black/40 backdrop-blur-md border-b border-white/10"
+          : "pt-6 pb-4 bg-transparent"
+        }`}
     >
-      <div className="max-w-6xl mx-auto px-4 w-full flex items-center justify-between gap-4">
-        <a
-          href="/"
-          onClick={(e) => {
-            e.preventDefault();
-            if (isHomePage) {
-              scrollToSection("#home");
-            } else {
-              window.location.href = "/";
-            }
-          }}
-          className={`flex items-center gap-3 rounded-lg px-2 py-1.5 transition-all duration-300 ${
-            isScrolled || !isHomePage ? "bg-transparent" : "bg-white/10 backdrop-blur-sm"
-          }`}
-          data-testid="link-logo"
-        >
-          {/* Chapter Logo */}
-          <img 
-            src="https://solby.sfo3.digitaloceanspaces.com/1770900740026-kncci_logo-removebg-preview.png" 
-            alt="KNCCI Uasin Gishu Chapter" 
-            className={`h-12 sm:h-16 w-auto object-contain transition-all duration-300 ${
-              isScrolled || !isHomePage
-                ? "drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]"
-                : "drop-shadow-[0_0_2px_rgba(255,255,255,0.9)] drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]"
-            }`}
-            width={220}
-            height={64}
-            loading="eager"
-            fetchPriority="high"
-          />
-          {/* Divider */}
-          <div className={`h-8 sm:h-10 w-px mx-1 transition-colors duration-300 ${
-            isScrolled ? "bg-gray-400" : "bg-white/40"
-          }`} />
-          {/* County Logo */}
-          <img 
-            src="/county-removebg-preview.png" 
-            alt="Uasin Gishu County" 
-            className={`h-12 sm:h-16 w-auto object-contain transition-all duration-300 ${
-              isScrolled || !isHomePage
-                ? "drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]"
-                : "drop-shadow-[0_0_2px_rgba(255,255,255,0.9)] drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]"
-            }`}
-            width={220}
-            height={64}
-            loading="eager"
-            fetchPriority="high"
-          />
-        </a>
-
-        <div className="hidden lg:flex items-center gap-1">
-          {navLinks.map((link) => (
-            <button
-              key={link.href}
-              onClick={() => handleNavClick(link.href)}
-              className={`px-3 py-2 text-sm font-medium transition-colors rounded-md hover-elevate ${
-                isScrolled || !isHomePage
-                  ? "text-foreground/80 hover:text-foreground"
-                  : "text-white/90 hover:text-white"
+      <div className="max-w-7xl mx-auto px-4 w-full flex items-center justify-between gap-4">
+        {/* Logo */}
+        <Link href="/">
+          <a
+            className={`flex items-center gap-3 rounded-lg px-2 py-1.5 transition-all duration-300 ${isScrolled || !isHomePage ? "bg-transparent" : "bg-white/10 backdrop-blur-sm"
               }`}
-              data-testid={`link-nav-${link.label.toLowerCase()}`}
-            >
-              {link.label}
-            </button>
-          ))}
+            data-testid="link-logo"
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          >
+            <img
+              src="https://solby.sfo3.digitaloceanspaces.com/1770900740026-kncci_logo-removebg-preview.png"
+              alt="KNCCI Logo"
+              className={`h-12 sm:h-16 w-auto object-contain transition-all duration-300 ${isScrolled || !isHomePage
+                ? "drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]"
+                : "drop-shadow-[0_0_2px_rgba(255,255,255,0.9)] drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]"
+                }`}
+              width={220}
+              height={64}
+            />
+            <div className={`h-8 sm:h-10 w-px mx-1 transition-colors duration-300 ${isScrolled ? "bg-gray-400" : "bg-white/40"
+              }`} />
+          </a>
+        </Link>
+
+        {/* Desktop Navigation */}
+        <div className="hidden lg:flex items-center">
+          <NavigationMenu>
+            <NavigationMenuList className="gap-1">
+              {navItems.map((item) => (
+                <NavigationMenuItem key={item.label}>
+                  {item.children ? (
+                    <>
+                      <NavigationMenuTrigger className={navTriggerClass(false)}>
+                        {item.label}
+                      </NavigationMenuTrigger>
+                      <NavigationMenuContent>
+                        <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] bg-popover">
+                          {item.children.map((child) => (
+                            <li key={child.label}>
+                              <NavigationMenuLink asChild>
+                                <Link href={child.href}>
+                                  <a
+                                    className={cn(
+                                      "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                                    )}
+                                  >
+                                    <div className="text-sm font-medium leading-none text-foreground">{child.label}</div>
+                                    <p className="line-clamp-2 text-sm leading-snug text-muted-foreground mt-1">
+                                      {child.description}
+                                    </p>
+                                  </a>
+                                </Link>
+                              </NavigationMenuLink>
+                            </li>
+                          ))}
+                        </ul>
+                      </NavigationMenuContent>
+                    </>
+                  ) : (
+                    <Link href={item.href!}>
+                      <NavigationMenuLink className={navTriggerClass(location === item.href)}>
+                        {item.label}
+                      </NavigationMenuLink>
+                    </Link>
+                  )}
+                </NavigationMenuItem>
+              ))}
+            </NavigationMenuList>
+          </NavigationMenu>
         </div>
 
-        <div className="flex items-center gap-2">
-          <a href="/membership" className="hidden sm:inline-flex">
+        {/* Desktop Actions */}
+        <div className="hidden lg:flex items-center gap-3">
+          <Link href="/membership">
             <Button
               variant="outline"
               size="sm"
-              className={`font-medium ${
+              className={cn(
+                "hidden xl:inline-flex font-medium transition-colors",
                 isScrolled || !isHomePage
                   ? "border-border text-foreground hover:bg-accent"
                   : "border-white/30 text-white hover:bg-white/10"
-              }`}
-              data-testid="button-become-member"
+              )}
             >
-              Become a KNCCI Member
+              Be a Member
             </Button>
-          </a>
+          </Link>
+
+          <Link href="/login">
+            <Button
+              size="sm"
+              className={cn(
+                "font-medium transition-colors",
+                isScrolled || !isHomePage
+                  ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                  : "bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 border border-white/20"
+              )}
+            >
+              Login
+            </Button>
+          </Link>
+
           <Button
             size="icon"
             variant="ghost"
             onClick={toggleTheme}
-            className={`hidden sm:flex ${
-              isScrolled || !isHomePage
-                ? "text-foreground"
-                : "text-white hover:bg-white/20"
-            }`}
-            data-testid="button-theme-toggle"
+            className={cn(
+              "transition-colors",
+              isScrolled || !isHomePage ? "text-foreground hover:bg-accent" : "text-white hover:bg-white/20"
+            )}
           >
             {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
           </Button>
+        </div>
 
+        {/* Mobile Menu Toggle */}
+        <div className="flex lg:hidden items-center gap-2">
           <Button
-            onClick={() => {
-              openRegistration();
-              setMobileOpen(false);
-            }}
-            className={`hidden sm:flex ${
-              isScrolled || !isHomePage
-                ? "bg-primary text-primary-foreground"
-                : "bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 border border-white/20"
-            }`}
-            data-testid="button-register-nav"
+            size="icon"
+            variant="ghost"
+            onClick={toggleTheme}
+            className={cn(
+              isScrolled || !isHomePage ? "text-foreground hover:bg-accent" : "text-white hover:bg-white/20"
+            )}
           >
-            Register Now
+            {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
           </Button>
-
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
               <Button
                 size="icon"
                 variant="ghost"
-                className={`lg:hidden ${
-                  isScrolled || !isHomePage
-                    ? "text-foreground"
-                    : "text-white hover:bg-white/20"
-                }`}
-                data-testid="button-mobile-menu"
+                className={cn(
+                  isScrolled || !isHomePage ? "text-foreground hover:bg-accent" : "text-white hover:bg-white/20"
+                )}
               >
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-80">
+            <SheetContent side="right" className="w-[300px] sm:w-[400px] overflow-y-auto">
               <div className="flex flex-col gap-4 mt-8">
-                {navLinks.map((link) => (
-                  <button
-                    key={link.href}
-                    onClick={() => handleNavClick(link.href)}
-                    className="text-left px-4 py-3 text-lg font-medium text-foreground hover:bg-accent rounded-md transition-colors"
-                    data-testid={`link-mobile-${link.label.toLowerCase()}`}
-                  >
-                    {link.label}
-                  </button>
+                {navItems.map((item, index) => (
+                  <div key={index}>
+                    {item.children ? (
+                      <Accordion type="single" collapsible className="w-full border-none">
+                        <AccordionItem value={`item-${index}`} className="border-none">
+                          <AccordionTrigger className="py-2 text-lg font-medium hover:no-underline text-foreground">
+                            {item.label}
+                          </AccordionTrigger>
+                          <AccordionContent className="flex flex-col gap-2 pl-4">
+                            {item.children.map((child) => (
+                              <Link key={child.href} href={child.href}>
+                                <a
+                                  className="text-base text-muted-foreground hover:text-primary py-2 block transition-colors"
+                                  onClick={() => setMobileOpen(false)}
+                                >
+                                  {child.label}
+                                </a>
+                              </Link>
+                            ))}
+                          </AccordionContent>
+                        </AccordionItem>
+                      </Accordion>
+                    ) : (
+                      <Link href={item.href!}>
+                        <a
+                          className="block py-2 text-lg font-medium hover:text-primary transition-colors text-foreground"
+                          onClick={() => setMobileOpen(false)}
+                        >
+                          {item.label}
+                        </a>
+                      </Link>
+                    )}
+                  </div>
                 ))}
+
                 <div className="border-t border-border my-4" />
-                <a href="/membership" onClick={() => setMobileOpen(false)}>
+
+                <Link href="/membership">
                   <Button
                     variant="outline"
-                    className="w-full"
-                    data-testid="button-become-member-mobile"
+                    className="w-full justify-start mt-2"
+                    onClick={() => setMobileOpen(false)}
                   >
-                    Become a KNCCI Member
+                    Be a Member
                   </Button>
-                </a>
-                <Button
-                  onClick={() => {
-                    openRegistration();
-                    setMobileOpen(false);
-                  }}
-                  className="w-full bg-primary text-primary-foreground"
-                  data-testid="button-register-mobile"
-                >
-                  Register Now
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={toggleTheme}
-                  className="w-full flex items-center gap-2"
-                  data-testid="button-theme-toggle-mobile"
-                >
-                  {theme === "light" ? (
-                    <>
-                      <Moon className="h-4 w-4" /> Dark Mode
-                    </>
-                  ) : (
-                    <>
-                      <Sun className="h-4 w-4" /> Light Mode
-                    </>
-                  )}
-                </Button>
+                </Link>
+
+                <Link href="/login">
+                  <Button
+                    className="w-full justify-start bg-primary text-primary-foreground mt-2"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    Login
+                  </Button>
+                </Link>
               </div>
             </SheetContent>
           </Sheet>

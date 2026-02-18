@@ -1,32 +1,32 @@
 // Static data - defined directly for client-side use
 // This eliminates the need for API calls for read-only data
-import type { Event, Speaker, Session, Partner, GalleryImage, Testimonial, Venue } from "@shared/schema";
+import type { Event, Speaker, Session, Partner, GalleryImage, Testimonial, Venue, BlogPost } from "@shared/schema";
 
 // Event data
 export const staticEvent: Event = {
   id: "6982fa650137a4e5f55a0b86",
-  name: "The Eldoret International Business Summit 2026",
-  subtitle: "Eldoret City: Gateway to Africa's Trade, Innovation and Economic Future",
-  description: "Eldoret is a thriving business hub in the North Rift and a key gateway to East and Central Africa. Following the success of the previous summit (which attracted over 10,000 attendees and 200+ exhibitors), the 2026 edition aims to unite key stakeholders to explore innovative strategies for sustainable business growth. The Eldoret International Business Summit 2026 is the flagship event organized by the Kenya National Chamber of Commerce and Industry (KNCCI) Uasin Gishu Chapter. This three-day summit brings together the nation's brightest minds in business, government, and civil society to drive economic growth and foster international partnerships. Join us in Eldoret as we explore Africa's trade and economic future.",
+  name: "KNCCI Uasin Gishu Chapter",
+  subtitle: "The Voice of Business and the Champion for Economic Transformation in Uasin Gishu County",
+  description: "The Kenya National Chamber of Commerce and Industry (KNCCI) Uasin Gishu Chapter is a vibrant and dynamic Business Membership Organization (BMO) that passionately champions the interests of the business community across various sectors. As one of the 47 chapters in Kenya, KNCCI Uasin Gishu Chapter stands out as a center of excellence supported by the Center for International Private Enterprise (CIPE). Notably, we were awarded as the best chapter in 2019 by the Kenya Business Awards.",
   date: "2026-04-23",
   endDate: "2026-04-25",
   location: "Eldoret City",
-  venue: "Rupaz mall Grounds",
+  venue: "Eldoret, Kenya",
   highlights: [
-    "Networking with 1000+ business leaders",
-    "200+ industry speakers",
-    "60+ sessions and workshops",
-    "Business exhibitions and trade fairs",
-    "Policy discussions and roundtables",
+    "Policy Advocacy & Business Reforms",
+    "Trade Promotion & Market Access",
+    "Business Networking & Partnerships",
+    "Capacity Building & Training",
+    "Economic Development Initiatives",
   ],
-  tagline: "Days of Strategic Dialogue",
+  tagline: "Empowering Businesses, Transforming Economies",
   stats: {
-    visitors: "10,000+",
-    exhibitors: "500",
-    delegates: "1000+",
-    participatingNations: "50",
+    visitors: "6,500+",
+    exhibitors: "47",
+    delegates: "20+",
+    participatingNations: "10+",
     speakers: "50+",
-    sessions: "10",
+    sessions: "100+",
   },
 };
 
@@ -311,3 +311,89 @@ export const staticVenue: Venue = {
     "Grand Empire Hotel Eldoret",
   ],
 };
+
+// Blog data
+export const staticBlogPosts: BlogPost[] = [
+  {
+    id: "1",
+    title: "Empowering SMEs: The Future of Trade in Uasin Gishu",
+    excerpt: "Discover how the KNCCI Uasin Gishu Chapter is leading initiatives to support small and medium enterprises in the region.",
+    content: `
+      <p>Small and Medium Enterprises (SMEs) are the backbone of the Kenyan economy, contributing significantly to GDP and employment. In Uasin Gishu County, the KNCCI Chapter has been at the forefront of creating an enabling environment for these businesses to thrive.</p>
+      
+      <h3>Key Initiatives</h3>
+      <p>Through policy advocacy and business reforms, we have worked closely with the County Government to streamline licensing processes and reduce the cost of doing business. Our recent membership forums have highlighted the need for digital transformation among SMEs.</p>
+      
+      <h3>Market Access</h3>
+      <p>One of our primary goals is to connect local producers with international markets. By organizing trade expos and business networking events, we provide a platform for SMEs to showcase their products to a global audience.</p>
+      
+      <p>As we look towards 2026, the chamber remains committed to its mission of empowering businesses and transforming the economy of Uasin Gishu.</p>
+    `,
+    author: "Willy K. Kenei",
+    date: "February 15, 2026",
+    imageUrl: "https://solby.sfo3.digitaloceanspaces.com/1769497085012-WhatsApp%20Image%202026-01-27%20at%2009.11.08.jpeg",
+    category: "Economy",
+    isFeatured: true
+  },
+  {
+    id: "2",
+    title: "Digital Transformation: A Gateway to Global Markets",
+    excerpt: "Learn how local businesses are leveraging technology to expand their reach and improve efficiency.",
+    content: `
+      <p>The digital age has brought about unprecedented opportunities for businesses to grow. From e-commerce platforms to digital marketing strategies, the tools available today are transforming how we trade.</p>
+      
+      <h3>The Shift to E-commerce</h3>
+      <p>More businesses in Eldoret are now adopting online sales channels. This shift has been accelerated by the global demand for Kenyan products and the convenience of digital payments like M-Pesa.</p>
+      
+      <h3>Capacity Building</h3>
+      <p>The chamber regularly hosts workshops on digital literacy and cybersecurity. These sessions are designed to equip business owners with the skills needed to navigate the digital landscape safely and effectively.</p>
+      
+      <p>Embracing technology is no longer optional; it is a necessity for any business looking to remain competitive in the modern market.</p>
+    `,
+    author: "Dr. Amina Wanjiku",
+    date: "February 10, 2026",
+    imageUrl: "https://solby.sfo3.digitaloceanspaces.com/1769497085219-WhatsApp%20Image%202026-01-27%20at%2009.11.03.jpeg",
+    category: "Technology",
+    isFeatured: true
+  },
+  {
+    id: "3",
+    title: "Sustainability in Agribusiness: Lessons from Eldoret",
+    excerpt: "Agriculture remains a key sector in Uasin Gishu. Explore the latest trends in sustainable farming and value addition.",
+    content: `
+      <p>Agriculture is the lifeblood of Uasin Gishu County. As the 'Breadbasket of Kenya,' our region plays a vital role in national food security. However, the sector faces challenges such as climate change and fluctuating market prices.</p>
+      
+      <h3>Value Addition</h3>
+      <p>Moving from subsistence farming to commercial agribusiness requires a focus on value addition. Processing raw products locally not only increases their value but also creates jobs for our youth.</p>
+      
+      <h3>Sustainable Practices</h3>
+      <p>We are encouraging farmers to adopt climate-smart agriculture techniques. This includes soil conservation, efficient water use, and the use of organic fertilizers to ensure long-term productivity.</p>
+      
+      <p>By investing in sustainable agribusiness, we are securing the future of our county and the prosperity of our people.</p>
+    `,
+    author: "Prof. David Kamau",
+    date: "February 5, 2026",
+    imageUrl: "https://solby.sfo3.digitaloceanspaces.com/1769687104798-WhatsApp%20Image%202026-01-27%20at%2009.11.09%20(2).jpeg",
+    category: "Agriculture"
+  },
+  {
+    id: "4",
+    title: "Women in Business: Breaking Barriers",
+    excerpt: "Celebrating the achievements of women entrepreneurs in Uasin Gishu and discussing the path forward.",
+    content: `
+      <p>Women-led businesses are a powerful force for change. In recent years, we have seen a significant increase in the number of women entering traditionally male-dominated sectors such as construction and logistics.</p>
+      
+      <h3>Overcoming Challenges</h3>
+      <p>Despite their success, women entrepreneurs still face unique challenges, including limited access to credit and cultural barriers. The KNCCI Women in Business committee is dedicated to addressing these issues through mentorship and advocacy.</p>
+      
+      <h3>Success Stories</h3>
+      <p>During our last regional conference, we featured several women who have built multi-million shilling enterprises from the ground up. Their stories serve as an inspiration to aspiring entrepreneurs across the county.</p>
+      
+      <p>Empowering women in business is not just a matter of equity; it is an economic imperative.</p>
+    `,
+    author: "Sarah Njeri",
+    date: "January 28, 2026",
+    imageUrl: "https://solby.sfo3.digitaloceanspaces.com/1769687104724-WhatsApp%20Image%202026-01-27%20at%2009.11.02%20(1).jpeg",
+    category: "Leadership"
+  }
+];

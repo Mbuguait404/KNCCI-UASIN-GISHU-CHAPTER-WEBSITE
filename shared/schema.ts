@@ -156,3 +156,36 @@ export const insertSponsorRequestSchema = z.object({
 });
 
 export type InsertSponsorRequest = z.infer<typeof insertSponsorRequestSchema>;
+
+
+export interface BlogPost {
+  id: string;
+  title: string;
+  excerpt: string;
+  content: string;
+  author: string;
+  date: string;
+  imageUrl: string;
+  category: string;
+  isFeatured?: boolean;
+}
+
+// Contact form submissions
+export interface ContactSubmission {
+  id: string;
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  submittedAt: string;
+}
+
+export const insertContactSubmissionSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Valid email is required"),
+  subject: z.string().min(1, "Subject is required"),
+  message: z.string().min(1, "Message is required"),
+});
+
+export type InsertContactSubmission = z.infer<typeof insertContactSubmissionSchema>;
+

@@ -14,7 +14,7 @@ const tierColors = {
 
 function PartnerLogo({ partner }: { partner: Partner }) {
   const initials = partner.name.split(" ").map(w => w[0]).join("").slice(0, 3);
-  
+
   return (
     <Card
       className="group p-6 border border-border bg-card hover-elevate flex items-center justify-center aspect-video"
@@ -59,14 +59,14 @@ export function PartnersSection() {
             Partnering for Success
           </h2>
           <p className="text-lg text-muted-foreground leading-relaxed">
-            We are grateful to our partners and sponsors whose support makes this 
+            We are grateful to our partners and sponsors whose support makes this
             event possible and drives Kenya's business community forward.
           </p>
         </div>
 
         <>
-            {/* Platinum Partners */}
-            {(() => {
+          {/* Platinum Partners */}
+          {/* {(() => {
               const tierPartners = partners.filter(p => p.tier === "platinum");
               if (tierPartners.length === 0) return null;
               return (
@@ -84,7 +84,7 @@ export function PartnersSection() {
             })()}
 
             {/* Gold Partners */}
-            {(() => {
+          {/* {(() => {
               const tierPartners = partners.filter(p => p.tier === "gold");
               if (tierPartners.length === 0) return null;
               return (
@@ -99,27 +99,27 @@ export function PartnersSection() {
                   </div>
                 </div>
               );
-            })()}
+            })()}  */}
 
-            {/* Silver and Bronze Partners - Combined Carousel */}
-            {(() => {
-              const silverPartners = partners.filter(p => p.tier === "silver");
-              const bronzePartners = partners.filter(p => p.tier === "bronze");
-              const combinedPartners = [...silverPartners, ...bronzePartners];
-              if (combinedPartners.length === 0) return null;
-              return (
-                <div className="mb-12" data-testid="tier-silver-bronze">
-                  <h3 className="text-center text-lg font-semibold text-muted-foreground mb-6 uppercase tracking-wider" data-testid="text-tier-label-silver-bronze">
-                    Silver and Bronze Partners
-                  </h3>
-                  <LogoCarousel 
-                    partners={combinedPartners} 
-                    tier="combined"
-                    columnCount={6}
-                  />
-                </div>
-              );
-            })()}
+          {/* Silver and Bronze Partners - Combined Carousel */}
+          {(() => {
+            const silverPartners = partners.filter(p => p.tier === "silver");
+            const bronzePartners = partners.filter(p => p.tier === "bronze");
+            const combinedPartners = [...silverPartners, ...bronzePartners];
+            if (combinedPartners.length === 0) return null;
+            return (
+              <div className="mb-12" data-testid="tier-silver-bronze">
+                {/* <h3 className="text-center text-lg font-semibold text-muted-foreground mb-6 uppercase tracking-wider" data-testid="text-tier-label-silver-bronze">
+                  Silver and Bronze Partners
+                </h3> */}
+                <LogoCarousel
+                  partners={combinedPartners}
+                  tier="combined"
+                  columnCount={6}
+                />
+              </div>
+            );
+          })()}
         </>
 
         <div className="text-center mt-12">
