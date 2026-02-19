@@ -27,15 +27,78 @@ import { SEOHead } from "@/components/seo/seo-head";
 import { Link, useLocation } from "wouter";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/services/auth-context";
-import { authService } from "@/lib/auth-service";
+import { businessService, BusinessData } from "@/services/business-service";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+    Form,
+    FormControl,
+    FormDescription,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { toast } from "@/hooks/use-toast";
 
 
 
 export default function ProfilePage() {
     const [, setLocation] = useLocation();
     const { user, logout, loading: authLoading } = useAuth();
-    const [business, setBusiness] = useState<any>(null);
+    const [business, setBusiness] = useState<BusinessData | null>(null);
     const [loading, setLoading] = useState(true);
+    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
+    const businessSchema = z.object({
+        name: z.string().min(2, "Business name must be at least 2 characters"),
+        category: z.string().min(2, "Category is required"),
+        email: z.string().email("Invalid email address"),
+        phone: z.string().min(10, "Phone number must be at least 10 characters"),
+        location: z.string().min(2, "Location is required"),
+        plan: z.enum(["Bronze", "Silver", "Gold"]),
+        website: z.string().url("Invalid website URL").optional().or(z.literal("")),
+        description: z.string().min(10, "Description must be at least 10 characters").optional().or(z.literal("")),
+        kra_pin: z.string().optional().or(z.literal("")),
+        company_reg_no: z.string().optional().or(z.literal("")),
+        business_permit: z.string().optional().or(z.literal("")),
+    });
+
+    const form = useForm<z.infer<typeof businessSchema>>({
+        resolver: zodResolver(businessSchema),
+        defaultValues: {
+            name: "",
+            category: "",
+            email: "",
+            phone: "",
+            location: "",
+            plan: "Bronze",
+            website: "",
+            description: "",
+            kra_pin: "",
+            company_reg_no: "",
+            business_permit: "",
+        },
+    });
 
     useEffect(() => {
         if (!authLoading && !user) {
@@ -45,9 +108,23 @@ export default function ProfilePage() {
 
         const fetchBusiness = async () => {
             try {
-                const response = await authService.getBusiness();
-                if (response.success) {
+                const response = await businessService.getMyBusiness();
+                if (response.success && response.data) {
                     setBusiness(response.data);
+                    // Reset form with fetched data
+                    form.reset({
+                        name: response.data.name || "",
+                        category: response.data.category || "",
+                        email: response.data.email || "",
+                        phone: response.data.phone || "",
+                        location: response.data.location || "",
+                        plan: response.data.plan || "Bronze",
+                        website: response.data.website || "",
+                        description: response.data.description || "",
+                        kra_pin: response.data.kra_pin || "",
+                        company_reg_no: response.data.company_reg_no || "",
+                        business_permit: response.data.business_permit || "",
+                    });
                 }
             } catch (error) {
                 console.error("Failed to fetch business:", error);
@@ -59,7 +136,33 @@ export default function ProfilePage() {
         if (user) {
             fetchBusiness();
         }
-    }, [user, authLoading, setLocation]);
+    }, [user, authLoading, setLocation, form]);
+
+    const onSubmit = async (data: z.infer<typeof businessSchema>) => {
+        try {
+            let response;
+            if (business?._id) {
+                response = await businessService.updateBusiness(data);
+            } else {
+                response = await businessService.createBusiness(data as BusinessData);
+            }
+
+            if (response.success) {
+                setBusiness(response.data);
+                toast({
+                    title: "Success",
+                    description: "Business profile updated successfully.",
+                });
+                setIsEditDialogOpen(false);
+            }
+        } catch (error: any) {
+            toast({
+                title: "Error",
+                description: error.response?.data?.message || "Failed to update business profile.",
+                variant: "destructive",
+            });
+        }
+    };
 
     if (authLoading || (loading && !business && user)) {
         return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
@@ -112,9 +215,209 @@ export default function ProfilePage() {
                                 </div>
 
                                 <div className="flex gap-3 mb-4">
-                                    <Button variant="outline" className="rounded-xl border-border hover:bg-muted font-bold">
-                                        <Settings className="w-4 h-4 mr-2" /> Edit Profile
-                                    </Button>
+                                    <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                                        <DialogTrigger asChild>
+                                            <Button variant="outline" className="rounded-xl border-border hover:bg-muted font-bold">
+                                                <Settings className="w-4 h-4 mr-2" /> Edit Profile
+                                            </Button>
+                                        </DialogTrigger>
+                                        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto rounded-3xl p-0 border-none shadow-2xl">
+                                            <div className="bg-primary/5 p-8 border-b border-primary/10">
+                                                <DialogHeader>
+                                                    <DialogTitle className="text-2xl font-extrabold flex items-center gap-2">
+                                                        <Briefcase className="w-6 h-6 text-primary" />
+                                                        Business Profile Settings
+                                                    </DialogTitle>
+                                                    <DialogDescription className="text-base">
+                                                        Update your organization's details to better represent your business in the chamber.
+                                                    </DialogDescription>
+                                                </DialogHeader>
+                                            </div>
+
+                                            <div className="p-8">
+                                                <Form {...form}>
+                                                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                            <FormField
+                                                                control={form.control}
+                                                                name="name"
+                                                                render={({ field }) => (
+                                                                    <FormItem>
+                                                                        <FormLabel className="font-bold">Business Name</FormLabel>
+                                                                        <FormControl>
+                                                                            <Input placeholder="e.g. Eldoret Tech Solutions" className="rounded-xl" {...field} />
+                                                                        </FormControl>
+                                                                        <FormMessage />
+                                                                    </FormItem>
+                                                                )}
+                                                            />
+                                                            <FormField
+                                                                control={form.control}
+                                                                name="category"
+                                                                render={({ field }) => (
+                                                                    <FormItem>
+                                                                        <FormLabel className="font-bold">Category</FormLabel>
+                                                                        <FormControl>
+                                                                            <Input placeholder="e.g. IT & Technology" className="rounded-xl" {...field} />
+                                                                        </FormControl>
+                                                                        <FormMessage />
+                                                                    </FormItem>
+                                                                )}
+                                                            />
+                                                            <FormField
+                                                                control={form.control}
+                                                                name="email"
+                                                                render={({ field }) => (
+                                                                    <FormItem>
+                                                                        <FormLabel className="font-bold">Business Email</FormLabel>
+                                                                        <FormControl>
+                                                                            <Input placeholder="info@company.co.ke" className="rounded-xl" {...field} />
+                                                                        </FormControl>
+                                                                        <FormMessage />
+                                                                    </FormItem>
+                                                                )}
+                                                            />
+                                                            <FormField
+                                                                control={form.control}
+                                                                name="phone"
+                                                                render={({ field }) => (
+                                                                    <FormItem>
+                                                                        <FormLabel className="font-bold">Business Phone</FormLabel>
+                                                                        <FormControl>
+                                                                            <Input placeholder="+254..." className="rounded-xl" {...field} />
+                                                                        </FormControl>
+                                                                        <FormMessage />
+                                                                    </FormItem>
+                                                                )}
+                                                            />
+                                                            <FormField
+                                                                control={form.control}
+                                                                name="location"
+                                                                render={({ field }) => (
+                                                                    <FormItem className="md:col-span-2">
+                                                                        <FormLabel className="font-bold">Location</FormLabel>
+                                                                        <FormControl>
+                                                                            <Input placeholder="e.g. KVDA Plaza, 4th Floor, Eldoret" className="rounded-xl" {...field} />
+                                                                        </FormControl>
+                                                                        <FormMessage />
+                                                                    </FormItem>
+                                                                )}
+                                                            />
+                                                            <FormField
+                                                                control={form.control}
+                                                                name="plan"
+                                                                render={({ field }) => (
+                                                                    <FormItem>
+                                                                        <FormLabel className="font-bold">Membership Plan</FormLabel>
+                                                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                                            <FormControl>
+                                                                                <SelectTrigger className="rounded-xl">
+                                                                                    <SelectValue placeholder="Select a plan" />
+                                                                                </SelectTrigger>
+                                                                            </FormControl>
+                                                                            <SelectContent className="rounded-xl">
+                                                                                <SelectItem value="Bronze">Bronze</SelectItem>
+                                                                                <SelectItem value="Silver">Silver</SelectItem>
+                                                                                <SelectItem value="Gold">Gold</SelectItem>
+                                                                            </SelectContent>
+                                                                        </Select>
+                                                                        <FormMessage />
+                                                                    </FormItem>
+                                                                )}
+                                                            />
+                                                            <FormField
+                                                                control={form.control}
+                                                                name="website"
+                                                                render={({ field }) => (
+                                                                    <FormItem>
+                                                                        <FormLabel className="font-bold">Website</FormLabel>
+                                                                        <FormControl>
+                                                                            <Input placeholder="https://..." className="rounded-xl" {...field} />
+                                                                        </FormControl>
+                                                                        <FormMessage />
+                                                                    </FormItem>
+                                                                )}
+                                                            />
+                                                            <FormField
+                                                                control={form.control}
+                                                                name="description"
+                                                                render={({ field }) => (
+                                                                    <FormItem className="md:col-span-2">
+                                                                        <FormLabel className="font-bold">Business Description</FormLabel>
+                                                                        <FormControl>
+                                                                            <Textarea
+                                                                                placeholder="Describe your business services and goals..."
+                                                                                className="rounded-xl min-h-[100px]"
+                                                                                {...field}
+                                                                            />
+                                                                        </FormControl>
+                                                                        <FormMessage />
+                                                                    </FormItem>
+                                                                )}
+                                                            />
+                                                        </div>
+
+                                                        <div className="pt-6 border-t border-border/50">
+                                                            <h3 className="font-bold mb-4 flex items-center gap-2">
+                                                                <Shield className="w-5 h-5 text-primary" />
+                                                                Compliance Details
+                                                            </h3>
+                                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                                                <FormField
+                                                                    control={form.control}
+                                                                    name="kra_pin"
+                                                                    render={({ field }) => (
+                                                                        <FormItem>
+                                                                            <FormLabel className="font-bold uppercase text-xs tracking-widest text-muted-foreground">KRA PIN</FormLabel>
+                                                                            <FormControl>
+                                                                                <Input className="rounded-xl font-mono" {...field} />
+                                                                            </FormControl>
+                                                                            <FormMessage />
+                                                                        </FormItem>
+                                                                    )}
+                                                                />
+                                                                <FormField
+                                                                    control={form.control}
+                                                                    name="company_reg_no"
+                                                                    render={({ field }) => (
+                                                                        <FormItem>
+                                                                            <FormLabel className="font-bold uppercase text-xs tracking-widest text-muted-foreground">Reg No.</FormLabel>
+                                                                            <FormControl>
+                                                                                <Input className="rounded-xl font-mono" {...field} />
+                                                                            </FormControl>
+                                                                            <FormMessage />
+                                                                        </FormItem>
+                                                                    )}
+                                                                />
+                                                                <FormField
+                                                                    control={form.control}
+                                                                    name="business_permit"
+                                                                    render={({ field }) => (
+                                                                        <FormItem>
+                                                                            <FormLabel className="font-bold uppercase text-xs tracking-widest text-muted-foreground">Permit No.</FormLabel>
+                                                                            <FormControl>
+                                                                                <Input className="rounded-xl font-mono" {...field} />
+                                                                            </FormControl>
+                                                                            <FormMessage />
+                                                                        </FormItem>
+                                                                    )}
+                                                                />
+                                                            </div>
+                                                        </div>
+
+                                                        <DialogFooter className="pt-8">
+                                                            <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)} className="rounded-xl font-bold">
+                                                                Cancel
+                                                            </Button>
+                                                            <Button type="submit" className="rounded-xl font-bold px-8 shadow-lg shadow-primary/20">
+                                                                Save Changes
+                                                            </Button>
+                                                        </DialogFooter>
+                                                    </form>
+                                                </Form>
+                                            </div>
+                                        </DialogContent>
+                                    </Dialog>
                                     <Button variant="destructive" className="rounded-xl font-bold shadow-lg shadow-red-500/10" onClick={handleLogout}>
                                         <LogOut className="w-4 h-4 mr-2" /> Logout
                                     </Button>
@@ -158,7 +461,7 @@ export default function ProfilePage() {
                                             </div>
                                             <div>
                                                 <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Location</p>
-                                                <p className="text-sm font-bold text-foreground">Eldoret, Uasin Gishu County</p>
+                                                <p className="text-sm font-bold text-foreground">{business?.location || "Not set"}</p>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-4 text-muted-foreground">
@@ -175,7 +478,7 @@ export default function ProfilePage() {
                                     <div className="pt-6 border-t border-border/50">
                                         <div className="flex justify-between items-center mb-4">
                                             <p className="font-bold">Membership Plan</p>
-                                            <Badge className="bg-primary text-white">Full Member</Badge>
+                                            <Badge className="bg-primary text-white">{business?.plan || "Full Member"}</Badge>
                                         </div>
                                         <p className="text-sm text-muted-foreground mb-4">Your membership expires on Dec 31, 2026</p>
                                         <Button className="w-full rounded-xl font-bold bg-muted text-foreground hover:bg-slate-200 dark:hover:bg-slate-800 border-none transition-colors" variant="outline">
@@ -288,44 +591,62 @@ export default function ProfilePage() {
                                         <Card className="rounded-3xl border-border/50 shadow-xl p-8">
                                             <div className="flex justify-between items-start mb-8">
                                                 <div>
-                                                    <h2 className="text-2xl font-extrabold mb-2">Eldoret Tech Solutions</h2>
+                                                    <h2 className="text-2xl font-extrabold mb-2">{business?.name || "Business Name Not Set"}</h2>
                                                     <p className="text-muted-foreground flex items-center gap-2">
-                                                        <Briefcase className="w-4 h-4" /> IT & Technology Services
+                                                        <Briefcase className="w-4 h-4" /> {business?.category || "Category Not Set"}
                                                     </p>
                                                 </div>
-                                                <Button variant="outline" className="rounded-xl font-bold">Change Logo</Button>
+                                                <Button variant="outline" className="rounded-xl font-bold" onClick={() => setIsEditDialogOpen(true)}>
+                                                    Edit Business Details
+                                                </Button>
                                             </div>
 
                                             <div className="grid md:grid-cols-2 gap-8 mb-8">
                                                 <div>
                                                     <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">Business Description</p>
-                                                    <p className="text-muted-foreground leading-relaxed leading-relaxed">
-                                                        Providing cutting-edge software solutions and hardware maintenance for businesses in the Rift Valley region.
-                                                        Specialized in ERP systems and cloud infra.
+                                                    <p className="text-muted-foreground leading-relaxed">
+                                                        {business?.description || "No description provided yet. Complete your profile to help other members find you."}
                                                     </p>
                                                 </div>
-                                                <div>
-                                                    <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">Website</p>
-                                                    <a href="#" className="text-primary font-bold flex items-center gap-2 hover:underline">
-                                                        www.eldorettech.co.ke <ExternalLink className="w-4 h-4" />
-                                                    </a>
+                                                <div className="space-y-4">
+                                                    <div>
+                                                        <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">Website</p>
+                                                        {business?.website ? (
+                                                            <a href={business.website} target="_blank" rel="noopener noreferrer" className="text-primary font-bold flex items-center gap-2 hover:underline">
+                                                                {business.website.replace(/^https?:\/\//, '')} <ExternalLink className="w-4 h-4" />
+                                                            </a>
+                                                        ) : (
+                                                            <p className="text-sm text-muted-foreground italic">No website listed</p>
+                                                        )}
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">Business Email</p>
+                                                        <p className="font-bold">{business?.email || "Not set"}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">Primary Phone</p>
+                                                        <p className="font-bold">{business?.phone || "Not set"}</p>
+                                                    </div>
                                                 </div>
                                             </div>
 
                                             <div className="pt-8 border-t border-border/50">
-                                                <h3 className="font-bold mb-6">Business Registrations</h3>
+                                                <h3 className="font-bold mb-6 flex items-center gap-2">
+                                                    <BadgeCheck className="w-5 h-5 text-primary" />
+                                                    Registration & Compliance
+                                                </h3>
                                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                                                     <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-border/50">
                                                         <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">KRA PIN</p>
-                                                        <p className="font-bold font-mono">P051234567X</p>
+                                                        <p className="font-bold font-mono">{business?.kra_pin || "---"}</p>
                                                     </div>
                                                     <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-border/50">
                                                         <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">Company Reg No</p>
-                                                        <p className="font-bold font-mono">PVT-L6M7R2N</p>
+                                                        <p className="font-bold font-mono">{business?.company_reg_no || "---"}</p>
                                                     </div>
                                                     <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-border/50">
                                                         <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">Business Permit</p>
-                                                        <p className="font-bold font-mono">UG/2024/7782</p>
+                                                        <p className="font-bold font-mono">{business?.business_permit || "---"}</p>
                                                     </div>
                                                 </div>
                                             </div>

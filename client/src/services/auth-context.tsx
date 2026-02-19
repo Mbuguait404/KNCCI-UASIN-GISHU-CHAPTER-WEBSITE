@@ -14,7 +14,7 @@ interface User {
 interface AuthContextType {
     user: User | null;
     loading: boolean;
-    login: (credentials: any) => Promise<void>;
+    login: (credentials: any) => Promise<User>;
     logout: () => void;
     isAuthenticated: boolean;
 }
@@ -48,14 +48,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         initAuth();
     }, []);
 
-    const login = async (credentials: any) => {
+    const login = async (credentials: any): Promise<User> => {
         try {
             const response = await authService.login(credentials);
             if (response.success) {
                 localStorage.setItem('accessToken', response.data.accessToken);
                 setUser(response.data.user);
+                return response.data.user;
             }
-
+            throw new Error('Login failed');
         } catch (error) {
             console.error("Login failed:", error);
             throw error;

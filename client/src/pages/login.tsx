@@ -15,28 +15,30 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function LoginPage() {
     const [, setLocation] = useLocation();
-    const { login, isAuthenticated } = useAuth();
+    const { login, isAuthenticated, user } = useAuth();
     const { toast } = useToast();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
-        if (isAuthenticated) {
-            setLocation("/profile");
+        if (isAuthenticated && user) {
+            setLocation(user.role === 'admin' ? '/admin' : '/profile');
         }
-    }, [isAuthenticated, setLocation]);
+    }, [isAuthenticated, user, setLocation]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
         try {
-            await login({ email, password });
+            const loggedInUser = await login({ email, password });
             toast({
                 title: "Welcome back!",
-                description: "You have successfully logged in.",
+                description: loggedInUser.role === 'admin'
+                    ? "Redirecting to admin dashboard..."
+                    : "You have successfully logged in.",
             });
-            setLocation("/profile");
+            setLocation(loggedInUser.role === 'admin' ? '/admin' : '/profile');
 
         } catch (error: any) {
             toast({

@@ -24,6 +24,7 @@ import MarketplacePage from "@/pages/marketplace";
 import MemberDirectoryPage from "@/pages/member-directory";
 import LoginPage from "@/pages/login";
 import ProfilePage from "@/pages/profile";
+import AdminDashboard from "@/pages/admin";
 import NotFound from "@/pages/not-found";
 
 
@@ -40,6 +41,7 @@ function Router() {
       <Route path="/member-directory" component={MemberDirectoryPage} />
       <Route path="/login" component={LoginPage} />
       <Route path="/profile" component={ProfilePage} />
+      <Route path="/admin" component={AdminDashboard} />
 
       <Route path="/membership" component={Membership} />
       <Route path="/board" component={Board} />
