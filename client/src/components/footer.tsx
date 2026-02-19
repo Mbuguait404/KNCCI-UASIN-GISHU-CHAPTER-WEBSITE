@@ -13,22 +13,22 @@ const quickLinks = [
   { label: "About KNCCI", href: "#about" },
   { label: "Events", href: "#program" },
   { label: "Speakers", href: "#speakers" },
-  { label: "Venue", href: "#venue" },
+  { label: "Location", href: "#location" },
   { label: "Gallery", href: "#gallery" },
   { label: "Partners", href: "#partners" },
 ];
 
 const socialLinks = [
-  { icon: Facebook, href: "#", label: "Facebook" },
-  { icon: Twitter, href: "#", label: "Twitter" },
+  { icon: Facebook, href: "https://www.facebook.com/p/Uasin-Gishu-Chamber-100070349883626/", label: "Facebook" },
+  { icon: Twitter, href: "https://x.com/kenya_chamber", label: "Twitter" },
   { icon: Linkedin, href: "#", label: "LinkedIn" },
-  { icon: Instagram, href: "#", label: "Instagram" },
+  { icon: Instagram, href: "https://www.instagram.com/p/DTPWs3DiDtP/", label: "Instagram" },
   { icon: Youtube, href: "#", label: "YouTube" },
 ];
 
 export function Footer() {
   const { toast } = useToast();
-  
+
   const form = useForm<InsertNewsletter>({
     resolver: zodResolver(insertNewsletterSchema),
     defaultValues: {
@@ -77,9 +77,9 @@ export function Footer() {
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-12">
           <div className="lg:col-span-2">
             <div className="flex items-center gap-3 mb-6">
-              <img 
-                src="/UG_chapter_logo-removebg-preview.png" 
-                alt="KNCCI - Kenya National Chamber of Commerce and Industry, Uasin Gishu Chapter" 
+              <img
+                src="/UG_chapter_logo-removebg-preview.png"
+                alt="KNCCI - Kenya National Chamber of Commerce and Industry, Uasin Gishu Chapter"
                 className="h-14 sm:h-16 w-auto object-contain"
                 data-testid="footer-logo-image"
                 width={200}
@@ -94,9 +94,7 @@ export function Footer() {
               </div> */}
             </div>
             <p className="text-white/70 mb-6 max-w-md leading-relaxed" data-testid="text-footer-description">
-              The Kenya National Chamber of Commerce and Industry is the voice of business 
-              in Kenya, dedicated to promoting trade, investment, and enterprise development 
-              for sustainable economic growth.
+              We advocate for the creation of a favorable commercial, trade, and investment environment that supports enterprise expansion. The membership of KNCCI constitutes small, micro enterprises (MSEs), medium, and large enterprises.
             </p>
             <div className="flex gap-3">
               {socialLinks.map((social) => (
@@ -145,8 +143,8 @@ export function Footer() {
               </li>
               <li className="flex items-center gap-3">
                 <Phone className="w-5 h-5 text-primary flex-shrink-0" />
-                <a 
-                  href="tel:+254740853372" 
+                <a
+                  href="tel:+254740853372"
                   className="text-white/70 hover:text-white transition-colors"
                   data-testid="link-phone"
                 >
@@ -155,8 +153,8 @@ export function Footer() {
               </li>
               <li className="flex items-center gap-3">
                 <Mail className="w-5 h-5 text-primary flex-shrink-0" />
-                <a 
-                  href="mailto:events@uasingishuchamber.co.ke" 
+                <a
+                  href="mailto:events@uasingishuchamber.co.ke"
                   className="text-white/70 hover:text-white transition-colors"
                   data-testid="link-email"
                 >
@@ -165,8 +163,8 @@ export function Footer() {
               </li>
               <li className="flex items-center gap-3">
                 <Globe className="w-5 h-5 text-primary flex-shrink-0" />
-                <a 
-                  href="https://www.uasingishuchamber.co.ke" 
+                <a
+                  href="https://www.uasingishuchamber.co.ke"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-white/70 hover:text-white transition-colors"
@@ -179,7 +177,7 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="border-t border-white/10 mt-12 pt-8">
+        {/* <div className="border-t border-white/10 mt-12 pt-8">
           <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
             <div className="text-center lg:text-left">
               <h4 className="font-semibold mb-2">Stay Updated</h4>
@@ -188,8 +186,8 @@ export function Footer() {
               </p>
             </div>
             <Form {...form}>
-              <form 
-                onSubmit={form.handleSubmit(onSubmit)} 
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
                 className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto"
               >
                 <FormField
@@ -225,7 +223,7 @@ export function Footer() {
               </form>
             </Form>
           </div>
-        </div>
+        </div> */}
 
         <div className="border-t border-white/10 mt-8 pt-8">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-white/50">

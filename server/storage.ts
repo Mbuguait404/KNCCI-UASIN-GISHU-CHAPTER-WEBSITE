@@ -1,20 +1,23 @@
-import { type User, type InsertUser, type Registration, type InsertRegistration, type NewsletterSubscription, type InsertNewsletter, type SponsorRequest, type InsertSponsorRequest, type Event, type Speaker, type Session, type Partner, type GalleryImage, type Testimonial, type Venue } from "@shared/schema";
+import { type User, type InsertUser, type Registration, type InsertRegistration, type NewsletterSubscription, type InsertNewsletter, type SponsorRequest, type InsertSponsorRequest, type Event, type Speaker, type Session, type Partner, type GalleryImage, type Testimonial, type Venue, type ContactSubmission, type InsertContactSubmission } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  
+
   createRegistration(data: InsertRegistration): Promise<Registration>;
   getRegistrations(): Promise<Registration[]>;
-  
+
   subscribeNewsletter(data: InsertNewsletter): Promise<NewsletterSubscription>;
   getNewsletterSubscriptions(): Promise<NewsletterSubscription[]>;
 
   createSponsorRequest(data: InsertSponsorRequest): Promise<SponsorRequest>;
   getSponsorRequests(): Promise<SponsorRequest[]>;
-  
+
+  createContactSubmission(data: InsertContactSubmission): Promise<ContactSubmission>;
+  getContactSubmissions(): Promise<ContactSubmission[]>;
+
   getEvent(): Event;
   getSpeakers(): Speaker[];
   getSchedule(): Session[];
@@ -29,12 +32,14 @@ export class MemStorage implements IStorage {
   private registrations: Map<string, Registration>;
   private newsletterSubscriptions: Map<string, NewsletterSubscription>;
   private sponsorRequests: Map<string, SponsorRequest>;
+  private contactSubmissions: Map<string, ContactSubmission>;
 
   constructor() {
     this.users = new Map();
     this.registrations = new Map();
     this.newsletterSubscriptions = new Map();
     this.sponsorRequests = new Map();
+    this.contactSubmissions = new Map();
   }
 
   async getUser(id: string): Promise<User | undefined> {
@@ -76,7 +81,7 @@ export class MemStorage implements IStorage {
     if (existing) {
       return existing;
     }
-    
+
     const id = randomUUID();
     const subscription: NewsletterSubscription = {
       id,
@@ -105,6 +110,21 @@ export class MemStorage implements IStorage {
 
   async getSponsorRequests(): Promise<SponsorRequest[]> {
     return Array.from(this.sponsorRequests.values());
+  }
+
+  async createContactSubmission(data: InsertContactSubmission): Promise<ContactSubmission> {
+    const id = randomUUID();
+    const submission: ContactSubmission = {
+      id,
+      ...data,
+      submittedAt: new Date().toISOString(),
+    };
+    this.contactSubmissions.set(id, submission);
+    return submission;
+  }
+
+  async getContactSubmissions(): Promise<ContactSubmission[]> {
+    return Array.from(this.contactSubmissions.values());
   }
 
   getEvent(): Event {

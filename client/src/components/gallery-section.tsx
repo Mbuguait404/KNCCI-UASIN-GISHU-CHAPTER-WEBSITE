@@ -2,6 +2,7 @@ import { useState } from "react";
 import { staticGallery } from "@/data/static-data";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Link } from "wouter";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import type { GalleryImage } from "@shared/schema";
 
@@ -16,18 +17,18 @@ const gradientColors = [
   "from-primary/30 to-chart-4/30",
 ];
 
-function GalleryCard({ 
-  image, 
+function GalleryCard({
+  image,
   index,
-  onClick 
-}: { 
-  image: GalleryImage; 
+  onClick
+}: {
+  image: GalleryImage;
   index: number;
   onClick: () => void;
 }) {
   const gradient = gradientColors[index % gradientColors.length];
   const hasImage = image.url && image.url.trim() !== "";
-  
+
   return (
     <div
       className="group relative overflow-hidden rounded-lg cursor-pointer hover-elevate"
@@ -103,20 +104,28 @@ export function GallerySection() {
             Moments from Past Events
           </h2>
           <p className="text-lg text-muted-foreground leading-relaxed">
-            Explore highlights from our previous events and get a glimpse of what 
+            Explore highlights from our previous events and get a glimpse of what
             to expect at The Eldoret International Business Summit 2026.
           </p>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-w-6xl mx-auto">
-            {galleryImages.map((image, index) => (
-              <GalleryCard
-                key={image.id}
-                image={image}
-                index={index}
-                onClick={() => openLightbox(index)}
-              />
-            ))}
+          {galleryImages.slice(0, 8).map((image, index) => (
+            <GalleryCard
+              key={image.id}
+              image={image}
+              index={index}
+              onClick={() => openLightbox(index)}
+            />
+          ))}
+        </div>
+
+        <div className="mt-12 text-center">
+          <Link href="/gallery">
+            <Button size="lg" className="rounded-full px-8 font-bold">
+              View Full Gallery
+            </Button>
+          </Link>
         </div>
 
         <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
@@ -131,7 +140,7 @@ export function GallerySection() {
               >
                 <X className="w-5 h-5" />
               </Button>
-              
+
               {currentImage && (
                 <>
                   <div className="aspect-video flex items-center justify-center relative bg-black">
@@ -191,9 +200,8 @@ export function GallerySection() {
                     {galleryImages.map((_, index) => (
                       <button
                         key={index}
-                        className={`w-2 h-2 rounded-full transition-colors ${
-                          index === currentIndex ? "bg-white" : "bg-white/30"
-                        }`}
+                        className={`w-2 h-2 rounded-full transition-colors ${index === currentIndex ? "bg-white" : "bg-white/30"
+                          }`}
                         onClick={() => setCurrentIndex(index)}
                         data-testid={`button-dot-${index}`}
                       />

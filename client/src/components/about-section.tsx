@@ -15,7 +15,7 @@ export function AboutSection() {
       <div className="container mx-auto px-4">
         <div className="max-w-3xl mx-auto text-center mb-16">
           <span className="text-primary font-semibold text-sm uppercase tracking-wider">
-            About The Event
+            About Us
           </span>
           {event && (
             <>
@@ -43,13 +43,13 @@ export function AboutSection() {
         <div className="mt-16 max-w-6xl mx-auto">
           <div className="text-center mb-12">
             <span className="text-primary font-semibold text-sm uppercase tracking-wider">
-              Event Activities
+              What We Offer
             </span>
             <h3 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mt-4 mb-6">
-              What to Expect
+              Explore Our Objectives
             </h3>
           </div>
-          
+
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             <Card className="p-6 border border-border bg-card hover-elevate">
               <div className="flex gap-4">
@@ -57,8 +57,8 @@ export function AboutSection() {
                   <Building2 className="w-6 h-6 text-primary" />
                 </div>
                 <div>
-                  <h4 className="text-lg font-semibold text-foreground mb-2">Business Exhibitions</h4>
-                  <p className="text-sm text-muted-foreground">Showcasing innovative products and solutions.</p>
+                  <h4 className="text-lg font-semibold text-foreground mb-2">Advocacy</h4>
+                  <p className="text-sm text-muted-foreground">We advocate for business-friendly policies to enhance growth and economic development.</p>
                 </div>
               </div>
             </Card>
@@ -69,8 +69,8 @@ export function AboutSection() {
                   <Mic className="w-6 h-6 text-secondary" />
                 </div>
                 <div>
-                  <h4 className="text-lg font-semibold text-foreground mb-2">Keynote Speeches</h4>
-                  <p className="text-sm text-muted-foreground">Insights from industry leaders on emerging trends.</p>
+                  <h4 className="text-lg font-semibold text-foreground mb-2">Business Support Services</h4>
+                  <p className="text-sm text-muted-foreground">We offer support services to help businesses grow and achieve their objectives.</p>
                 </div>
               </div>
             </Card>
@@ -81,8 +81,8 @@ export function AboutSection() {
                   <Users className="w-6 h-6 text-chart-4" />
                 </div>
                 <div>
-                  <h4 className="text-lg font-semibold text-foreground mb-2">Panel Discussions</h4>
-                  <p className="text-sm text-muted-foreground">Interactive sessions on Agribusiness, Sports, Tourism, and Healthcare.</p>
+                  <h4 className="text-lg font-semibold text-foreground mb-2">Training & Capacity Building</h4>
+                  <p className="text-sm text-muted-foreground">We provide training programs to enhance skills and business competitiveness.</p>
                 </div>
               </div>
             </Card>
@@ -105,8 +105,8 @@ export function AboutSection() {
                   <UtensilsCrossed className="w-6 h-6 text-chart-1" />
                 </div>
                 <div>
-                  <h4 className="text-lg font-semibold text-foreground mb-2">Gala Networking Dinner</h4>
-                  <p className="text-sm text-muted-foreground">A high-level dinner for stakeholders.</p>
+                  <h4 className="text-lg font-semibold text-foreground mb-2">Networking Opportunitiesr</h4>
+                  <p className="text-sm text-muted-foreground">We create networking opportunities to connect businesses and foster collaborations.</p>
                 </div>
               </div>
             </Card>
@@ -117,8 +117,8 @@ export function AboutSection() {
                   <GraduationCap className="w-6 h-6 text-primary" />
                 </div>
                 <div>
-                  <h4 className="text-lg font-semibold text-foreground mb-2">Skill Development Sessions</h4>
-                  <p className="text-sm text-muted-foreground">Practical workshops on innovation and planning.</p>
+                  <h4 className="text-lg font-semibold text-foreground mb-2">Trade Promotion</h4>
+                  <p className="text-sm text-muted-foreground">We promote trade locally and internationally to boost business success.</p>
                 </div>
               </div>
             </Card>
@@ -130,7 +130,7 @@ export function AboutSection() {
             <div className="grid md:grid-cols-2 gap-8 items-center">
               <div>
                 <h3 className="text-2xl font-bold text-foreground mb-4">
-                  Why Attend?
+                  Why Join Us?
                 </h3>
                 {event?.highlights && (
                   <ul className="space-y-3">
@@ -148,43 +148,43 @@ export function AboutSection() {
               <div className="relative">
                 {event?.stats && (
                   <div className="rounded-lg bg-gradient-to-br from-primary/20 to-secondary/20 border border-border p-6">
-                    <h4 className="text-lg font-semibold text-foreground mb-4 text-center">Key Statistics & Targets</h4>
+                    <h4 className="text-lg font-semibold text-foreground mb-4 text-center">Our Reach & Impact</h4>
                     <div className="grid grid-cols-2 gap-4">
                       {event.stats.visitors && (
                         <div className="text-center">
                           <div className="text-2xl sm:text-3xl font-bold text-foreground" data-testid="stat-visitors">{event.stats.visitors}</div>
-                          <div className="text-xs sm:text-sm text-muted-foreground mt-1">Visitors</div>
+                          <div className="text-xs sm:text-sm text-muted-foreground mt-1">Active Members</div>
                         </div>
                       )}
                       {event.stats.exhibitors && (
                         <div className="text-center">
                           <div className="text-2xl sm:text-3xl font-bold text-primary" data-testid="stat-exhibitors">{event.stats.exhibitors}</div>
-                          <div className="text-xs sm:text-sm text-muted-foreground mt-1">Exhibitors</div>
+                          <div className="text-xs sm:text-sm text-muted-foreground mt-1">KNCCI Chapters</div>
                         </div>
                       )}
                       {event.stats.delegates && (
                         <div className="text-center">
                           <div className="text-2xl sm:text-3xl font-bold text-secondary" data-testid="stat-delegates">{event.stats.delegates}</div>
-                          <div className="text-xs sm:text-sm text-muted-foreground mt-1">Delegates</div>
+                          <div className="text-xs sm:text-sm text-muted-foreground mt-1">Strategic Partners</div>
                         </div>
                       )}
                       {event.stats.participatingNations && (
                         <div className="text-center">
                           <div className="text-2xl sm:text-3xl font-bold text-chart-4" data-testid="stat-nations">{event.stats.participatingNations}</div>
-                          <div className="text-xs sm:text-sm text-muted-foreground mt-1">Participating Nations</div>
+                          <div className="text-xs sm:text-sm text-muted-foreground mt-1">Sectors Represented</div>
                         </div>
                       )}
                       {event.stats.speakers && (
                         <div className="text-center">
                           <div className="text-2xl sm:text-3xl font-bold text-chart-3" data-testid="stat-speakers">{event.stats.speakers}</div>
-                          <div className="text-xs sm:text-sm text-muted-foreground mt-1">Speakers</div>
+                          <div className="text-xs sm:text-sm text-muted-foreground mt-1">Business Mentors</div>
                         </div>
                       )}
                       {event.stats.sessions && (
                         <div className="text-center">
                           <div className="text-2xl sm:text-3xl font-bold text-chart-1" data-testid="stat-sessions">{event.stats.sessions}</div>
-                          <div className="text-xs sm:text-sm text-muted-foreground mt-1">Sessions</div>
-                      </div>
+                          <div className="text-xs sm:text-sm text-muted-foreground mt-1">Years of Excellence</div>
+                        </div>
                       )}
                     </div>
                   </div>

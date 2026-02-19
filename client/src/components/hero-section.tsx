@@ -155,112 +155,47 @@ export function HeroSection({ event: propEvent }: HeroSectionProps) {
       />
 
       <div className="relative z-10 container mx-auto px-4 text-center h-full flex flex-col justify-center">
-        <div className="max-w-4xl mx-auto w-full space-y-3 sm:space-y-4 animate-fade-in-up">
-          {event && (
-            <>
-              <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-3 py-1.5 text-white/90 text-xs sm:text-sm font-bold">
-                <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
-                <span data-testid="text-event-date">{formatDate(event.date, event.endDate)}</span>
-              </div>
+        <div className="max-w-4xl mx-auto w-full space-y-6 sm:space-y-8 animate-fade-in-up">
+          <div className="space-y-4">
+            <div className="inline-flex items-center gap-2 bg-primary/20 backdrop-blur-md border border-primary/30 rounded-full px-4 py-1.5 text-primary-foreground text-xs sm:text-sm font-bold tracking-wider uppercase">
+              Uasin Gishu County Chapter
+            </div>
 
-              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight px-2" data-testid="text-event-name">
-                {displayName}
-              </h1>
+            <h1 className="text-4xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-white leading-[1.1] tracking-tight px-2 drop-shadow-2xl" data-testid="text-event-name">
+              Kenya National Chamber of <br className="hidden md:block" />
+              Commerce & Industry <br />
+              <span className="text-primary">Uasin Gishu Chapter</span>
+            </h1>
 
-              <div className="inline-flex items-center gap-2 bg-primary backdrop-blur-sm border-2 border-white/30 rounded-full px-4 py-1.5 sm:px-5 sm:py-2 shadow-lg shadow-primary/50" data-testid="text-event-edition">
-                <span className="text-[10px] sm:text-xs md:text-sm font-bold text-white uppercase tracking-[0.2em] drop-shadow-md">
-                  4TH EDITION
-                </span>
-              </div>
+            <p className="text-lg sm:text-xl md:text-2xl text-white/90 max-w-3xl mx-auto leading-relaxed px-4 font-medium drop-shadow-lg" data-testid="text-event-subtitle">
+              The Voice of Business and the Champion for Economic Transformation in Uasin Gishu County
+            </p>
+          </div>
 
-              <p className="text-sm sm:text-base md:text-lg text-white/90 max-w-2xl mx-auto leading-relaxed px-2 font-semibold drop-shadow-lg" data-testid="text-event-subtitle">
-                {event.subtitle}
-              </p>
-
-              <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-white/90 text-xs sm:text-sm font-semibold">
-                <div className="flex items-center gap-1.5">
-                  <MapPin className="w-3 h-3 sm:w-4 sm:h-4 text-primary" />
-                  <span data-testid="text-event-venue">{event.venue}</span>
-                </div>
-              </div>
-
-              {event.highlights && event.highlights.length > 0 && (
-                <div className="flex flex-wrap justify-center gap-2">
-                  {event.highlights.slice(0, 4).map((highlight, index) => (
-                    <div
-                      key={index}
-                      className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-3 py-1.5 text-white text-xs sm:text-sm font-bold"
-                      data-testid={`badge-highlight-${index}`}
-                    >
-                      {highlight}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {eventDate && (
-                timeLeft ? (
-                  !timeLeft.isOver ? (
-                    <div className="pt-2 sm:pt-3">
-                      <p className="text-[10px] sm:text-xs text-white/80 uppercase tracking-wider mb-2 sm:mb-3 font-bold">
-                        Event Starts In
-                      </p>
-                      <div className="flex justify-center gap-2 sm:gap-3 md:gap-4">
-                        <CountdownBlock value={timeLeft.days} label="Days" />
-                        <CountdownBlock value={timeLeft.hours} label="Hours" />
-                        <CountdownBlock value={timeLeft.minutes} label="Minutes" />
-                        <CountdownBlock value={timeLeft.seconds} label="Seconds" />
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="pt-2 sm:pt-3">
-                      <div className="inline-flex items-center gap-2 bg-secondary/20 border border-secondary/30 rounded-full px-4 py-2 sm:px-6 sm:py-3">
-                        <div className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
-                        <span className="text-white font-bold text-sm sm:text-base" data-testid="text-event-status">Event In Progress</span>
-                      </div>
-                    </div>
-                  )
-                ) : (
-                  <div className="pt-2 sm:pt-3">
-                    <p className="text-[10px] sm:text-xs text-white/80 uppercase tracking-wider mb-2 sm:mb-3 font-bold">
-                      Event Starts In
-                    </p>
-                    <div className="flex justify-center gap-2 sm:gap-3 md:gap-4">
-                      <CountdownBlock value={0} label="Days" />
-                      <CountdownBlock value={0} label="Hours" />
-                      <CountdownBlock value={0} label="Minutes" />
-                      <CountdownBlock value={0} label="Seconds" />
-                    </div>
-                  </div>
-                )
-              )}
-            </>
-          )}
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4 sm:pt-5">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
             <Button
               size="lg"
               onClick={() => openRegistration()}
-              className="w-full sm:w-auto bg-primary text-primary-foreground text-base sm:text-lg px-6 sm:px-8 py-4 sm:py-5"
+              className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground text-lg px-8 py-6 shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95"
               data-testid="button-register-hero"
             >
-              Register for Event
+              Become a Member
             </Button>
             <Button
               size="lg"
               variant="outline"
-              onClick={() => scrollToSection("#program")}
-              className="w-full sm:w-auto border-white/30 text-white bg-white/5 backdrop-blur-sm text-base sm:text-lg px-6 sm:px-8 py-4 sm:py-5"
-              data-testid="button-program-hero"
+              onClick={() => scrollToSection("#who-we-are")}
+              className="w-full sm:w-auto border-white/40 text-white bg-white/10 hover:bg-white/20 backdrop-blur-md text-lg px-8 py-6 transition-all hover:scale-105 active:scale-95"
+              data-testid="button-about-hero"
             >
-              View Program
+              Explore Our Work
             </Button>
           </div>
         </div>
 
-        <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 animate-bounce">
-          <div className="w-5 h-8 sm:w-6 sm:h-10 border-2 border-white/30 rounded-full flex items-start justify-center p-1">
-            <div className="w-1.5 h-2 sm:h-3 bg-white/60 rounded-full animate-pulse" />
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce cursor-pointer" onClick={() => scrollToSection("#about")}>
+          <div className="w-6 h-10 border-2 border-white/30 rounded-full flex items-start justify-center p-1.5">
+            <div className="w-1.5 h-3 bg-white/60 rounded-full" />
           </div>
         </div>
       </div>
