@@ -16,7 +16,9 @@ import {
     Shield,
     BadgeCheck,
     BaggageClaim,
-    Activity
+    Activity,
+    LayoutDashboard,
+    Award
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -59,6 +61,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
+import { MembershipCertificate } from "@/components/membership-certificate";
 
 
 
@@ -68,6 +71,7 @@ export default function ProfilePage() {
     const [business, setBusiness] = useState<BusinessData | null>(null);
     const [loading, setLoading] = useState(true);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+    const [showCertificate, setShowCertificate] = useState(false);
 
     const businessSchema = z.object({
         name: z.string().min(2, "Business name must be at least 2 characters"),
@@ -214,7 +218,15 @@ export default function ProfilePage() {
                                     </p>
                                 </div>
 
-                                <div className="flex gap-3 mb-4">
+                                <div className="flex gap-3 mb-4 flex-wrap">
+                                    {user.role === 'admin' && (
+                                        <Button
+                                            className="rounded-xl font-bold bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:from-violet-700 hover:to-indigo-700 shadow-lg shadow-violet-500/20"
+                                            onClick={() => setLocation('/admin')}
+                                        >
+                                            <LayoutDashboard className="w-4 h-4 mr-2" /> Admin Dashboard
+                                        </Button>
+                                    )}
                                     <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
                                         <DialogTrigger asChild>
                                             <Button variant="outline" className="rounded-xl border-border hover:bg-muted font-bold">
@@ -495,7 +507,9 @@ export default function ProfilePage() {
                                     <p className="text-sm text-muted-foreground mb-6">
                                         Your account has been fully verified by the KNCCI Uasin Gishu administration team.
                                     </p>
-                                    <Button className="w-full rounded-xl font-bold">Download Certificate</Button>
+                                    <Button className="w-full rounded-xl font-bold" onClick={() => setShowCertificate(true)}>
+                                        <Award className="w-4 h-4 mr-2" /> Download Certificate
+                                    </Button>
                                 </CardContent>
                             </Card>
                         </div>
@@ -660,6 +674,18 @@ export default function ProfilePage() {
             </main>
 
             <Footer />
+
+            {/* Membership Certificate Modal */}
+            {showCertificate && (
+                <MembershipCertificate
+                    memberName={user.name}
+                    regNo={user.reg_no}
+                    businessName={business?.name}
+                    businessCategory={business?.category}
+                    plan={business?.plan}
+                    onClose={() => setShowCertificate(false)}
+                />
+            )}
         </div>
     );
 }
