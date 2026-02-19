@@ -103,8 +103,8 @@ export function Navigation() {
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           >
             <img
-              src="https://solby.sfo3.digitaloceanspaces.com/1770900740026-kncci_logo-removebg-preview.png"
-              alt="KNCCI Logo"
+              src="/UG_chapter_logo-removebg-preview.png"
+              alt="KNCCI UG Chapter Logo"
               className={`h-12 sm:h-16 w-auto object-contain transition-all duration-300 ${isScrolled || !isHomePage
                 ? "drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]"
                 : "drop-shadow-[0_0_2px_rgba(255,255,255,0.9)] drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]"

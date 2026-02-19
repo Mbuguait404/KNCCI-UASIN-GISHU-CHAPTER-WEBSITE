@@ -54,41 +54,34 @@ export default function AboutPage() {
             <Navigation />
 
             <main className="pt-20">
-                {/* Hero Section */}
-                <section className="relative py-20 lg:py-32 overflow-hidden bg-slate-950">
-                    <div className="absolute inset-0 z-0">
-                        <img
-                            src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=2070"
-                            alt="Professional Building"
-                            className="w-full h-full object-cover opacity-30"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-b from-slate-950/80 via-slate-950/40 to-slate-950" />
-                    </div>
-
-                    <div className="container mx-auto px-4 relative z-10 text-center">
-                        <motion.span
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="inline-block px-4 py-1.5 mb-6 text-primary font-bold text-xs uppercase tracking-[0.2em] bg-primary/10 rounded-full border border-primary/20"
-                        >
-                            Get to know about us
-                        </motion.span>
-                        <motion.h1
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.1 }}
-                            className="text-4xl md:text-6xl lg:text-7xl font-extrabold text-white mb-8 tracking-tight"
-                        >
-                            About <span className="text-primary">Us</span>
-                        </motion.h1>
-                        <motion.p
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.2 }}
-                            className="max-w-3xl mx-auto text-lg md:text-xl text-slate-300 leading-relaxed"
-                        >
-                            The Voice of Business and the Champion for Economic Transformation in Uasin Gishu County.
-                        </motion.p>
+                {/* Header section */}
+                <section className="py-20 bg-slate-50 dark:bg-slate-900/40 border-b border-border">
+                    <div className="container mx-auto px-4">
+                        <div className="max-w-4xl mx-auto text-center">
+                            <motion.span
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="text-primary font-bold text-sm uppercase tracking-widest block mb-4"
+                            >
+                                Get to know about us
+                            </motion.span>
+                            <motion.h1
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.1 }}
+                                className="text-4xl md:text-6xl font-extrabold mb-6 tracking-tight"
+                            >
+                                About <span className="text-primary">Us</span>
+                            </motion.h1>
+                            <motion.p
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.2 }}
+                                className="text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto"
+                            >
+                                The Voice of Business and the Champion for Economic Transformation in Uasin Gishu County.
+                            </motion.p>
+                        </div>
                     </div>
                 </section>
 
@@ -139,7 +132,7 @@ export default function AboutPage() {
                             >
                                 <div className="relative rounded-3xl overflow-hidden shadow-2xl z-10 border-8 border-background">
                                     <img
-                                        src="https://images.unsplash.com/photo-1577412647305-991150c7d163?auto=format&fit=crop&q=80&w=1000"
+                                        src="https://solby.sfo3.digitaloceanspaces.com/1769687104735-WhatsApp%20Image%202026-01-27%20at%2009.10.55%20(1).jpeg"
                                         alt="KNCCI Office Environment"
                                         className="w-full h-auto object-cover"
                                     />
@@ -204,10 +197,10 @@ export default function AboutPage() {
                             >
                                 <div className="space-y-4 pt-12">
                                     <div className="rounded-2xl overflow-hidden shadow-lg transform translate-y-4">
-                                        <img src="https://images.unsplash.com/photo-1521791136064-7986c2923216?auto=format&fit=crop&q=80&w=1000" alt="Business Collaboration" className="w-full h-auto" />
+                                        <img src="https://solby.sfo3.digitaloceanspaces.com/1769687104798-WhatsApp%20Image%202026-01-27%20at%2009.11.09%20(2).jpeg" alt="Business Collaboration" className="w-full h-auto" />
                                     </div>
                                     <div className="rounded-2xl overflow-hidden shadow-lg border-4 border-primary/20">
-                                        <img src="https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&q=80&w=1000" alt="Business Meeting" className="w-full h-auto" />
+                                        <img src="https://solby.sfo3.digitaloceanspaces.com/1769497085040-WhatsApp%20Image%202026-01-27%20at%2009.10.56.jpeg" alt="Business Meeting" className="w-full h-auto" />
                                     </div>
                                 </div>
                                 <div className="space-y-4">
@@ -218,7 +211,7 @@ export default function AboutPage() {
                                         </div>
                                     </div>
                                     <div className="rounded-2xl overflow-hidden shadow-lg transform -translate-y-8">
-                                        <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&q=80&w=1000" alt="Team Workshop" className="w-full h-auto" />
+                                        <img src="https://solby.sfo3.digitaloceanspaces.com/1769687104848-WhatsApp%20Image%202026-01-27%20at%2009.11.09%20(4).jpeg" alt="Team Workshop" className="w-full h-auto" />
                                     </div>
                                 </div>
                             </motion.div>
@@ -288,12 +281,12 @@ export default function AboutPage() {
                                     </div>
                                 </div>
                                 <Button size="lg" className="rounded-full px-8 shadow-xl shadow-primary/20 hover:scale-105 transition-transform" asChild>
-                                    <Link href="/contact">Apply for COO Today <ArrowRight className="ml-2 w-4 h-4" /></Link>
+                                    <a href="https://cmis.kenyachamber.or.ke/" target="_blank" rel="noopener noreferrer">Apply for COO Today <ArrowRight className="ml-2 w-4 h-4" /></a>
                                 </Button>
                             </div>
                             <div className="lg:w-2/5 relative min-h-[400px]">
                                 <img
-                                    src="https://images.unsplash.com/photo-1526628953301-3e589a6a8b74?auto=format&fit=crop&q=80&w=1000"
+                                    src="https://solby.sfo3.digitaloceanspaces.com/1769497085219-WhatsApp%20Image%202026-01-27%20at%2009.11.03.jpeg"
                                     alt="International Trade Document"
                                     className="absolute inset-0 w-full h-full object-cover"
                                 />
@@ -309,7 +302,7 @@ export default function AboutPage() {
                 </section>
 
                 {/* Functions of KNCCI List */}
-                <section className="py-24 bg-muted/30">
+                <section className="py-24 bg-background">
                     <div className="container mx-auto px-4">
                         <div className="max-w-3xl mx-auto text-center mb-16">
                             <span className="text-primary font-bold text-sm uppercase tracking-widest block mb-4">What We Do</span>
@@ -319,7 +312,7 @@ export default function AboutPage() {
                             </p>
                         </div>
 
-                        <div className="max-w-5xl mx-auto">
+                        <div className="max-w-6xl mx-auto">
                             <div className="grid md:grid-cols-2 gap-x-12 gap-y-8">
                                 {functions.map((func, idx) => (
                                     <motion.div
@@ -344,7 +337,7 @@ export default function AboutPage() {
 
                 {/* CTA Section */}
                 <section className="py-24 relative overflow-hidden">
-                    <div className="absolute inset-0 bg-primary pointer-events-none">
+                    <div className="absolute inset-0 bg-slate-900 pointer-events-none">
                         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '40px 40px' }} />
                     </div>
                     <div className="container mx-auto px-4 relative z-10 text-center">
@@ -362,10 +355,10 @@ export default function AboutPage() {
                                 Join 6,500+ businesses and start benefiting from advocacy, networking, and expert trade facilitation services.
                             </p>
                             <div className="flex flex-col sm:flex-row gap-6 justify-center">
-                                <Button size="lg" variant="secondary" className="rounded-full px-12 h-16 text-lg font-bold shadow-2xl hover:scale-105 transition-transform" asChild>
+                                <Button size="lg" variant="default" className="rounded-full px-12 h-16 text-lg font-bold shadow-2xl hover:scale-105 transition-transform" asChild>
                                     <Link href="/membership">Be a Member Now <Users2 className="ml-2 w-5 h-5" /></Link>
                                 </Button>
-                                <Button size="lg" variant="outline" className="rounded-full px-12 h-16 text-lg font-bold border-2 border-white bg-transparent text-white hover:bg-white hover:text-primary transition-all duration-300" asChild>
+                                <Button size="lg" variant="destructive" className="rounded-full px-12 h-16 text-lg font-bold border-2 border-white bg-transparent text-white hover:bg-white hover:text-primary transition-all duration-300" asChild>
                                     <Link href="/contact">Learn More <Briefcase className="ml-2 w-5 h-5" /></Link>
                                 </Button>
                             </div>

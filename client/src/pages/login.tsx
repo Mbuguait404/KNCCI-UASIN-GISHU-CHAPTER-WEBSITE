@@ -95,7 +95,7 @@ export default function LoginPage() {
                     >
                         <Card className="border-border/50 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.14)] rounded-[2.5rem] overflow-hidden bg-background/80 backdrop-blur-xl">
                             <Tabs defaultValue="login" className="w-full">
-                                <TabsList className="grid grid-cols-2 h-16 bg-muted/40 rounded-none p-1.5 gap-1">
+                                <TabsList className="grid grid-cols-2 h-16  bg-primary/5 rounded-none p-1.5 gap-1">
                                     <TabsTrigger value="login" className="h-full data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-lg font-bold text-sm rounded-3xl transition-all">Login</TabsTrigger>
                                     <TabsTrigger value="register" className="h-full data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-lg font-bold text-sm rounded-3xl transition-all">Register</TabsTrigger>
                                 </TabsList>
