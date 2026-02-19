@@ -53,22 +53,27 @@ function Router() {
   );
 }
 
+import { AuthProvider } from "@/services/auth-context";
+
 function App() {
   return (
     <HelmetProvider>
       <ThemeProvider>
         <QueryClientProvider client={queryClient}>
           <TooltipProvider>
-            <RegistrationProvider>
-              <Toaster />
-              <Router />
-              <WhatsAppFloat />
-            </RegistrationProvider>
+            <AuthProvider>
+              <RegistrationProvider>
+                <Toaster />
+                <Router />
+                <WhatsAppFloat />
+              </RegistrationProvider>
+            </AuthProvider>
           </TooltipProvider>
         </QueryClientProvider>
       </ThemeProvider>
     </HelmetProvider>
   );
 }
+
 
 export default App;

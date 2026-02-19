@@ -25,14 +25,52 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SEOHead } from "@/components/seo/seo-head";
 import { Link, useLocation } from "wouter";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/services/auth-context";
+import { authService } from "@/lib/auth-service";
+
+
 
 export default function ProfilePage() {
     const [, setLocation] = useLocation();
+    const { user, logout, loading: authLoading } = useAuth();
+    const [business, setBusiness] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (!authLoading && !user) {
+            setLocation("/login");
+            return;
+        }
+
+        const fetchBusiness = async () => {
+            try {
+                const response = await authService.getBusiness();
+                if (response.success) {
+                    setBusiness(response.data);
+                }
+            } catch (error) {
+                console.error("Failed to fetch business:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (user) {
+            fetchBusiness();
+        }
+    }, [user, authLoading, setLocation]);
+
+    if (authLoading || (loading && !business && user)) {
+        return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    }
+
+    if (!user) return null;
 
     const handleLogout = () => {
-        // Mock logout
-        setLocation("/");
+        logout();
     };
+
 
     return (
         <div className="min-h-screen bg-background">
@@ -56,20 +94,20 @@ export default function ProfilePage() {
                                 <Avatar className="w-40 h-40 border-8 border-background shadow-2xl rounded-3xl">
                                     <AvatarImage src="" alt="Profile" />
                                     <AvatarFallback className="bg-primary text-white text-5xl font-extrabold rounded-none">
-                                        JD
+                                        {user.name.split(' ').map(n => n[0]).join('')}
                                     </AvatarFallback>
                                 </Avatar>
 
                                 <div className="flex-1 mb-4">
                                     <div className="flex flex-wrap items-center gap-3 mb-2">
-                                        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">John Doe</h1>
+                                        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">{user.name}</h1>
                                         <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400 border-none px-3 py-1 flex gap-1.5 items-center">
                                             <BadgeCheck className="w-4 h-4" />
                                             Active Member
                                         </Badge>
                                     </div>
                                     <p className="text-xl text-muted-foreground flex items-center gap-2">
-                                        CEO, Eldoret Tech Solutions
+                                        {business?.name || "Member"}, {business?.category || "Individual"}
                                     </p>
                                 </div>
 
@@ -81,6 +119,7 @@ export default function ProfilePage() {
                                         <LogOut className="w-4 h-4 mr-2" /> Logout
                                     </Button>
                                 </div>
+
                             </div>
                         </div>
                     </div>
@@ -100,7 +139,7 @@ export default function ProfilePage() {
                                             </div>
                                             <div>
                                                 <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Email Address</p>
-                                                <p className="text-sm font-bold text-foreground">john.doe@eldorettech.co.ke</p>
+                                                <p className="text-sm font-bold text-foreground">{user.email}</p>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-4 text-muted-foreground">
@@ -109,9 +148,10 @@ export default function ProfilePage() {
                                             </div>
                                             <div>
                                                 <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Phone Number</p>
-                                                <p className="text-sm font-bold text-foreground">+254 712 345 678</p>
+                                                <p className="text-sm font-bold text-foreground">{user.phone || "Not set"}</p>
                                             </div>
                                         </div>
+
                                         <div className="flex items-center gap-4 text-muted-foreground">
                                             <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400">
                                                 <MapPin className="w-5 h-5" />

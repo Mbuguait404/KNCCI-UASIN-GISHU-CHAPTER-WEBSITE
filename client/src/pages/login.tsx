@@ -6,15 +6,49 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SEOHead } from "@/components/seo/seo-head";
 import { Link, useLocation } from "wouter";
+import { useState, useEffect } from "react";
+
+import { useAuth } from "@/services/auth-context";
+import { useToast } from "@/hooks/use-toast";
+
+
 
 export default function LoginPage() {
     const [, setLocation] = useLocation();
+    const { login, isAuthenticated } = useAuth();
+    const { toast } = useToast();
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
 
-    const handleLogin = (e: React.FormEvent) => {
+    useEffect(() => {
+        if (isAuthenticated) {
+            setLocation("/profile");
+        }
+    }, [isAuthenticated, setLocation]);
+
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
-        // Redirect to profile page
-        setLocation("/profile");
+        setIsLoading(true);
+        try {
+            await login({ email, password });
+            toast({
+                title: "Welcome back!",
+                description: "You have successfully logged in.",
+            });
+            setLocation("/profile");
+
+        } catch (error: any) {
+            toast({
+                title: "Login failed",
+                description: error.response?.data?.message || "Invalid email or password",
+                variant: "destructive",
+            });
+        } finally {
+            setIsLoading(false);
+        }
     };
+
 
     return (
         <div className="h-screen w-full bg-slate-50 dark:bg-slate-900 overflow-hidden flex flex-col">
@@ -113,7 +147,14 @@ export default function LoginPage() {
                                                     <label className="text-[11px] font-extrabold uppercase tracking-[0.2em] text-muted-foreground ml-1">Email / Username</label>
                                                     <div className="relative group">
                                                         <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-primary transition-colors" />
-                                                        <Input required placeholder="name@company.com" className="h-14 pl-12 rounded-2xl bg-slate-50 dark:bg-slate-900 border-border/50 focus:border-primary focus:ring-primary/20 transition-all text-base" />
+                                                        <Input
+                                                            required
+                                                            type="email"
+                                                            value={email}
+                                                            onChange={(e) => setEmail(e.target.value)}
+                                                            placeholder="name@company.com"
+                                                            className="h-14 pl-12 rounded-2xl bg-slate-50 dark:bg-slate-900 border-border/50 focus:border-primary focus:ring-primary/20 transition-all text-base"
+                                                        />
                                                     </div>
                                                 </div>
 
@@ -124,14 +165,26 @@ export default function LoginPage() {
                                                     </div>
                                                     <div className="relative group">
                                                         <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-primary transition-colors" />
-                                                        <Input required type="password" placeholder="••••••••" className="h-14 pl-12 rounded-2xl bg-slate-50 dark:bg-slate-900 border-border/50 focus:border-primary focus:ring-primary/20 transition-all text-base" />
+                                                        <Input
+                                                            required
+                                                            type="password"
+                                                            value={password}
+                                                            onChange={(e) => setPassword(e.target.value)}
+                                                            placeholder="••••••••"
+                                                            className="h-14 pl-12 rounded-2xl bg-slate-50 dark:bg-slate-900 border-border/50 focus:border-primary focus:ring-primary/20 transition-all text-base"
+                                                        />
                                                     </div>
                                                 </div>
                                             </div>
 
-                                            <Button size="lg" className="w-full h-14 rounded-2xl font-bold text-lg shadow-xl shadow-primary/20 group relative overflow-hidden">
+                                            <Button
+                                                size="lg"
+                                                type="submit"
+                                                disabled={isLoading}
+                                                className="w-full h-14 rounded-2xl font-bold text-lg shadow-xl shadow-primary/20 group relative overflow-hidden"
+                                            >
                                                 <span className="relative z-10 flex items-center justify-center">
-                                                    Sign In <LogIn className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                                    {isLoading ? "Signing In..." : "Sign In"} <LogIn className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                                                 </span>
                                             </Button>
                                         </form>

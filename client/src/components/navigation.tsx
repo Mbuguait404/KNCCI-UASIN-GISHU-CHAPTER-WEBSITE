@@ -21,6 +21,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { useAuth } from "@/services/auth-context";
+
 
 interface NavItem {
   label: string;
@@ -66,6 +68,7 @@ export function Navigation() {
   const isHomePage = location === "/";
   // preserving context usage just in case, primarily for mobile or if needed later
   const { openRegistration } = useRegistration();
+  const { user, isAuthenticated } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -181,19 +184,38 @@ export function Navigation() {
             </Button>
           </Link>
 
-          <Link href="/login">
-            <Button
-              size="sm"
-              className={cn(
-                "font-medium transition-colors",
-                isScrolled || !isHomePage
-                  ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                  : "bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 border border-white/20"
-              )}
-            >
-              Login
-            </Button>
-          </Link>
+          {isAuthenticated ? (
+            <Link href="/profile">
+              <Button
+                size="sm"
+                className={cn(
+                  "font-medium transition-colors flex gap-2 items-center",
+                  isScrolled || !isHomePage
+                    ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                    : "bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 border border-white/20"
+                )}
+              >
+                <div className="w-5 h-5 rounded-full bg-primary-foreground/20 flex items-center justify-center text-[10px] font-bold">
+                  {user?.name?.[0]}
+                </div>
+                Profile
+              </Button>
+            </Link>
+          ) : (
+            <Link href="/login">
+              <Button
+                size="sm"
+                className={cn(
+                  "font-medium transition-colors",
+                  isScrolled || !isHomePage
+                    ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                    : "bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 border border-white/20"
+                )}
+              >
+                Login
+              </Button>
+            </Link>
+          )}
 
           <Button
             size="icon"
@@ -207,6 +229,7 @@ export function Navigation() {
             {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
           </Button>
         </div>
+
 
         {/* Mobile Menu Toggle */}
         <div className="flex lg:hidden items-center gap-2">
