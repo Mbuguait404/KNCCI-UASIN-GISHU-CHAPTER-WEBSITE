@@ -221,7 +221,7 @@ export default function ProfilePage() {
                                 <div className="flex gap-3 mb-4 flex-wrap">
                                     {user.role === 'admin' && (
                                         <Button
-                                            className="rounded-xl font-bold bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:from-violet-700 hover:to-indigo-700 shadow-lg shadow-violet-500/20"
+                                            className="rounded-xl font-bold bg-gradient-to-r from-primary/5 to-secondary/5 text-white hover:from-primary/10 hover:to-secondary/10 shadow-lg shadow-primary/20"
                                             onClick={() => setLocation('/admin')}
                                         >
                                             <LayoutDashboard className="w-4 h-4 mr-2" /> Admin Dashboard
@@ -229,7 +229,7 @@ export default function ProfilePage() {
                                     )}
                                     <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
                                         <DialogTrigger asChild>
-                                            <Button variant="outline" className="rounded-xl border-border hover:bg-muted font-bold">
+                                            <Button variant="outline" className="rounded-xl border-border hover:bg-primary/5 font-bold">
                                                 <Settings className="w-4 h-4 mr-2" /> Edit Profile
                                             </Button>
                                         </DialogTrigger>
@@ -517,7 +517,7 @@ export default function ProfilePage() {
                         {/* Main Content Area */}
                         <div className="lg:col-span-2 space-y-8">
                             <Tabs defaultValue="overview" className="w-full">
-                                <TabsList className="w-full h-14 bg-muted/40 p-1.5 rounded-2xl border border-border/50 overflow-x-auto overflow-y-hidden">
+                                <TabsList className="w-full h-14 bg-primary/10 p-1.5 rounded-2xl border border-border/50 overflow-x-auto overflow-y-hidden">
                                     <TabsTrigger value="overview" className="flex-1 h-full rounded-xl data-[state=active]:bg-background data-[state=active]:shadow-md font-bold text-sm">Dashboard</TabsTrigger>
                                     <TabsTrigger value="business" className="flex-1 h-full rounded-xl data-[state=active]:bg-background data-[state=active]:shadow-md font-bold text-sm">Business Details</TabsTrigger>
                                     <TabsTrigger value="payments" className="flex-1 h-full rounded-xl data-[state=active]:bg-background data-[state=active]:shadow-md font-bold text-sm">Finances</TabsTrigger>

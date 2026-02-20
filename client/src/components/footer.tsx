@@ -7,15 +7,53 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { insertNewsletterSchema, type InsertNewsletter } from "@shared/schema";
-import { Mail, Phone, MapPin, Loader2, Facebook, Twitter, Linkedin, Instagram, Youtube, Globe, ExternalLink } from "lucide-react";
+import {
+  Mail,
+  Phone,
+  MapPin,
+  Loader2,
+  Facebook,
+  Twitter,
+  Linkedin,
+  Instagram,
+  Youtube,
+  Globe,
+  ExternalLink,
+  ChevronRight
+} from "lucide-react";
+import { Link } from "wouter";
 
-const quickLinks = [
-  { label: "About KNCCI", href: "#about" },
-  { label: "Events", href: "#program" },
-  { label: "Speakers", href: "#speakers" },
-  { label: "Location", href: "#location" },
-  { label: "Gallery", href: "#gallery" },
-  { label: "Partners", href: "#partners" },
+const footerSections = [
+  {
+    title: "Chamber",
+    links: [
+      { label: "About Us", href: "/about" },
+      { label: "Who We Are", href: "/about#who-we-are" },
+      { label: "Chairman's Word", href: "/about#chairman-message" },
+      { label: "Board of Directors", href: "/board" },
+      { label: "Our Services", href: "/#services" },
+    ],
+  },
+  {
+    title: "Activities",
+    links: [
+      { label: "Our Work", href: "/work" },
+      { label: "Upcoming Events", href: "/events" },
+      { label: "Media Gallery", href: "/gallery" },
+      { label: "Latest News", href: "/blog" },
+      { label: "Partner Network", href: "/#partners" },
+    ],
+  },
+  {
+    title: "Commerce",
+    links: [
+      { label: "Marketplace", href: "/marketplace" },
+      { label: "Member Directory", href: "/member-directory" },
+      { label: "Become a Member", href: "/membership" },
+      { label: "Trade Facilitation", href: "/about#trade" },
+      { label: "Contact Support", href: "/contact" },
+    ],
+  },
 ];
 
 const socialLinks = [
@@ -60,135 +98,121 @@ export function Footer() {
     subscribeMutation.mutate(data);
   };
 
-  const scrollToSection = (href: string) => {
-    const element = document.querySelector(href);
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth" });
-    }
-  };
-
   return (
     <footer
       id="footer"
-      className="bg-slate-900 text-white py-16"
+      className="bg-slate-950 text-white relative overflow-hidden"
       data-testid="section-footer"
     >
-      <div className="container mx-auto px-4">
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-12">
-          <div className="lg:col-span-2">
-            <div className="flex items-center gap-3 mb-6">
-              <img
-                src="/UG_chapter_logo-removebg-preview.png"
-                alt="KNCCI - Kenya National Chamber of Commerce and Industry, Uasin Gishu Chapter"
-                className="h-14 sm:h-16 w-auto object-contain"
-                data-testid="footer-logo-image"
-                width={200}
-                height={64}
-                loading="lazy"
-              />
-              {/* <div>
-                <span className="font-bold text-xl" data-testid="text-footer-logo">KNCCI</span>
-                <span className="text-xs block text-white/60 -mt-0.5">
-                  Kenya National Chamber of Commerce and Industry
-                </span>
-              </div> */}
-            </div>
-            <p className="text-white/70 mb-6 max-w-md leading-relaxed" data-testid="text-footer-description">
-              We advocate for the creation of a favorable commercial, trade, and investment environment that supports enterprise expansion. The membership of KNCCI constitutes small, micro enterprises (MSEs), medium, and large enterprises.
+      {/* Decorative pulse background */}
+      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
+
+      <div className="container mx-auto px-4 pt-20 pb-12 relative z-10">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8 mb-20">
+          {/* Brand Column */}
+          <div className="space-y-8">
+            <Link href="/">
+              <a className="inline-block transition-transform hover:scale-105 duration-300">
+                <img
+                  src="/UG_chapter_logo-removebg-preview.png"
+                  alt="KNCCI Uasin Gishu"
+                  className="h-16 sm:h-20 w-auto object-contain filter drop-shadow-lg"
+                  data-testid="footer-logo-image"
+                />
+              </a>
+            </Link>
+            <p className="text-slate-400 text-sm leading-relaxed max-w-sm" data-testid="text-footer-description">
+              The Kenya National Chamber of Commerce & Industry, Uasin Gishu Chapter, is dedicated to fostering a prosperous business environment through advocacy, networking, and trade facilitation.
             </p>
-            <div className="flex gap-3">
+            <div className="flex gap-4">
               {socialLinks.map((social) => (
                 <a
                   key={social.label}
                   href={social.href}
-                  className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
+                  className="w-9 h-9 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center hover:bg-primary hover:border-primary transition-all duration-300 group"
                   aria-label={social.label}
-                  data-testid={`link-social-${social.label.toLowerCase()}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
                 >
-                  <social.icon className="w-5 h-5" />
+                  <social.icon className="w-4 h-4 text-slate-400 group-hover:text-white" />
                 </a>
               ))}
             </div>
           </div>
 
-          <div>
-            <h4 className="font-semibold text-lg mb-6">Quick Links</h4>
-            <ul className="space-y-3">
-              {quickLinks.map((link) => (
-                <li key={link.href}>
-                  <button
-                    onClick={() => scrollToSection(link.href)}
-                    className="text-white/70 hover:text-white transition-colors"
-                    data-testid={`link-footer-${link.label.toLowerCase().replace(/\s+/g, '-')}`}
-                  >
-                    {link.label}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
+          {/* Navigation Columns */}
+          {footerSections.map((section) => (
+            <div key={section.title} className="space-y-8">
+              <h4 className="text-sm font-bold uppercase tracking-widest text-white/90 border-l-2 border-primary pl-4">
+                {section.title}
+              </h4>
+              <ul className="space-y-4">
+                {section.links.map((link) => (
+                  <li key={`${section.title}-${link.label}`}>
+                    <Link href={link.href}>
+                      <a className="text-slate-400 hover:text-primary text-sm flex items-center gap-2 group transition-colors">
+                        <ChevronRight className="w-3 h-3 text-slate-600 group-hover:text-primary transition-transform group-hover:translate-x-1" />
+                        {link.label}
+                      </a>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
 
-          <div>
-            <h4 className="font-semibold text-lg mb-6">Contact us</h4>
-            <p className="text-white/60 text-sm mb-4">
-              For inquiries and sponsorships:
-            </p>
-            <ul className="space-y-4">
-              <li className="flex items-start gap-3">
-                <MapPin className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                <span className="text-white/70" data-testid="text-address">
-                  Daima Towers, M2 Room 9<br />
-                  Eldoret
-                </span>
-              </li>
-              <li className="flex items-center gap-3">
-                <Phone className="w-5 h-5 text-primary flex-shrink-0" />
-                <a
-                  href="tel:+254740853372"
-                  className="text-white/70 hover:text-white transition-colors"
-                  data-testid="link-phone"
-                >
-                  +254 740 853 372
-                </a>
-              </li>
-              <li className="flex items-center gap-3">
-                <Mail className="w-5 h-5 text-primary flex-shrink-0" />
-                <a
-                  href="mailto:events@uasingishuchamber.co.ke"
-                  className="text-white/70 hover:text-white transition-colors"
-                  data-testid="link-email"
-                >
-                  events@uasingishuchamber.co.ke
-                </a>
-              </li>
-              <li className="flex items-center gap-3">
-                <Globe className="w-5 h-5 text-primary flex-shrink-0" />
-                <a
-                  href="https://www.uasingishuchamber.co.ke"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-white/70 hover:text-white transition-colors"
-                  data-testid="link-website"
-                >
-                  www.uasingishuchamber.co.ke
-                </a>
-              </li>
-            </ul>
+        {/* Contact Strip */}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 py-10 border-y border-slate-900 mb-10">
+          <div className="flex items-center gap-4 group">
+            <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+              <MapPin className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-[10px] text-slate-500 uppercase font-bold tracking-tighter">Location</p>
+              <p className="text-xs text-slate-300">Daima Towers, M2 Room 9, Eldoret</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4 group">
+            <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+              <Phone className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-[10px] text-slate-500 uppercase font-bold tracking-tighter">Phone</p>
+              <a href="tel:+254740853372" className="text-xs text-slate-300 hover:text-white">+254 740 853 372</a>
+            </div>
+          </div>
+          <div className="flex items-center gap-4 group">
+            <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+              <Mail className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-[10px] text-slate-500 uppercase font-bold tracking-tighter">Email</p>
+              <a href="mailto:info@uasingishuchamber.co.ke" className="text-xs text-slate-300 hover:text-white">info@uasingishuchamber.co.ke</a>
+            </div>
+          </div>
+          <div className="flex items-center gap-4 group">
+            <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+              <Globe className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-[10px] text-slate-500 uppercase font-bold tracking-tighter">Website</p>
+              <a href="https://uasingishuchamber.co.ke" className="text-xs text-slate-300 hover:text-white" target="_blank" rel="noopener noreferrer">uasingishuchamber.co.ke</a>
+            </div>
           </div>
         </div>
 
-        {/* <div className="border-t border-white/10 mt-12 pt-8">
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
-            <div className="text-center lg:text-left">
-              <h4 className="font-semibold mb-2">Stay Updated</h4>
-              <p className="text-white/60 text-sm">
-                Subscribe to our newsletter for event updates and business insights.
-              </p>
+        {/* Newsletter & Bottom Bar */}
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-10">
+          <div className="flex flex-col sm:flex-row items-center gap-6 w-full lg:w-auto">
+            <div className="hidden sm:block">
+              <p className="text-sm font-bold">Stay Connected</p>
+              <p className="text-xs text-slate-500">Subscribe for trade updates</p>
             </div>
             <Form {...form}>
               <form
                 onSubmit={form.handleSubmit(onSubmit)}
-                className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto"
+                className="flex gap-2 w-full sm:w-auto"
               >
                 <FormField
                   control={form.control}
@@ -199,45 +223,32 @@ export function Footer() {
                         <Input
                           {...field}
                           type="email"
-                          placeholder="Enter your email"
-                          className="bg-white/10 border-white/20 text-white placeholder:text-white/40 min-w-[280px]"
-                          data-testid="input-newsletter-email"
+                          placeholder="Email address"
+                          className="h-10 bg-slate-900 border-slate-800 text-white placeholder:text-slate-600 min-w-[200px] rounded-full focus:border-primary/50 transition-all"
                         />
                       </FormControl>
-                      <FormMessage className="text-destructive-foreground" />
                     </FormItem>
                   )}
                 />
                 <Button
                   type="submit"
                   disabled={subscribeMutation.isPending}
-                  className="bg-primary text-primary-foreground"
-                  data-testid="button-subscribe"
+                  className="h-10 bg-primary text-primary-foreground rounded-full px-6 hover:shadow-lg hover:shadow-primary/20 transition-all"
                 >
                   {subscribeMutation.isPending ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
-                    "Subscribe"
+                    "Join"
                   )}
                 </Button>
               </form>
             </Form>
           </div>
-        </div> */}
 
-        <div className="border-t border-white/10 mt-8 pt-8">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-white/50">
-            <p data-testid="text-copyright">
-              &copy; {new Date().getFullYear()} Kenya National Chamber of Commerce and Industry. All rights reserved.
-            </p>
-            <a
-              href="https://the-cube.co.ke/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-colors border border-white/10 text-xs"
-            >
-              <span>Built by The Cube Innovation Hub</span>
-              <ExternalLink className="w-3.5 h-3.5 opacity-70" />
+          <div className="flex flex-col sm:flex-row items-center gap-8 text-[11px] text-slate-500 uppercase font-bold tracking-widest">
+            <p>&copy; {new Date().getFullYear()} KNCCI Uasin Gishu</p>
+            <a href="https://the-cube.co.ke/" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors flex items-center gap-2">
+              Designed by The Cube Innovation Hub <ExternalLink className="w-3 h-3" />
             </a>
           </div>
         </div>
@@ -245,3 +256,4 @@ export function Footer() {
     </footer>
   );
 }
+
