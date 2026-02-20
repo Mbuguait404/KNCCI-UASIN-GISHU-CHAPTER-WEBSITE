@@ -1,63 +1,16 @@
 import { Navigation } from "@/components/navigation";
 import { Footer } from "@/components/footer";
 import { motion } from "framer-motion";
-import { Calendar, MapPin, Users, ArrowRight, Filter, Search } from "lucide-react";
+import { Calendar, MapPin, ArrowRight, Filter, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Link } from "wouter";
 import { SEOHead } from "@/components/seo/seo-head";
-import { staticEvent } from "@/data/static-data";
+import { upcomingEvents, pastEvents } from "@/data/events-data";
 
 export default function EventsPage() {
-    const upcomingEvents = [
-        {
-            id: staticEvent.id,
-            title: staticEvent.name,
-            date: "April 23-25, 2026",
-            location: staticEvent.venue,
-            image: "https://images.unsplash.com/photo-1540575861501-7ad05823c9f5?auto=format&fit=crop&q=80&w=2070",
-            category: "Summit",
-            description: staticEvent.subtitle,
-            featured: true
-        },
-        {
-            id: "monthly-mixer-may",
-            title: "May Business Networking Mixer",
-            date: "May 15, 2026",
-            location: "Boma Inn, Eldoret",
-            image: "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&q=80&w=2069",
-            category: "Networking",
-            description: "Our monthly gathering for business leaders to connect and share insights.",
-            featured: false
-        },
-        {
-            id: "agribusiness-expo",
-            title: "North Rift Agribusiness Expo",
-            date: "June 10-12, 2026",
-            location: "Eldoret Showground",
-            image: "https://images.unsplash.com/photo-1595113316349-9fa4ee24f884?auto=format&fit=crop&q=80&w=2072",
-            category: "Exhibition",
-            description: "Showcasing the latest in agricultural technology and value addition.",
-            featured: false
-        }
-    ];
-
-    const pastEvents = [
-        {
-            title: "Chamber Business Awards 2025",
-            date: "December 20, 2025",
-            location: "Eka Hotel, Eldoret",
-            category: "Awards"
-        },
-        {
-            title: "SME Digital Transformation Workshop",
-            date: "November 5, 2025",
-            location: "KVDA Plaza",
-            category: "Workshop"
-        }
-    ];
 
     return (
         <div className="min-h-screen bg-background">
@@ -118,7 +71,7 @@ export default function EventsPage() {
                                 whileInView={{ opacity: 1, y: 0 }}
                                 viewport={{ once: true }}
                             >
-                                <Link href="/">
+                                <Link href={"/events/" + upcomingEvents[0].id}>
                                     <div className="relative h-[500px] rounded-[2.5rem] overflow-hidden cursor-pointer shadow-2xl">
                                         <img
                                             src={upcomingEvents[0].image}
@@ -164,25 +117,27 @@ export default function EventsPage() {
                                         viewport={{ once: true }}
                                         transition={{ delay: idx * 0.1 }}
                                     >
-                                        <Card className="overflow-hidden border-border/50 group cursor-pointer hover:shadow-xl transition-all duration-300">
-                                            <div className="relative h-48">
-                                                <img src={event.image} alt={event.title} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
-                                                <div className="absolute top-4 right-4">
-                                                    <Badge variant="secondary" className="backdrop-blur-md bg-white/80 dark:bg-black/80">{event.category}</Badge>
+                                        <Link href={"/events/" + event.id}>
+                                            <Card className="overflow-hidden border-border/50 group cursor-pointer hover:shadow-xl transition-all duration-300">
+                                                <div className="relative h-48">
+                                                    <img src={event.image} alt={event.title} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
+                                                    <div className="absolute top-4 right-4">
+                                                        <Badge variant="secondary" className="backdrop-blur-md bg-white/80 dark:bg-black/80">{event.category}</Badge>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <CardContent className="p-6">
-                                                <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-tighter mb-2">
-                                                    <Calendar className="w-3.5 h-3.5" />
-                                                    {event.date}
-                                                </div>
-                                                <h4 className="text-xl font-bold mb-2 group-hover:text-primary transition-colors">{event.title}</h4>
-                                                <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                                                    <MapPin className="w-4 h-4" />
-                                                    {event.location}
-                                                </div>
-                                            </CardContent>
-                                        </Card>
+                                                <CardContent className="p-6">
+                                                    <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-tighter mb-2">
+                                                        <Calendar className="w-3.5 h-3.5" />
+                                                        {event.date}
+                                                    </div>
+                                                    <h4 className="text-xl font-bold mb-2 group-hover:text-primary transition-colors">{event.title}</h4>
+                                                    <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                                                        <MapPin className="w-4 h-4" />
+                                                        {event.location}
+                                                    </div>
+                                                </CardContent>
+                                            </Card>
+                                        </Link>
                                     </motion.div>
                                 ))}
 

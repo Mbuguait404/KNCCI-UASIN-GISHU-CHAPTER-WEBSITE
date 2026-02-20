@@ -20,6 +20,7 @@ import AboutPage from "@/pages/about";
 import ContactPage from "@/pages/contact";
 import WorkPage from "@/pages/work";
 import EventsPage from "@/pages/events";
+import EventDetail from "@/pages/event-detail";
 import MarketplacePage from "@/pages/marketplace";
 import MemberDirectoryPage from "@/pages/member-directory";
 import LoginPage from "@/pages/login";
@@ -37,6 +38,7 @@ function Router() {
       <Route path="/partnership" component={Partnership} />
       <Route path="/work" component={WorkPage} />
       <Route path="/events" component={EventsPage} />
+      <Route path="/events/:id" component={EventDetail} />
       <Route path="/marketplace" component={MarketplacePage} />
       <Route path="/member-directory" component={MemberDirectoryPage} />
       <Route path="/login" component={LoginPage} />

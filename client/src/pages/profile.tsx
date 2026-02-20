@@ -208,7 +208,7 @@ export default function ProfilePage() {
                                 <div className="flex-1 mb-4">
                                     <div className="flex flex-wrap items-center gap-3 mb-2">
                                         <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">{user.name}</h1>
-                                        <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400 border-none px-3 py-1 flex gap-1.5 items-center">
+                                        <Badge variant="secondary" className="bg-secondary/10 text-secondary dark:bg-emerald-900/40 dark:text-emerald-400 border-none px-3 py-1 flex gap-1.5 items-center">
                                             <BadgeCheck className="w-4 h-4" />
                                             Active Member
                                         </Badge>
@@ -229,7 +229,7 @@ export default function ProfilePage() {
                                     )}
                                     <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
                                         <DialogTrigger asChild>
-                                            <Button variant="outline" className="rounded-xl border-border hover:bg-primary/5 font-bold">
+                                            <Button variant="outline" className="rounded-xl border-border hover:bg-muted font-bold">
                                                 <Settings className="w-4 h-4 mr-2" /> Edit Profile
                                             </Button>
                                         </DialogTrigger>
@@ -449,7 +449,7 @@ export default function ProfilePage() {
                                 <CardContent className="p-6 space-y-6">
                                     <div className="space-y-4">
                                         <div className="flex items-center gap-4 text-muted-foreground">
-                                            <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400">
+                                            <div className="w-10 h-10 rounded-full bg-secondary/10 text-secondary flex items-center justify-center">
                                                 <Mail className="w-5 h-5" />
                                             </div>
                                             <div>
@@ -458,7 +458,7 @@ export default function ProfilePage() {
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-4 text-muted-foreground">
-                                            <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400">
+                                            <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center">
                                                 <Phone className="w-5 h-5" />
                                             </div>
                                             <div>
@@ -468,7 +468,7 @@ export default function ProfilePage() {
                                         </div>
 
                                         <div className="flex items-center gap-4 text-muted-foreground">
-                                            <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400">
+                                            <div className="w-10 h-10 rounded-full bg-secondary/10 text-secondary flex items-center justify-center">
                                                 <MapPin className="w-5 h-5" />
                                             </div>
                                             <div>
@@ -477,7 +477,7 @@ export default function ProfilePage() {
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-4 text-muted-foreground">
-                                            <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400">
+                                            <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center">
                                                 <Calendar className="w-5 h-5" />
                                             </div>
                                             <div>
@@ -529,10 +529,10 @@ export default function ProfilePage() {
                                         <Card className="rounded-3xl border-border/50 shadow-lg hover:shadow-xl transition-all group overflow-hidden">
                                             <CardContent className="p-8">
                                                 <div className="flex justify-between items-start mb-6">
-                                                    <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
+                                                    <div className="w-14 h-14 rounded-2xl bg-secondary/10 text-secondary flex items-center justify-center group-hover:bg-secondary group-hover:text-white transition-all duration-300">
                                                         <Activity className="w-7 h-7" />
                                                     </div>
-                                                    <Badge className="bg-blue-100 text-blue-700 border-none px-3 font-bold">6 Active Jobs</Badge>
+                                                    <Badge className="bg-secondary/10 text-secondary border-none px-3 font-bold">6 Active Jobs</Badge>
                                                 </div>
                                                 <h3 className="text-xl font-extrabold mb-2">Active Trade Leads</h3>
                                                 <p className="text-muted-foreground mb-6">You have matching trade opportunities based on your business category.</p>
@@ -547,10 +547,10 @@ export default function ProfilePage() {
                                         <Card className="rounded-3xl border-border/50 shadow-lg hover:shadow-xl transition-all group overflow-hidden">
                                             <CardContent className="p-8">
                                                 <div className="flex justify-between items-start mb-6">
-                                                    <div className="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center group-hover:bg-amber-600 group-hover:text-white transition-all duration-300">
+                                                    <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all duration-300">
                                                         <Briefcase className="w-7 h-7" />
                                                     </div>
-                                                    <Badge className="bg-amber-100 text-amber-700 border-none px-3 font-bold">Member Rate</Badge>
+                                                    <Badge className="bg-primary/10 text-primary border-none px-3 font-bold">Member Rate</Badge>
                                                 </div>
                                                 <h3 className="text-xl font-extrabold mb-2">Upcoming Events</h3>
                                                 <p className="text-muted-foreground mb-6">Register for the next County Business Forum with your member discount.</p>
@@ -576,10 +576,10 @@ export default function ProfilePage() {
                                         <CardContent className="p-0">
                                             <div className="divide-y divide-border/40">
                                                 {[
-                                                    { title: "Membership Renewal Success", time: "2 hours ago", icon: BadgeCheck, color: "text-emerald-500", bg: "bg-emerald-50" },
-                                                    { title: "New Trade Lead: Agriculture Equipment", time: "1 day ago", icon: BaggageClaim, color: "text-blue-500", bg: "bg-blue-50" },
-                                                    { title: "Invitation: Eldoret Business Gala", time: "3 days ago", icon: Calendar, color: "text-amber-500", bg: "bg-amber-50" },
-                                                    { title: "System Update Complete", time: "1 week ago", icon: Shield, color: "text-slate-500", bg: "bg-slate-50" },
+                                                    { title: "Membership Renewal Success", time: "2 hours ago", icon: BadgeCheck, color: "text-secondary", bg: "bg-secondary/10" },
+                                                    { title: "New Trade Lead: Agriculture Equipment", time: "1 day ago", icon: BaggageClaim, color: "text-secondary", bg: "bg-secondary/10" },
+                                                    { title: "Invitation: Eldoret Business Gala", time: "3 days ago", icon: Calendar, color: "text-primary", bg: "bg-primary/10" },
+                                                    { title: "System Update Complete", time: "1 week ago", icon: Shield, color: "text-muted-foreground", bg: "bg-muted" },
                                                 ].map((note, i) => (
                                                     <div key={i} className="p-6 flex gap-4 hover:bg-slate-50 dark:hover:bg-slate-900/30 transition-colors cursor-pointer group">
                                                         <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${note.bg} ${note.color}`}>

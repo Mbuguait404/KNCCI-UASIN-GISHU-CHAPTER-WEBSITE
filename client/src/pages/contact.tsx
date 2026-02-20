@@ -71,27 +71,27 @@ export default function ContactPage() {
             icon: MapPin,
             title: "Our Office",
             content: "Daima Towers, M2 Room 9, Eldoret, Kenya",
-            color: "bg-blue-500/10 text-blue-500",
+            color: "bg-secondary/10 text-secondary",
         },
         {
             icon: Phone,
             title: "Phone Number",
             content: "+254 740 853 372",
             link: "tel:+254740853372",
-            color: "bg-green-500/10 text-green-500",
+            color: "bg-primary/10 text-primary",
         },
         {
             icon: Mail,
             title: "Email Address",
             content: "events@uasingishuchamber.co.ke",
             link: "mailto:events@uasingishuchamber.co.ke",
-            color: "bg-purple-500/10 text-purple-500",
+            color: "bg-secondary/10 text-secondary",
         },
         {
             icon: Clock,
             title: "Working Hours",
             content: "Mon - Fri: 8:00 AM - 5:00 PM",
-            color: "bg-orange-500/10 text-orange-500",
+            color: "bg-primary/10 text-primary",
         },
     ];
 
