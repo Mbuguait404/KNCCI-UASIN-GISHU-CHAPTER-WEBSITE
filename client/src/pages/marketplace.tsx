@@ -122,7 +122,7 @@ export default function MarketplacePage() {
                 </section>
 
                 {/* Categories / Tabs Section */}
-                <section className="py-12 border-b border-border bg-muted/30">
+                <section className="py-12 border-b border-border bg-background">
                     <div className="container mx-auto px-4 overflow-x-auto">
                         <div className="flex whitespace-nowrap gap-4 pb-2">
                             {categories.map((cat, i) => (
@@ -244,43 +244,47 @@ export default function MarketplacePage() {
                 </section>
 
                 {/* Sell Section */}
-                <section className="py-24">
+                <section className="py-16">
                     <div className="container mx-auto px-4">
-                        <div className="max-w-5xl mx-auto bg-primary rounded-[3rem] overflow-hidden flex flex-col md:flex-row items-center relative shadow-2xl">
+                        <div className="max-w-7xl mx-auto bg-primary rounded-[2.5rem] overflow-hidden flex flex-col md:flex-row items-center relative shadow-2xl">
                             <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full blur-[100px] pointer-events-none" />
-                            <div className="p-12 md:p-16 md:w-1/2 text-white">
-                                <h2 className="text-3xl md:text-5xl font-extrabold mb-6 leading-tight">Grow your business <span className="italic opacity-80">Online</span></h2>
-                                <p className="text-xl text-white/90 mb-10 leading-relaxed">
+                            <div className="p-10 md:p-12 md:w-3/5 text-white">
+                                <h2 className="text-2xl md:text-4xl font-extrabold mb-4 leading-tight">Grow your business <span className="italic opacity-80">Online</span></h2>
+                                <p className="text-lg text-white/90 mb-6 leading-relaxed max-w-xl">
                                     Join our marketplace and reach thousands of potential customers. It's time to scale your business beyond physical borders.
                                 </p>
-                                <ul className="space-y-4 mb-10">
+                                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
                                     <li className="flex items-center gap-3">
-                                        <CheckCircle2 className="w-6 h-6 text-white" />
-                                        <span className="font-medium text-lg">Verified Member Badge</span>
+                                        <CheckCircle2 className="w-5 h-5 text-white/80" />
+                                        <span className="font-medium text-base">Verified Member Badge</span>
                                     </li>
                                     <li className="flex items-center gap-3">
-                                        <CheckCircle2 className="w-6 h-6 text-white" />
-                                        <span className="font-medium text-lg">Direct Inquiries System</span>
+                                        <CheckCircle2 className="w-5 h-5 text-white/80" />
+                                        <span className="font-medium text-base">Direct Inquiries System</span>
                                     </li>
                                     <li className="flex items-center gap-3">
-                                        <CheckCircle2 className="w-6 h-6 text-white" />
-                                        <span className="font-medium text-lg">Unlimited Product Listings</span>
+                                        <CheckCircle2 className="w-5 h-5 text-white/80" />
+                                        <span className="font-medium text-base">Unlimited Product Listings</span>
+                                    </li>
+                                    <li className="flex items-center gap-3">
+                                        <CheckCircle2 className="w-5 h-5 text-white/80" />
+                                        <span className="font-medium text-base">E-commerce Ready</span>
                                     </li>
                                 </ul>
-                                <Button size="lg" variant="secondary" className="rounded-full px-12 h-16 text-lg font-bold shadow-xl hover:scale-105 transition-transform" asChild>
-                                    <a href="/membership">Register as a Seller/</a>
+                                <Button size="lg" variant="secondary" className="rounded-full px-10 h-14 text-base font-bold shadow-xl hover:scale-105 transition-transform" asChild>
+                                    <a href="/membership">Register as a Seller</a>
                                 </Button>
                             </div>
-                            <div className="md:w-1/2 relative h-[400px] md:h-[600px] w-full">
+                            <div className="md:w-2/5 relative h-[300px] md:h-[400px] w-full">
                                 <img
                                     src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=2426"
                                     alt="Marketplace Platform"
                                     className="absolute inset-0 w-full h-full object-cover"
                                 />
-                                <div className="absolute inset-0 bg-gradient-to-r from-primary to-transparent" />
+                                <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/50 to-transparent md:bg-gradient-to-r md:from-primary md:to-transparent" />
                                 <div className="absolute inset-0 flex items-center justify-center p-8">
-                                    <div className="bg-white/10 backdrop-blur-xl border border-white/20 p-8 rounded-3xl shadow-2xl animate-bounce-slow">
-                                        <Store className="w-24 h-24 text-white" />
+                                    <div className="bg-white/10 backdrop-blur-xl border border-white/20 p-6 rounded-3xl shadow-2xl animate-bounce-slow">
+                                        <Store className="w-16 h-16 text-white" />
                                     </div>
                                 </div>
                             </div>

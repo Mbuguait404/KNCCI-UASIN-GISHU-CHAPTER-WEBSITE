@@ -20,10 +20,12 @@ import AboutPage from "@/pages/about";
 import ContactPage from "@/pages/contact";
 import WorkPage from "@/pages/work";
 import EventsPage from "@/pages/events";
+import EventDetail from "@/pages/event-detail";
 import MarketplacePage from "@/pages/marketplace";
 import MemberDirectoryPage from "@/pages/member-directory";
 import LoginPage from "@/pages/login";
 import ProfilePage from "@/pages/profile";
+import AdminDashboard from "@/pages/admin";
 import NotFound from "@/pages/not-found";
 
 
@@ -36,10 +38,12 @@ function Router() {
       <Route path="/partnership" component={Partnership} />
       <Route path="/work" component={WorkPage} />
       <Route path="/events" component={EventsPage} />
+      <Route path="/events/:id" component={EventDetail} />
       <Route path="/marketplace" component={MarketplacePage} />
       <Route path="/member-directory" component={MemberDirectoryPage} />
       <Route path="/login" component={LoginPage} />
       <Route path="/profile" component={ProfilePage} />
+      <Route path="/admin" component={AdminDashboard} />
 
       <Route path="/membership" component={Membership} />
       <Route path="/board" component={Board} />
@@ -53,22 +57,27 @@ function Router() {
   );
 }
 
+import { AuthProvider } from "@/services/auth-context";
+
 function App() {
   return (
     <HelmetProvider>
       <ThemeProvider>
         <QueryClientProvider client={queryClient}>
           <TooltipProvider>
-            <RegistrationProvider>
-              <Toaster />
-              <Router />
-              <WhatsAppFloat />
-            </RegistrationProvider>
+            <AuthProvider>
+              <RegistrationProvider>
+                <Toaster />
+                <Router />
+                <WhatsAppFloat />
+              </RegistrationProvider>
+            </AuthProvider>
           </TooltipProvider>
         </QueryClientProvider>
       </ThemeProvider>
     </HelmetProvider>
   );
 }
+
 
 export default App;

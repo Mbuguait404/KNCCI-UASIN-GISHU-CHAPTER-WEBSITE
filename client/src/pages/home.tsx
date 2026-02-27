@@ -2,11 +2,10 @@ import { Navigation } from "@/components/navigation";
 import { HeroSection } from "@/components/hero-section";
 import { AboutSection } from "@/components/about-section";
 import { ChairmanSection } from "@/components/chairman-section";
-import { GalaDinnerSection } from "../components/gala-dinner-section";
+import { ServicesSection } from "@/components/services-section";
 import { LocationSection } from "@/components/location-section";
 import { RegistrationSection } from "@/components/registration-section";
 import { PartnersSection } from "@/components/partners-section";
-import { ExhibitionRatesSection } from "@/components/exhibition-rates-section";
 import { PartnershipPackagesSection } from "@/components/partnership-packages-section";
 import { GallerySection } from "@/components/gallery-section";
 import { TestimonialsSection } from "@/components/testimonials-section";
@@ -58,15 +57,15 @@ export default function Home() {
           <AboutSection />
           <ChairmanSection />
           <PartnershipPackagesSection />
-          <ExhibitionRatesSection />
           {/* <SpeakersSection />
         <ProgramSection /> */}
           {/* <VenueSection /> */}
-          <GalaDinnerSection />
-          <LocationSection />
+          <ServicesSection />
           <RegistrationSection />
+          <LocationSection />
           <GallerySection />
           <PartnersSection />
+          {/* <ExhibitionRatesSection /> */}
           <TestimonialsSection />
         </main>
         <Footer />

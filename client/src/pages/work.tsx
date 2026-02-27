@@ -79,37 +79,33 @@ export default function WorkPage() {
             <Navigation />
 
             <main className="pt-20">
-                {/* Hero Section */}
-                <section className="relative py-24 lg:py-36 overflow-hidden bg-slate-900">
-                    <div className="absolute inset-0">
-                        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&q=80&w=2071')] bg-cover bg-center opacity-20" />
-                        <div className="absolute inset-0 bg-gradient-to-b from-slate-900/60 to-slate-900" />
-                    </div>
-
-                    <div className="container mx-auto px-4 relative z-10 text-center">
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="max-w-3xl mx-auto"
-                        >
-                            <span className="inline-block px-4 py-1.5 mb-6 text-primary font-bold text-xs uppercase tracking-[0.2em] bg-primary/10 rounded-full border border-primary/20">
-                                Impacting Business
-                            </span>
-                            <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold text-white mb-8 tracking-tight">
-                                Our <span className="text-primary italic">Pillars</span> of Impact
-                            </h1>
-                            <p className="text-xl text-slate-300 leading-relaxed mb-10">
-                                At KNCCI Uasin Gishu, we are dedicated to creating a vibrant and prosperous business environment through five core strategic initiatives.
-                            </p>
-                            <div className="flex flex-wrap justify-center gap-4">
-                                <Button size="lg" className="rounded-full" asChild>
-                                    <Link href="/about">Learn our Story <ArrowRight className="ml-2 w-4 h-4" /></Link>
-                                </Button>
-                                <Button size="lg" variant="outline" className="rounded-full text-white border-white/20 hover:bg-white/10">
-                                    View Strategic Plan
-                                </Button>
-                            </div>
-                        </motion.div>
+                {/* Header section */}
+                <section className="py-20 bg-slate-50 dark:bg-slate-900/40 border-b border-border">
+                    <div className="container mx-auto px-4">
+                        <div className="max-w-4xl mx-auto text-center">
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                            >
+                                <span className="text-primary font-bold text-sm uppercase tracking-widest block mb-4">
+                                    Impacting Business
+                                </span>
+                                <h1 className="text-4xl md:text-6xl font-extrabold mb-6 tracking-tight">
+                                    Our <span className="text-primary">Pillars</span> of Impact
+                                </h1>
+                                <p className="text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto mb-10">
+                                    At KNCCI Uasin Gishu, we are dedicated to creating a vibrant and prosperous business environment through five core strategic initiatives.
+                                </p>
+                                <div className="flex flex-wrap justify-center gap-4">
+                                    <Button size="lg" className="rounded-full px-8 shadow-lg shadow-primary/20" asChild>
+                                        <Link href="/about">Learn our Story <ArrowRight className="ml-2 w-4 h-4" /></Link>
+                                    </Button>
+                                    <Button size="lg" variant="outline" className="rounded-full px-8 border-primary text-primary hover:bg-primary/5">
+                                        View Strategic Plan
+                                    </Button>
+                                </div>
+                            </motion.div>
+                        </div>
                     </div>
                 </section>
 
@@ -209,7 +205,7 @@ export default function WorkPage() {
                             >
                                 <div className="relative rounded-[2.5rem] overflow-hidden shadow-2xl border-8 border-background">
                                     <img
-                                        src="https://images.unsplash.com/photo-1517245327032-96a18e20e599?auto=format&fit=crop&q=80&w=2070"
+                                        src="https://solby.sfo3.digitaloceanspaces.com/1769687104740-WhatsApp%20Image%202026-01-27%20at%2009.10.56%20(1).jpeg"
                                         alt="Business Networking"
                                         className="w-full h-auto"
                                     />
@@ -228,7 +224,7 @@ export default function WorkPage() {
                 </section>
 
                 {/* Call to Action */}
-                <section className="py-24 relative overflow-hidden bg-primary">
+                <section className="py-24 relative overflow-hidden bg-slate-900">
                     <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '40px 40px' }} />
                     <div className="container mx-auto px-4 relative z-10 text-center text-white">
                         <h2 className="text-3xl md:text-5xl font-extrabold mb-8 tracking-tight">Support Our Initiatives</h2>
@@ -236,11 +232,11 @@ export default function WorkPage() {
                             Whether you're a business looking for advocacy or a partner looking to drive impact, there's a place for you in our mission.
                         </p>
                         <div className="flex flex-col sm:flex-row gap-6 justify-center">
-                            <Button size="lg" variant="secondary" className="rounded-full px-12 h-16 text-lg font-bold" asChild>
+                            <Button size="lg" variant="default" className="rounded-full px-12 h-16 text-lg font-bold" asChild>
                                 <Link href="/membership">Join the Chamber</Link>
                             </Button>
-                            <Button size="lg" variant="outline" className="rounded-full px-12 h-16 text-lg font-bold border-2 border-white bg-transparent text-white hover:bg-white hover:text-primary transition-all duration-300" asChild>
-                                <Link href="/partnership">Explore Partnerships</Link>
+                            <Button size="lg" variant="destructive" className="rounded-full px-12 h-16 text-lg font-bold border-2 border-white bg-transparent text-white hover:bg-white hover:text-primary transition-all duration-300" asChild>
+                                <Link href="/contact">Contact Secretariat</Link>
                             </Button>
                         </div>
                     </div>

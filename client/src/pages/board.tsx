@@ -105,7 +105,7 @@ export default function Board() {
                     })}
 
                     {/* Join Us CTA */}
-                    <section className="py-24 bg-foreground text-background relative overflow-hidden">
+                    <section className="py-24 bg-slate-900 text-background relative overflow-hidden">
                         <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-kncci-green/20 opacity-30" />
                         <div className="max-w-4xl mx-auto px-4 text-center relative z-10">
                             <h2 className="text-3xl sm:text-4xl font-bold mb-6 animate-fade-in">Want to get involved?</h2>

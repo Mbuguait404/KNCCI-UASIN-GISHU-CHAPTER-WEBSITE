@@ -6,15 +6,51 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SEOHead } from "@/components/seo/seo-head";
 import { Link, useLocation } from "wouter";
+import { useState, useEffect } from "react";
+
+import { useAuth } from "@/services/auth-context";
+import { useToast } from "@/hooks/use-toast";
+
+
 
 export default function LoginPage() {
     const [, setLocation] = useLocation();
+    const { login, isAuthenticated, user } = useAuth();
+    const { toast } = useToast();
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
 
-    const handleLogin = (e: React.FormEvent) => {
+    useEffect(() => {
+        if (isAuthenticated && user) {
+            setLocation(user.role === 'admin' ? '/admin' : '/profile');
+        }
+    }, [isAuthenticated, user, setLocation]);
+
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
-        // Redirect to profile page
-        setLocation("/profile");
+        setIsLoading(true);
+        try {
+            const loggedInUser = await login({ email, password });
+            toast({
+                title: "Welcome back!",
+                description: loggedInUser.role === 'admin'
+                    ? "Redirecting to admin dashboard..."
+                    : "You have successfully logged in.",
+            });
+            setLocation(loggedInUser.role === 'admin' ? '/admin' : '/profile');
+
+        } catch (error: any) {
+            toast({
+                title: "Login failed",
+                description: error.response?.data?.message || "Invalid email or password",
+                variant: "destructive",
+            });
+        } finally {
+            setIsLoading(false);
+        }
     };
+
 
     return (
         <div className="h-screen w-full bg-slate-50 dark:bg-slate-900 overflow-hidden flex flex-col">
@@ -95,7 +131,7 @@ export default function LoginPage() {
                     >
                         <Card className="border-border/50 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.14)] rounded-[2.5rem] overflow-hidden bg-background/80 backdrop-blur-xl">
                             <Tabs defaultValue="login" className="w-full">
-                                <TabsList className="grid grid-cols-2 h-16 bg-muted/40 rounded-none p-1.5 gap-1">
+                                <TabsList className="grid grid-cols-2 h-16  bg-primary/5 rounded-none p-1.5 gap-1">
                                     <TabsTrigger value="login" className="h-full data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-lg font-bold text-sm rounded-3xl transition-all">Login</TabsTrigger>
                                     <TabsTrigger value="register" className="h-full data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-lg font-bold text-sm rounded-3xl transition-all">Register</TabsTrigger>
                                 </TabsList>
@@ -113,7 +149,14 @@ export default function LoginPage() {
                                                     <label className="text-[11px] font-extrabold uppercase tracking-[0.2em] text-muted-foreground ml-1">Email / Username</label>
                                                     <div className="relative group">
                                                         <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-primary transition-colors" />
-                                                        <Input required placeholder="name@company.com" className="h-14 pl-12 rounded-2xl bg-slate-50 dark:bg-slate-900 border-border/50 focus:border-primary focus:ring-primary/20 transition-all text-base" />
+                                                        <Input
+                                                            required
+                                                            type="email"
+                                                            value={email}
+                                                            onChange={(e) => setEmail(e.target.value)}
+                                                            placeholder="name@company.com"
+                                                            className="h-14 pl-12 rounded-2xl bg-slate-50 dark:bg-slate-900 border-border/50 focus:border-primary focus:ring-primary/20 transition-all text-base"
+                                                        />
                                                     </div>
                                                 </div>
 
@@ -124,14 +167,26 @@ export default function LoginPage() {
                                                     </div>
                                                     <div className="relative group">
                                                         <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-primary transition-colors" />
-                                                        <Input required type="password" placeholder="••••••••" className="h-14 pl-12 rounded-2xl bg-slate-50 dark:bg-slate-900 border-border/50 focus:border-primary focus:ring-primary/20 transition-all text-base" />
+                                                        <Input
+                                                            required
+                                                            type="password"
+                                                            value={password}
+                                                            onChange={(e) => setPassword(e.target.value)}
+                                                            placeholder="••••••••"
+                                                            className="h-14 pl-12 rounded-2xl bg-slate-50 dark:bg-slate-900 border-border/50 focus:border-primary focus:ring-primary/20 transition-all text-base"
+                                                        />
                                                     </div>
                                                 </div>
                                             </div>
 
-                                            <Button size="lg" className="w-full h-14 rounded-2xl font-bold text-lg shadow-xl shadow-primary/20 group relative overflow-hidden">
+                                            <Button
+                                                size="lg"
+                                                type="submit"
+                                                disabled={isLoading}
+                                                className="w-full h-14 rounded-2xl font-bold text-lg shadow-xl shadow-primary/20 group relative overflow-hidden"
+                                            >
                                                 <span className="relative z-10 flex items-center justify-center">
-                                                    Sign In <LogIn className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                                    {isLoading ? "Signing In..." : "Sign In"} <LogIn className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                                                 </span>
                                             </Button>
                                         </form>

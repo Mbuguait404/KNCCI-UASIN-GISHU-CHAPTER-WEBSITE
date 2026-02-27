@@ -71,27 +71,27 @@ export default function ContactPage() {
             icon: MapPin,
             title: "Our Office",
             content: "Daima Towers, M2 Room 9, Eldoret, Kenya",
-            color: "bg-blue-500/10 text-blue-500",
+            color: "bg-secondary/10 text-secondary",
         },
         {
             icon: Phone,
             title: "Phone Number",
             content: "+254 740 853 372",
             link: "tel:+254740853372",
-            color: "bg-green-500/10 text-green-500",
+            color: "bg-primary/10 text-primary",
         },
         {
             icon: Mail,
             title: "Email Address",
             content: "events@uasingishuchamber.co.ke",
             link: "mailto:events@uasingishuchamber.co.ke",
-            color: "bg-purple-500/10 text-purple-500",
+            color: "bg-secondary/10 text-secondary",
         },
         {
             icon: Clock,
             title: "Working Hours",
             content: "Mon - Fri: 8:00 AM - 5:00 PM",
-            color: "bg-orange-500/10 text-orange-500",
+            color: "bg-primary/10 text-primary",
         },
     ];
 
@@ -111,39 +111,30 @@ export default function ContactPage() {
             <Navigation />
 
             <main className="pt-20">
-                {/* Hero Section */}
-                <section className="relative py-24 lg:py-32 overflow-hidden bg-slate-950">
-                    <div className="absolute inset-0 z-0">
-                        <img
-                            src="https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=2070"
-                            alt="Contact Hero"
-                            className="w-full h-full object-cover opacity-40"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-b from-slate-950/80 via-slate-950/40 to-slate-950" />
-                    </div>
-
-                    <div className="container mx-auto px-4 relative z-10">
-                        <div className="max-w-3xl">
+                {/* Header section */}
+                <section className="py-20 bg-slate-50 dark:bg-slate-900/40 border-b border-border">
+                    <div className="container mx-auto px-4">
+                        <div className="max-w-4xl mx-auto text-center">
                             <motion.span
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className="inline-block px-4 py-1.5 mb-6 text-primary font-bold text-xs uppercase tracking-[0.2em] bg-primary/10 rounded-full border border-primary/20"
+                                className="text-primary font-bold text-sm uppercase tracking-widest block mb-4"
                             >
-                                Contact Us
+                                Get in Touch
                             </motion.span>
                             <motion.h1
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.1 }}
-                                className="text-4xl md:text-6xl lg:text-7xl font-extrabold text-white mb-8 tracking-tight"
+                                className="text-4xl md:text-6xl font-extrabold mb-6 tracking-tight"
                             >
-                                Let's <span className="text-primary italic">Connect</span> & Build Together
+                                Let's <span className="text-primary">Connect</span> & Build Together
                             </motion.h1>
                             <motion.p
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.2 }}
-                                className="text-lg md:text-xl text-slate-300 leading-relaxed max-w-2xl"
+                                className="text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto"
                             >
                                 Have questions about membership, events, or partnerships? Our team is ready to support your business journey in Uasin Gishu County.
                             </motion.p>
@@ -314,7 +305,7 @@ export default function ContactPage() {
                 </section>
 
                 {/* Map Section */}
-                <section className="py-24 bg-muted/30 relative overflow-hidden">
+                <section className="py-24 bg-gradient-to-br from-primary/5 to-secondary/5 relative overflow-hidden">
                     <div className="container mx-auto px-4">
                         <div className="mb-12 text-center">
                             <span className="text-primary font-bold text-sm uppercase tracking-widest block mb-4">Location</span>

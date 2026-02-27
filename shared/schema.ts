@@ -170,6 +170,21 @@ export interface BlogPost {
   isFeatured?: boolean;
 }
 
+export interface ChamberEvent {
+  id: string;
+  title: string;
+  date: string;
+  location: string;
+  image: string;
+  category: string;
+  description: string;
+  featured: boolean;
+  content?: string;
+  longDescription?: string;
+  registrationLink?: string;
+  agenda?: { time: string; activity: string }[];
+}
+
 // Contact form submissions
 export interface ContactSubmission {
   id: string;
