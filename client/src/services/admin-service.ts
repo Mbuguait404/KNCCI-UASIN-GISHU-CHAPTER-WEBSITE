@@ -94,4 +94,22 @@ export const adminService = {
         const response = await api.delete(`/admin/members/${id}`);
         return response.data;
     },
+
+    /** GET /membership-applications/admin/all */
+    async getApplications(): Promise<{ success: boolean; data: any[]; message: string }> {
+        const response = await api.get('/membership-applications/admin/all');
+        return response.data;
+    },
+
+    /** PATCH /membership-applications/admin/:id/status */
+    async updateApplicationStatus(id: string, status: string): Promise<{ success: boolean; message: string }> {
+        const response = await api.patch(`/membership-applications/admin/${id}/status`, { status });
+        return response.data;
+    },
+
+    /** DELETE /membership-applications/admin/:id */
+    async deleteApplication(id: string): Promise<{ success: boolean; message: string }> {
+        const response = await api.delete(`/membership-applications/admin/${id}`);
+        return response.data;
+    },
 };

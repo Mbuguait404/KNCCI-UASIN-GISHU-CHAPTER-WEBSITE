@@ -1,8 +1,10 @@
 import { Navigation } from "@/components/navigation";
 import { Footer } from "@/components/footer";
+import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { SEOHead } from "@/components/seo/seo-head";
+import { MembershipForm } from "@/components/membership-form";
 import {
   Users,
   Megaphone,
@@ -11,7 +13,6 @@ import {
   Eye,
   Briefcase,
   Percent,
-  ExternalLink,
 } from "lucide-react";
 
 const membershipData = {
@@ -68,8 +69,6 @@ const membershipData = {
   ],
 };
 
-const MEMBERSHIP_FORM_URL = "https://forms.gle/22EEiMTGzu7o9C6PA";
-
 export default function Membership() {
   return (
     <>
@@ -89,20 +88,23 @@ export default function Membership() {
       />
       <div className="min-h-screen bg-background">
         <Navigation />
-        <main>
-          {/* Hero */}
-          <section className="py-20 sm:py-28 bg-gradient-to-br from-primary/10 via-background to-kncci-green/10">
+        <main className="pt-20">
+          {/* Header section */}
+          <section className="py-20 bg-slate-50 dark:bg-slate-900/40 border-b border-border">
             <div className="container mx-auto px-4">
               <div className="max-w-4xl mx-auto text-center">
-                <span className="text-primary font-semibold text-sm uppercase tracking-wider">
-                  {membershipData.organization.acronym} Uasin Gishu Chapter
-                </span>
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mt-4 mb-2">
-                  {membershipData.organization.name}
-                </h1>
-                <p className="text-xl text-kncci-green dark:text-kncci-green font-medium">
-                  {membershipData.organization.slogan}
-                </p>
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  <span className="text-primary font-bold text-sm uppercase tracking-widest block mb-4">The Chamber Network</span>
+                  <h1 className="text-4xl md:text-6xl font-extrabold mb-6 tracking-tight">
+                    Grow Your <span className="text-primary">Business</span> Together
+                  </h1>
+                  <p className="text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto mb-10">
+                    Become a part of the most influential business network in Uasin Gishu. Access exclusive resources, advocacy, and growth opportunities.
+                  </p>
+                </motion.div>
               </div>
             </div>
           </section>
@@ -111,12 +113,13 @@ export default function Membership() {
           <section className="py-16 sm:py-24 bg-background">
             <div className="container mx-auto px-4">
               <div className="max-w-6xl mx-auto">
-                <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-12 border-b border-border pb-6">
-                  <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-kncci-green">
-                    {membershipData.document_title}
-                  </h2>
-                  <p className="text-lg text-muted-foreground font-medium">
-                    {membershipData.tagline}
+                <div className="flex flex-col md:flex-row items-end justify-between mb-16 gap-4">
+                  <div>
+                    <h2 className="text-3xl md:text-4xl font-bold italic mb-4">Membership <span className="text-primary">Benefits</span></h2>
+                    <div className="w-24 h-1.5 bg-primary rounded-full" />
+                  </div>
+                  <p className="text-lg text-muted-foreground font-medium max-w-md">
+                    Unlock exclusive opportunities and resources designed to scale your business.
                   </p>
                 </div>
 
@@ -149,36 +152,16 @@ export default function Membership() {
                   })}
                 </div>
 
-                {/* CTA - Apply Now */}
-                <Card className="max-w-2xl mx-auto border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-kncci-green/5">
-                  <CardContent className="p-8 sm:p-10 text-center">
-                    <h3 className="text-2xl font-bold text-foreground mb-2">
-                      Ready to join?
-                    </h3>
-                    <p className="text-muted-foreground mb-6">
-                      Take the first step towards becoming a KNCCI member. Fill out
-                      the membership application form and unlock exclusive benefits
-                      for your business.
+                {/* Membership Application Form */}
+                <div id="apply-form" className="max-w-4xl mx-auto scroll-mt-24 pt-24">
+                  <div className="text-center mb-16">
+                    <h2 className="text-3xl md:text-5xl font-bold mb-6">Join <span className="text-primary italic">Now</span></h2>
+                    <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+                      Fill out the form below to become a member of the KNCCI Uasin Gishu Chapter and start growing your business today.
                     </p>
-                    <Button
-                      size="lg"
-                      className="gap-2"
-                      asChild
-                    >
-                      <a
-                        href={MEMBERSHIP_FORM_URL}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        Apply for Membership
-                        <ExternalLink className="w-4 h-4" />
-                      </a>
-                    </Button>
-                    <p className="text-xs text-muted-foreground mt-4">
-                      You will be redirected to the official KNCCI membership form
-                    </p>
-                  </CardContent>
-                </Card>
+                  </div>
+                  <MembershipForm />
+                </div>
               </div>
             </div>
           </section>

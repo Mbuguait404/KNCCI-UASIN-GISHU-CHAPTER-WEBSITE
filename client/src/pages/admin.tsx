@@ -6,7 +6,7 @@ import {
     LogOut, Crown, Medal, Award, Trash2, KeyRound, UserCog,
     Building2, Mail, Phone, MapPin, Globe, Eye, X, Home,
     TrendingUp, Activity, LayoutDashboard, ChevronDown,
-    AlertTriangle, Loader2
+    AlertTriangle, Loader2, FileText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -83,8 +83,10 @@ export default function AdminDashboard() {
     // ─── State ─────────────────────────────────────────────────────────
     const [stats, setStats] = useState<DashboardStats | null>(null);
     const [members, setMembers] = useState<PaginatedMembers | null>(null);
+    const [applications, setApplications] = useState<any[]>([]);
     const [loadingStats, setLoadingStats] = useState(true);
     const [loadingMembers, setLoadingMembers] = useState(true);
+    const [loadingApplications, setLoadingApplications] = useState(true);
 
     // Filters
     const [searchQuery, setSearchQuery] = useState("");
@@ -143,6 +145,21 @@ export default function AdminDashboard() {
 
     useEffect(() => { fetchStats(); }, [fetchStats]);
     useEffect(() => { fetchMembers(); }, [fetchMembers]);
+
+    // ─── Fetch applications ───────────────────────────────────────────
+    const fetchApplications = useCallback(async () => {
+        try {
+            setLoadingApplications(true);
+            const res = await adminService.getApplications();
+            if (res.success) setApplications(res.data);
+        } catch (err: any) {
+            toast({ title: "Error", description: err.response?.data?.message || "Failed to load applications", variant: "destructive" });
+        } finally {
+            setLoadingApplications(false);
+        }
+    }, [toast]);
+
+    useEffect(() => { fetchApplications(); }, [fetchApplications]);
 
     // Debounced search
     useEffect(() => {
@@ -206,6 +223,32 @@ export default function AdminDashboard() {
             fetchStats();
         } catch (err: any) {
             toast({ title: "Error", description: err.response?.data?.message || "Failed to delete member", variant: "destructive" });
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const handleApplicationStatus = async (id: string, status: string) => {
+        setActionLoading(true);
+        try {
+            await adminService.updateApplicationStatus(id, status);
+            toast({ title: "Status Updated", description: `Application is now ${status}.` });
+            fetchApplications();
+        } catch (err: any) {
+            toast({ title: "Error", description: err.response?.data?.message || "Failed to update status", variant: "destructive" });
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const handleApplicationDelete = async (id: string) => {
+        setActionLoading(true);
+        try {
+            await adminService.deleteApplication(id);
+            toast({ title: "Application Deleted", description: "The membership application has been removed." });
+            fetchApplications();
+        } catch (err: any) {
+            toast({ title: "Error", description: err.response?.data?.message || "Failed to delete application", variant: "destructive" });
         } finally {
             setActionLoading(false);
         }
@@ -296,6 +339,7 @@ export default function AdminDashboard() {
                         {[
                             { key: "overview", label: "Dashboard", icon: <LayoutDashboard className="w-4 h-4" /> },
                             { key: "members", label: "Members", icon: <Users className="w-4 h-4" /> },
+                            { key: "applications", label: "Applications", icon: <FileText className="w-4 h-4" /> },
                         ].map((item) => (
                             <button
                                 key={item.key}
@@ -359,6 +403,7 @@ export default function AdminDashboard() {
                             <TabsList className="h-9">
                                 <TabsTrigger value="overview" className="text-xs px-3 h-7"><BarChart3 className="w-3.5 h-3.5" /></TabsTrigger>
                                 <TabsTrigger value="members" className="text-xs px-3 h-7"><Users className="w-3.5 h-3.5" /></TabsTrigger>
+                                <TabsTrigger value="applications" className="text-xs px-3 h-7"><FileText className="w-3.5 h-3.5" /></TabsTrigger>
                             </TabsList>
                         </Tabs>
                         <Button variant="ghost" size="icon" onClick={() => setLocation('/')} title="Return to Home">
@@ -381,7 +426,7 @@ export default function AdminDashboard() {
                             {new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
                         </p>
                         <h1 className="text-3xl lg:text-4xl font-extrabold tracking-tight">
-                            {activeTab === "overview" ? "Dashboard Overview" : "Member Management"}
+                            {activeTab === "overview" ? "Dashboard Overview" : activeTab === "members" ? "Member Management" : "Application Management"}
                         </h1>
                     </motion.div>
 
@@ -698,6 +743,110 @@ export default function AdminDashboard() {
                                         </div>
                                     </div>
                                 )}
+                            </Card>
+                        </motion.div>
+                    )}
+
+                    {/* ═══ APPLICATIONS TAB ═══════════════════════════════ */}
+                    {activeTab === "applications" && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.3 }}
+                            className="space-y-6"
+                        >
+                            <Card className="border-border/40 overflow-hidden">
+                                <div className="overflow-x-auto">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow className="bg-slate-50/50 dark:bg-slate-900/50">
+                                                <TableHead className="font-extrabold text-xs uppercase tracking-wider">Applicant</TableHead>
+                                                <TableHead className="font-extrabold text-xs uppercase tracking-wider">Business</TableHead>
+                                                <TableHead className="font-extrabold text-xs uppercase tracking-wider">Location</TableHead>
+                                                <TableHead className="font-extrabold text-xs uppercase tracking-wider">Status</TableHead>
+                                                <TableHead className="font-extrabold text-xs uppercase tracking-wider text-right">Actions</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {loadingApplications ? (
+                                                <TableRow>
+                                                    <TableCell colSpan={5} className="h-40 text-center">
+                                                        <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto" />
+                                                        <p className="text-sm text-muted-foreground mt-2">Loading applications...</p>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ) : applications.length === 0 ? (
+                                                <TableRow>
+                                                    <TableCell colSpan={5} className="h-40 text-center">
+                                                        <FileText className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                                                        <p className="text-sm font-bold text-muted-foreground">No applications found</p>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ) : (
+                                                applications.map((app, i) => (
+                                                    <motion.tr
+                                                        key={app._id}
+                                                        initial={{ opacity: 0, x: -10 }}
+                                                        animate={{ opacity: 1, x: 0 }}
+                                                        transition={{ delay: i * 0.03 }}
+                                                        className="border-b border-border/30 hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors group"
+                                                    >
+                                                        <TableCell>
+                                                            <div>
+                                                                <p className="text-sm font-bold">{app.name}</p>
+                                                                <p className="text-[11px] text-muted-foreground">{app.email}</p>
+                                                                <p className="text-[11px] text-muted-foreground">{app.contact}</p>
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <p className="text-sm font-medium">{app.businessName}</p>
+                                                            <p className="text-[11px] text-muted-foreground">{app.businessClass}</p>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <p className="text-xs">{app.location}</p>
+                                                            <p className="text-[10px] text-muted-foreground">{app.subCounty}</p>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <Badge variant={app.status === 'pending' ? 'outline' : app.status === 'approved' ? 'default' : 'destructive'}>
+                                                                {app.status}
+                                                            </Badge>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <div className="flex items-center justify-end gap-1">
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50"
+                                                                    onClick={() => handleApplicationStatus(app._id, 'approved')}
+                                                                    disabled={actionLoading || app.status === 'approved'}
+                                                                >
+                                                                    Approve
+                                                                </Button>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="text-amber-500 hover:text-amber-600 hover:bg-amber-50"
+                                                                    onClick={() => handleApplicationStatus(app._id, 'rejected')}
+                                                                    disabled={actionLoading || app.status === 'rejected'}
+                                                                >
+                                                                    Reject
+                                                                </Button>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                                                                    onClick={() => handleApplicationDelete(app._id)}
+                                                                >
+                                                                    <Trash2 className="w-4 h-4" />
+                                                                </Button>
+                                                            </div>
+                                                        </TableCell>
+                                                    </motion.tr>
+                                                ))
+                                            )}
+                                        </TableBody>
+                                    </Table>
+                                </div>
                             </Card>
                         </motion.div>
                     )}

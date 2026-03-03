@@ -4,7 +4,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useTheme } from "@/components/theme-provider";
 import { useLocation, Link } from "wouter";
 import { useRegistration } from "@/contexts/registration-context";
-import { Menu, Moon, Sun, ChevronDown } from "lucide-react";
+import { Menu, Moon, Sun, ChevronDown, User, LogOut } from "lucide-react";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -294,24 +294,63 @@ export function Navigation() {
 
                 <div className="border-t border-border my-4" />
 
-                <Link href="/membership">
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start mt-2"
-                    onClick={() => setMobileOpen(false)}
-                  >
-                    Be a Member
-                  </Button>
-                </Link>
+                {isAuthenticated ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3 px-3 py-4 bg-muted/50 rounded-2xl border border-border/50">
+                      <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-bold flex-shrink-0 shadow-sm">
+                        {user?.name?.[0]}
+                      </div>
+                      <div className="flex flex-col min-w-0">
+                        <span className="font-bold text-foreground leading-tight truncate">{user?.name}</span>
+                        <span className="text-xs text-muted-foreground truncate">{user?.email}</span>
+                      </div>
+                    </div>
 
-                <Link href="/login">
-                  <Button
-                    className="w-full justify-start bg-primary text-primary-foreground mt-2"
-                    onClick={() => setMobileOpen(false)}
-                  >
-                    Login
-                  </Button>
-                </Link>
+                    <Link href="/profile">
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start gap-3 h-12 rounded-xl border-border"
+                        onClick={() => setMobileOpen(false)}
+                      >
+                        <User className="h-4 w-4 text-primary" />
+                        Account Profile
+                      </Button>
+                    </Link>
+
+                    {/* <Button
+                      variant="ghost"
+                      className="w-full justify-start gap-3 h-12 rounded-xl text-destructive hover:text-destructive hover:bg-destructive/10"
+                      onClick={() => {
+                        logout();
+                        setMobileOpen(false);
+                      }}
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Sign Out
+                    </Button> */}
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <Link href="/membership">
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start h-12 rounded-xl border-border"
+                        onClick={() => setMobileOpen(false)}
+                      >
+                        Be a Member
+                      </Button>
+                    </Link>
+
+                    <Link href="/login">
+                      <Button
+                        className="w-full justify-start bg-primary text-primary-foreground h-12 rounded-xl font-bold"
+                        onClick={() => setMobileOpen(false)}
+                      >
+                        Sign In
+                      </Button>
+                    </Link>
+                  </div>
+                )}
               </div>
             </SheetContent>
           </Sheet>

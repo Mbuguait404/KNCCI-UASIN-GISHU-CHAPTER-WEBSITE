@@ -1,6 +1,5 @@
 import { Navigation } from "@/components/navigation";
-import { Footer } from "@/components/footer";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
     User,
     Settings,
@@ -18,7 +17,16 @@ import {
     BaggageClaim,
     Activity,
     LayoutDashboard,
-    Award
+    Award,
+    Home,
+    Search,
+    Bell,
+    TrendingUp,
+    Store,
+    Users,
+    FileText,
+    Download,
+    CreditCard as PaymentIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -63,8 +71,6 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { MembershipCertificate } from "@/components/membership-certificate";
 
-
-
 export default function ProfilePage() {
     const [, setLocation] = useLocation();
     const { user, logout, loading: authLoading } = useAuth();
@@ -72,6 +78,7 @@ export default function ProfilePage() {
     const [loading, setLoading] = useState(true);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [showCertificate, setShowCertificate] = useState(false);
+    const [activeTab, setActiveTab] = useState("overview");
 
     const businessSchema = z.object({
         name: z.string().min(2, "Business name must be at least 2 characters"),
@@ -115,7 +122,6 @@ export default function ProfilePage() {
                 const response = await businessService.getMyBusiness();
                 if (response.success && response.data) {
                     setBusiness(response.data);
-                    // Reset form with fetched data
                     form.reset({
                         name: response.data.name || "",
                         category: response.data.category || "",
@@ -169,523 +175,717 @@ export default function ProfilePage() {
     };
 
     if (authLoading || (loading && !business && user)) {
-        return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
+                <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                    className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full"
+                />
+            </div>
+        );
     }
 
     if (!user) return null;
 
-    const handleLogout = () => {
-        logout();
-    };
+    const sideNavItems = [
+        { key: "overview", label: "Dashboard", icon: <LayoutDashboard className="w-4 h-4" /> },
+        { key: "business", label: "Business Profile", icon: <Briefcase className="w-4 h-4" /> },
+        { key: "finances", label: "Finances", icon: <PaymentIcon className="w-4 h-4" /> },
+        { key: "marketplace", label: "Marketplace", icon: <Store className="w-4 h-4" /> },
+        { key: "events", label: "Events & Trade", icon: <Activity className="w-4 h-4" /> },
+    ];
 
+    const stats = [
+        { title: "Membership Status", value: business?.plan || "Full", icon: <Shield className="w-5 h-5" />, color: "from-blue-500 to-indigo-600", bg: "bg-blue-500/10" },
+        { title: "Registered Events", value: "2", icon: <Calendar className="w-5 h-5" />, color: "from-primary to-primary/70", bg: "bg-primary/10" },
+        { title: "Trade Leads", value: "12", icon: <TrendingUp className="w-5 h-5" />, color: "from-emerald-500 to-teal-600", bg: "bg-emerald-500/10" },
+        { title: "Total Points", value: "450", icon: <Award className="w-5 h-5" />, color: "from-amber-500 to-orange-600", bg: "bg-amber-500/10" },
+    ];
 
     return (
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex font-sans">
             <SEOHead
-                title="Your Profile | KNCCI Uasin Gishu Member Portal"
-                description="Manage your KNCCI Uasin Gishu membership, business details, and trade opportunities."
+                title="Member Dashboard | KNCCI Uasin Gishu"
+                description="Manage your business, explore trade leads, and connect with the chamber through your personal dashboard."
             />
-            <Navigation />
 
-            <main className="pt-24 pb-20">
-                <div className="container mx-auto px-4">
-                    {/* Hero Profile Section */}
-                    <div className="relative mb-12">
-                        <div className="h-48 md:h-64 rounded-3xl bg-gradient-to-r from-primary/20 via-primary/10 to-transparent border border-primary/10 overflow-hidden relative">
-                            <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full -mr-32 -mt-32 blur-3xl" />
-                            <div className="absolute bottom-0 left-0 w-64 h-64 bg-primary/10 rounded-full -ml-32 -mb-32 blur-2xl" />
+            {/* ──── Sidebar ──────────────────────────────────────────────── */}
+            <aside className="hidden lg:flex lg:flex-col w-72 bg-white dark:bg-slate-900 border-r border-border/40 p-6 justify-between fixed h-full z-20 overflow-y-auto">
+                <div className="space-y-8">
+                    {/* Brand */}
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-white font-extrabold text-sm shadow-lg shadow-primary/20">
+                            K
+                        </div>
+                        <div>
+                            <h2 className="font-extrabold text-sm tracking-tight text-foreground">Member Portal</h2>
+                            <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">KNCCI Uasin Gishu</p>
+                        </div>
+                    </div>
+
+                    {/* Nav Items */}
+                    <nav className="space-y-1">
+                        {sideNavItems.map((item) => (
+                            <button
+                                key={item.key}
+                                onClick={() => setActiveTab(item.key)}
+                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all duration-200 ${activeTab === item.key
+                                    ? "bg-primary/10 text-primary shadow-sm"
+                                    : "text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-foreground"
+                                    }`}
+                            >
+                                {item.icon}
+                                {item.label}
+                            </button>
+                        ))}
+                    </nav>
+
+                    {/* Navigation Help */}
+                    <div className="pt-4 space-y-4">
+                        <p className="px-4 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Resources</p>
+                        <div className="space-y-1">
+                            <Button
+                                variant="ghost"
+                                className="w-full justify-start text-sm font-bold text-muted-foreground hover:text-foreground hover:bg-slate-100 dark:hover:bg-slate-800"
+                                onClick={() => setLocation('/')}
+                            >
+                                <Home className="w-4 h-4 mr-3" /> Visit Website
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                className="w-full justify-start text-sm font-bold text-muted-foreground hover:text-foreground hover:bg-slate-100 dark:hover:bg-slate-800"
+                                onClick={() => setShowCertificate(true)}
+                            >
+                                <Award className="w-4 h-4 mr-3" /> Certificate
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* User & Logout */}
+                <div className="mt-8 space-y-4">
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-border/20 text-foreground">
+                        <Avatar className="w-9 h-9">
+                            <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs uppercase">
+                                {user.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                            </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-xs font-bold truncate">{user.name}</p>
+                            <p className="text-[10px] text-muted-foreground truncate italic">{business?.plan || "Member"}</p>
+                        </div>
+                    </div>
+                    <Button
+                        variant="ghost"
+                        className="w-full justify-start text-sm font-bold text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-xl"
+                        onClick={logout}
+                    >
+                        <LogOut className="w-4 h-4 mr-2" /> Log Out
+                    </Button>
+                </div>
+            </aside>
+
+            {/* ──── Main Content ─────────────────────────────────────────── */}
+            <main className="flex-1 lg:ml-72 min-h-screen text-foreground">
+                {/* Mobile Header */}
+                <header className="lg:hidden flex items-center justify-between p-4 border-b border-border/40 bg-white dark:bg-slate-900 sticky top-0 z-30">
+                    <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-white font-extrabold text-xs">K</div>
+                        <h2 className="font-extrabold text-sm uppercase">Dashboard</h2>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Button variant="ghost" size="icon" onClick={() => setShowCertificate(true)}>
+                            <Award className="w-4 h-4 text-primary" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="text-red-500" onClick={logout}>
+                            <LogOut className="w-4 h-4" />
+                        </Button>
+                    </div>
+                </header>
+
+                <div className="p-6 lg:p-10 w-full max-w-[1600px] flex flex-col gap-8">
+                    {/* ═══ Compact Profile Header ═══ */}
+                    <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="w-full bg-white dark:bg-slate-900 rounded-[2rem] border border-border/40 p-4 lg:px-8 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6"
+                    >
+                        <div className="flex items-center gap-4">
+                            <Avatar className="w-12 h-12 border-2 border-primary/20 shadow-sm rounded-xl">
+                                <AvatarFallback className="bg-primary text-white text-lg font-extrabold uppercase">
+                                    {user.name.split(' ').map(n => n[0]).join('')}
+                                </AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0">
+                                <h2 className="text-base font-extrabold tracking-tight truncate">{user.name}</h2>
+                                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest truncate">{business?.category || "KNCCI Member"}</p>
+                            </div>
                         </div>
 
-                        <div className="container px-8 -mt-20 relative z-10">
-                            <div className="flex flex-col md:flex-row gap-8 items-end">
-                                <Avatar className="w-40 h-40 border-8 border-background shadow-2xl rounded-3xl">
-                                    <AvatarImage src="" alt="Profile" />
-                                    <AvatarFallback className="bg-primary text-white text-5xl font-extrabold rounded-none">
-                                        {user.name.split(' ').map(n => n[0]).join('')}
-                                    </AvatarFallback>
-                                </Avatar>
+                        <div className="hidden xl:flex items-center gap-8">
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-primary">
+                                    <Mail className="w-4 h-4" />
+                                </div>
+                                <div className="min-w-0">
+                                    <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Email</p>
+                                    <p className="text-xs font-bold truncate">{user.email}</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-primary">
+                                    <Phone className="w-4 h-4" />
+                                </div>
+                                <div>
+                                    <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Contact</p>
+                                    <p className="text-xs font-bold">{user.phone || "Not set"}</p>
+                                </div>
+                            </div>
+                        </div>
 
-                                <div className="flex-1 mb-4">
-                                    <div className="flex flex-wrap items-center gap-3 mb-2">
-                                        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">{user.name}</h1>
-                                        <Badge variant="secondary" className="bg-secondary/10 text-secondary dark:bg-emerald-900/40 dark:text-emerald-400 border-none px-3 py-1 flex gap-1.5 items-center">
-                                            <BadgeCheck className="w-4 h-4" />
-                                            Active Member
-                                        </Badge>
+                        <div className="flex items-center gap-4">
+                            <div className="hidden sm:flex flex-col items-end mr-2">
+                                <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Active Plan</p>
+                                <Badge className="bg-primary/10 text-primary border-none font-bold rounded-lg px-2 py-0.5 text-[10px]">
+                                    {business?.plan || "Bronze"}
+                                </Badge>
+                            </div>
+                            <Button
+                                variant="outline"
+                                className="rounded-xl h-10 px-5 font-bold shadow-sm bg-primary/5 text-primary border-primary/20 hover:bg-primary hover:text-white transition-all text-[11px] uppercase tracking-wider"
+                                onClick={() => setShowCertificate(true)}
+                            >
+                                <Award className="w-3.5 h-3.5 mr-2" /> Certificate
+                            </Button>
+                        </div>
+                    </motion.div>
+
+                    {/* Header Section with glassmorphism welcome banner */}
+                    <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-primary/10 via-primary/5 to-secondary/5 border border-primary/10 p-8 lg:p-12">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full -mr-32 -mt-32 blur-[80px]" />
+                        <div className="absolute bottom-0 left-0 w-64 h-64 bg-secondary/10 rounded-full -ml-32 -mb-32 blur-[60px]" />
+
+                        <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                            <motion.div
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                className="max-w-2xl"
+                            >
+                                <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary/70 mb-2 font-mono">
+                                    Welcome back, {user.name.split(' ')[0]}
+                                </p>
+                                <h1 className="text-3xl lg:text-5xl font-extrabold tracking-tight mb-4">
+                                    {sideNavItems.find(n => n.key === activeTab)?.label || "Dashboard"}
+                                </h1>
+                                <div className="flex flex-wrap items-center gap-4">
+                                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white dark:bg-slate-800 shadow-sm border border-primary/10">
+                                        <BadgeCheck className="w-4 h-4 text-emerald-500" />
+                                        <span className="text-xs font-extrabold text-foreground uppercase tracking-widest">Verified Member</span>
                                     </div>
-                                    <p className="text-xl text-muted-foreground flex items-center gap-2">
-                                        {business?.name || "Member"}, {business?.category || "Individual"}
-                                    </p>
+                                    <span className="text-[11px] font-bold text-muted-foreground/60 uppercase tracking-widest border-l border-border/40 pl-4 h-4 flex items-center">
+                                        Member Since Jan 2023
+                                    </span>
                                 </div>
+                            </motion.div>
 
-                                <div className="flex gap-3 mb-4 flex-wrap">
-                                    {user.role === 'admin' && (
-                                        <Button
-                                            className="rounded-xl font-bold bg-gradient-to-r from-primary/5 to-secondary/5 text-white hover:from-primary/10 hover:to-secondary/10 shadow-lg shadow-primary/20"
-                                            onClick={() => setLocation('/admin')}
-                                        >
-                                            <LayoutDashboard className="w-4 h-4 mr-2" /> Admin Dashboard
-                                        </Button>
-                                    )}
-                                    <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-                                        <DialogTrigger asChild>
-                                            <Button variant="outline" className="rounded-xl border-border hover:bg-muted font-bold">
-                                                <Settings className="w-4 h-4 mr-2" /> Edit Profile
-                                            </Button>
-                                        </DialogTrigger>
-                                        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto rounded-3xl p-0 border-none shadow-2xl">
-                                            <div className="bg-primary/5 p-8 border-b border-primary/10">
-                                                <DialogHeader>
-                                                    <DialogTitle className="text-2xl font-extrabold flex items-center gap-2">
-                                                        <Briefcase className="w-6 h-6 text-primary" />
-                                                        Business Profile Settings
-                                                    </DialogTitle>
-                                                    <DialogDescription className="text-base">
-                                                        Update your organization's details to better represent your business in the chamber.
-                                                    </DialogDescription>
-                                                </DialogHeader>
-                                            </div>
-
-                                            <div className="p-8">
-                                                <Form {...form}>
-                                                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                            <FormField
-                                                                control={form.control}
-                                                                name="name"
-                                                                render={({ field }) => (
-                                                                    <FormItem>
-                                                                        <FormLabel className="font-bold">Business Name</FormLabel>
-                                                                        <FormControl>
-                                                                            <Input placeholder="e.g. Eldoret Tech Solutions" className="rounded-xl" {...field} />
-                                                                        </FormControl>
-                                                                        <FormMessage />
-                                                                    </FormItem>
-                                                                )}
-                                                            />
-                                                            <FormField
-                                                                control={form.control}
-                                                                name="category"
-                                                                render={({ field }) => (
-                                                                    <FormItem>
-                                                                        <FormLabel className="font-bold">Category</FormLabel>
-                                                                        <FormControl>
-                                                                            <Input placeholder="e.g. IT & Technology" className="rounded-xl" {...field} />
-                                                                        </FormControl>
-                                                                        <FormMessage />
-                                                                    </FormItem>
-                                                                )}
-                                                            />
-                                                            <FormField
-                                                                control={form.control}
-                                                                name="email"
-                                                                render={({ field }) => (
-                                                                    <FormItem>
-                                                                        <FormLabel className="font-bold">Business Email</FormLabel>
-                                                                        <FormControl>
-                                                                            <Input placeholder="info@company.co.ke" className="rounded-xl" {...field} />
-                                                                        </FormControl>
-                                                                        <FormMessage />
-                                                                    </FormItem>
-                                                                )}
-                                                            />
-                                                            <FormField
-                                                                control={form.control}
-                                                                name="phone"
-                                                                render={({ field }) => (
-                                                                    <FormItem>
-                                                                        <FormLabel className="font-bold">Business Phone</FormLabel>
-                                                                        <FormControl>
-                                                                            <Input placeholder="+254..." className="rounded-xl" {...field} />
-                                                                        </FormControl>
-                                                                        <FormMessage />
-                                                                    </FormItem>
-                                                                )}
-                                                            />
-                                                            <FormField
-                                                                control={form.control}
-                                                                name="location"
-                                                                render={({ field }) => (
-                                                                    <FormItem className="md:col-span-2">
-                                                                        <FormLabel className="font-bold">Location</FormLabel>
-                                                                        <FormControl>
-                                                                            <Input placeholder="e.g. KVDA Plaza, 4th Floor, Eldoret" className="rounded-xl" {...field} />
-                                                                        </FormControl>
-                                                                        <FormMessage />
-                                                                    </FormItem>
-                                                                )}
-                                                            />
-                                                            <FormField
-                                                                control={form.control}
-                                                                name="plan"
-                                                                render={({ field }) => (
-                                                                    <FormItem>
-                                                                        <FormLabel className="font-bold">Membership Plan</FormLabel>
-                                                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                                            <FormControl>
-                                                                                <SelectTrigger className="rounded-xl">
-                                                                                    <SelectValue placeholder="Select a plan" />
-                                                                                </SelectTrigger>
-                                                                            </FormControl>
-                                                                            <SelectContent className="rounded-xl">
-                                                                                <SelectItem value="Bronze">Bronze</SelectItem>
-                                                                                <SelectItem value="Silver">Silver</SelectItem>
-                                                                                <SelectItem value="Gold">Gold</SelectItem>
-                                                                            </SelectContent>
-                                                                        </Select>
-                                                                        <FormMessage />
-                                                                    </FormItem>
-                                                                )}
-                                                            />
-                                                            <FormField
-                                                                control={form.control}
-                                                                name="website"
-                                                                render={({ field }) => (
-                                                                    <FormItem>
-                                                                        <FormLabel className="font-bold">Website</FormLabel>
-                                                                        <FormControl>
-                                                                            <Input placeholder="https://..." className="rounded-xl" {...field} />
-                                                                        </FormControl>
-                                                                        <FormMessage />
-                                                                    </FormItem>
-                                                                )}
-                                                            />
-                                                            <FormField
-                                                                control={form.control}
-                                                                name="description"
-                                                                render={({ field }) => (
-                                                                    <FormItem className="md:col-span-2">
-                                                                        <FormLabel className="font-bold">Business Description</FormLabel>
-                                                                        <FormControl>
-                                                                            <Textarea
-                                                                                placeholder="Describe your business services and goals..."
-                                                                                className="rounded-xl min-h-[100px]"
-                                                                                {...field}
-                                                                            />
-                                                                        </FormControl>
-                                                                        <FormMessage />
-                                                                    </FormItem>
-                                                                )}
-                                                            />
-                                                        </div>
-
-                                                        <div className="pt-6 border-t border-border/50">
-                                                            <h3 className="font-bold mb-4 flex items-center gap-2">
-                                                                <Shield className="w-5 h-5 text-primary" />
-                                                                Compliance Details
-                                                            </h3>
-                                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                                                <FormField
-                                                                    control={form.control}
-                                                                    name="kra_pin"
-                                                                    render={({ field }) => (
-                                                                        <FormItem>
-                                                                            <FormLabel className="font-bold uppercase text-xs tracking-widest text-muted-foreground">KRA PIN</FormLabel>
-                                                                            <FormControl>
-                                                                                <Input className="rounded-xl font-mono" {...field} />
-                                                                            </FormControl>
-                                                                            <FormMessage />
-                                                                        </FormItem>
-                                                                    )}
-                                                                />
-                                                                <FormField
-                                                                    control={form.control}
-                                                                    name="company_reg_no"
-                                                                    render={({ field }) => (
-                                                                        <FormItem>
-                                                                            <FormLabel className="font-bold uppercase text-xs tracking-widest text-muted-foreground">Reg No.</FormLabel>
-                                                                            <FormControl>
-                                                                                <Input className="rounded-xl font-mono" {...field} />
-                                                                            </FormControl>
-                                                                            <FormMessage />
-                                                                        </FormItem>
-                                                                    )}
-                                                                />
-                                                                <FormField
-                                                                    control={form.control}
-                                                                    name="business_permit"
-                                                                    render={({ field }) => (
-                                                                        <FormItem>
-                                                                            <FormLabel className="font-bold uppercase text-xs tracking-widest text-muted-foreground">Permit No.</FormLabel>
-                                                                            <FormControl>
-                                                                                <Input className="rounded-xl font-mono" {...field} />
-                                                                            </FormControl>
-                                                                            <FormMessage />
-                                                                        </FormItem>
-                                                                    )}
-                                                                />
-                                                            </div>
-                                                        </div>
-
-                                                        <DialogFooter className="pt-8">
-                                                            <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)} className="rounded-xl font-bold">
-                                                                Cancel
-                                                            </Button>
-                                                            <Button type="submit" className="rounded-xl font-bold px-8 shadow-lg shadow-primary/20">
-                                                                Save Changes
-                                                            </Button>
-                                                        </DialogFooter>
-                                                    </form>
-                                                </Form>
-                                            </div>
-                                        </DialogContent>
-                                    </Dialog>
-                                    <Button variant="destructive" className="rounded-xl font-bold shadow-lg shadow-red-500/10" onClick={handleLogout}>
-                                        <LogOut className="w-4 h-4 mr-2" /> Logout
+                            <div className="flex flex-wrap gap-3">
+                                {user.role === 'admin' && (
+                                    <Button
+                                        variant="outline"
+                                        className="rounded-2xl border-primary/20 bg-white/50 backdrop-blur-sm hover:bg-white dark:bg-slate-900/50 dark:hover:bg-slate-900 font-bold h-12 px-6 shadow-sm"
+                                        onClick={() => setLocation('/admin')}
+                                    >
+                                        <LayoutDashboard className="w-4 h-4 mr-2" /> Admin Panel
                                     </Button>
-                                </div>
-
+                                )}
+                                <Button className="rounded-2xl shadow-xl shadow-primary/20 font-bold h-12 px-8" onClick={() => setIsEditDialogOpen(true)}>
+                                    <Settings className="w-4 h-4 mr-2" /> Profile Settings
+                                </Button>
                             </div>
                         </div>
                     </div>
 
-                    <div className="grid lg:grid-cols-3 gap-8">
-                        {/* Sidebar */}
-                        <div className="space-y-8">
-                            <Card className="rounded-3xl border-border/50 shadow-xl overflow-hidden">
-                                <CardHeader className="bg-slate-50 dark:bg-slate-900/50 border-b border-border/50">
-                                    <CardTitle className="text-lg font-bold">Member Information</CardTitle>
-                                </CardHeader>
-                                <CardContent className="p-6 space-y-6">
-                                    <div className="space-y-4">
-                                        <div className="flex items-center gap-4 text-muted-foreground">
-                                            <div className="w-10 h-10 rounded-full bg-secondary/10 text-secondary flex items-center justify-center">
-                                                <Mail className="w-5 h-5" />
-                                            </div>
-                                            <div>
-                                                <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Email Address</p>
-                                                <p className="text-sm font-bold text-foreground">{user.email}</p>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center gap-4 text-muted-foreground">
-                                            <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center">
-                                                <Phone className="w-5 h-5" />
-                                            </div>
-                                            <div>
-                                                <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Phone Number</p>
-                                                <p className="text-sm font-bold text-foreground">{user.phone || "Not set"}</p>
-                                            </div>
+                    {/* MAIN CONTENT AREA: Tabs (Full Width) */}
+                    <div className="w-full space-y-8">
+                        {/* ═══ Full Width Content Tabs ═══ */}
+                        <div className="w-full space-y-8">
+                            <AnimatePresence mode="wait">
+                                {activeTab === "overview" && (
+                                    <motion.div
+                                        key="overview"
+                                        initial={{ opacity: 0, scale: 0.98 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0, scale: 0.98 }}
+                                        className="space-y-8"
+                                    >
+                                        {/* Quick Stats Grid */}
+                                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                                            {stats.map((stat, i) => (
+                                                <motion.div
+                                                    key={i}
+                                                    initial={{ opacity: 0, y: 10 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    transition={{ delay: i * 0.1 }}
+                                                >
+                                                    <Card className="rounded-3xl border-none shadow-xl shadow-primary/5 hover:shadow-primary/10 transition-all border-border/30 overflow-hidden relative group">
+                                                        <div className={`absolute top-0 right-0 w-24 h-24 ${stat.bg} rounded-full -mr-12 -mt-12 transition-transform duration-700 group-hover:scale-150 blur-2xl`} />
+                                                        <CardContent className="p-6 relative">
+                                                            <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${stat.color} flex items-center justify-center text-white mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                                                                {stat.icon}
+                                                            </div>
+                                                            <p className="text-3xl font-extrabold tracking-tight">{stat.value}</p>
+                                                            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-1 opacity-70">{stat.title}</p>
+                                                        </CardContent>
+                                                    </Card>
+                                                </motion.div>
+                                            ))}
                                         </div>
 
-                                        <div className="flex items-center gap-4 text-muted-foreground">
-                                            <div className="w-10 h-10 rounded-full bg-secondary/10 text-secondary flex items-center justify-center">
-                                                <MapPin className="w-5 h-5" />
-                                            </div>
-                                            <div>
-                                                <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Location</p>
-                                                <p className="text-sm font-bold text-foreground">{business?.location || "Not set"}</p>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center gap-4 text-muted-foreground">
-                                            <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center">
-                                                <Calendar className="w-5 h-5" />
-                                            </div>
-                                            <div>
-                                                <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Member Since</p>
-                                                <p className="text-sm font-bold text-foreground">January 2023</p>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="pt-6 border-t border-border/50">
-                                        <div className="flex justify-between items-center mb-4">
-                                            <p className="font-bold">Membership Plan</p>
-                                            <Badge className="bg-primary text-white">{business?.plan || "Full Member"}</Badge>
-                                        </div>
-                                        <p className="text-sm text-muted-foreground mb-4">Your membership expires on Dec 31, 2026</p>
-                                        <Button className="w-full rounded-xl font-bold bg-muted text-foreground hover:bg-slate-200 dark:hover:bg-slate-800 border-none transition-colors" variant="outline">
-                                            Renew Membership
-                                        </Button>
-                                    </div>
-                                </CardContent>
-                            </Card>
-
-                            <Card className="rounded-3xl border-border/50 shadow-xl overflow-hidden bg-primary/5 border-primary/10">
-                                <CardContent className="p-6 text-center">
-                                    <Shield className="w-12 h-12 text-primary mx-auto mb-4" />
-                                    <h3 className="text-xl font-bold mb-2">Member Verified</h3>
-                                    <p className="text-sm text-muted-foreground mb-6">
-                                        Your account has been fully verified by the KNCCI Uasin Gishu administration team.
-                                    </p>
-                                    <Button className="w-full rounded-xl font-bold" onClick={() => setShowCertificate(true)}>
-                                        <Award className="w-4 h-4 mr-2" /> Download Certificate
-                                    </Button>
-                                </CardContent>
-                            </Card>
-                        </div>
-
-                        {/* Main Content Area */}
-                        <div className="lg:col-span-2 space-y-8">
-                            <Tabs defaultValue="overview" className="w-full">
-                                <TabsList className="w-full h-14 bg-primary/10 p-1.5 rounded-2xl border border-border/50 overflow-x-auto overflow-y-hidden">
-                                    <TabsTrigger value="overview" className="flex-1 h-full rounded-xl data-[state=active]:bg-background data-[state=active]:shadow-md font-bold text-sm">Dashboard</TabsTrigger>
-                                    <TabsTrigger value="business" className="flex-1 h-full rounded-xl data-[state=active]:bg-background data-[state=active]:shadow-md font-bold text-sm">Business Details</TabsTrigger>
-                                    <TabsTrigger value="payments" className="flex-1 h-full rounded-xl data-[state=active]:bg-background data-[state=active]:shadow-md font-bold text-sm">Finances</TabsTrigger>
-                                    <TabsTrigger value="activity" className="flex-1 h-full rounded-xl data-[state=active]:bg-background data-[state=active]:shadow-md font-bold text-sm">Recent Activity</TabsTrigger>
-                                </TabsList>
-
-                                <TabsContent value="overview" className="mt-8 space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
-                                    <div className="grid md:grid-cols-2 gap-6">
-                                        <Card className="rounded-3xl border-border/50 shadow-lg hover:shadow-xl transition-all group overflow-hidden">
-                                            <CardContent className="p-8">
-                                                <div className="flex justify-between items-start mb-6">
-                                                    <div className="w-14 h-14 rounded-2xl bg-secondary/10 text-secondary flex items-center justify-center group-hover:bg-secondary group-hover:text-white transition-all duration-300">
-                                                        <Activity className="w-7 h-7" />
+                                        {/* Notifications / Activity */}
+                                        <Card className="rounded-[2.5rem] border-none shadow-2xl shadow-primary/5 dark:bg-slate-900 overflow-hidden">
+                                            <CardHeader className="p-8 pb-4">
+                                                <div className="flex justify-between items-center">
+                                                    <div>
+                                                        <CardTitle className="text-xl font-extrabold text-foreground">Recent Activities</CardTitle>
+                                                        <CardDescription className="text-sm font-medium">Insights and updates for your business journey</CardDescription>
                                                     </div>
-                                                    <Badge className="bg-secondary/10 text-secondary border-none px-3 font-bold">6 Active Jobs</Badge>
+                                                    <Button variant="ghost" className="text-primary font-extrabold text-[10px] uppercase tracking-widest">Mark read</Button>
                                                 </div>
-                                                <h3 className="text-xl font-extrabold mb-2">Active Trade Leads</h3>
-                                                <p className="text-muted-foreground mb-6">You have matching trade opportunities based on your business category.</p>
-                                                <Link href="/marketplace">
-                                                    <a className="text-primary font-bold flex items-center gap-1.5 hover:gap-2.5 transition-all">
-                                                        View Opportunities <ChevronRight className="w-4 h-4" />
-                                                    </a>
-                                                </Link>
+                                            </CardHeader>
+                                            <CardContent className="p-0">
+                                                <div className="divide-y divide-border/20">
+                                                    {[
+                                                        { title: "Renewal Success", desc: "Your membership for 2026/27 has been officially confirmed.", time: "2h ago", icon: Award, color: "text-amber-500", bg: "bg-amber-500/10" },
+                                                        { title: "Marketplace Match", desc: "A new lead in 'Construction Materials' matches your profile.", time: "1d ago", icon: TrendingUp, color: "text-emerald-500", bg: "bg-emerald-500/10" },
+                                                        { title: "Directory Profile", desc: "Your business is now visible in the verified member directory.", time: "3d ago", icon: User, color: "text-blue-500", bg: "bg-blue-500/10" },
+                                                    ].map((item, i) => (
+                                                        <div key={i} className="p-6 flex gap-6 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all cursor-pointer group">
+                                                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${item.bg} ${item.color} shadow-sm group-hover:rotate-6 transition-transform`}>
+                                                                <item.icon className="w-7 h-7" />
+                                                            </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <div className="flex justify-between items-start mb-1">
+                                                                    <h4 className="font-extrabold truncate pr-4 text-xs uppercase tracking-tight group-hover:text-primary transition-colors">{item.title}</h4>
+                                                                    <span className="text-[10px] font-extrabold text-muted-foreground bg-slate-100 dark:bg-slate-800 rounded-full px-2 py-0.5 whitespace-nowrap">{item.time}</span>
+                                                                </div>
+                                                                <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed font-medium">{item.desc}</p>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                                <div className="p-6 bg-slate-50/50 dark:bg-slate-800/20 text-center border-t border-border/10">
+                                                    <Button variant="ghost" className="font-extrabold text-primary text-[10px] uppercase tracking-[0.2em] hover:bg-transparent">All Updates <ChevronRight className="w-4 h-4 ml-1" /></Button>
+                                                </div>
                                             </CardContent>
                                         </Card>
+                                    </motion.div>
+                                )}
 
-                                        <Card className="rounded-3xl border-border/50 shadow-lg hover:shadow-xl transition-all group overflow-hidden">
-                                            <CardContent className="p-8">
-                                                <div className="flex justify-between items-start mb-6">
-                                                    <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all duration-300">
-                                                        <Briefcase className="w-7 h-7" />
+                                {activeTab === "business" && (
+                                    <motion.div
+                                        key="business"
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -10 }}
+                                        className="space-y-6"
+                                    >
+                                        <Card className="rounded-[2.5rem] border-none shadow-2xl shadow-primary/5 p-8 lg:p-12 bg-white dark:bg-slate-900 border border-border/40 overflow-hidden relative">
+                                            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -mr-32 -mt-32 blur-3xl opacity-50" />
+
+                                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-12">
+                                                <div className="relative z-10">
+                                                    <div className="flex items-center gap-3 mb-2">
+                                                        <h2 className="text-3xl lg:text-4xl font-extrabold tracking-tight">{business?.name || "Member Organization"}</h2>
+                                                        <Badge variant="outline" className="border-primary/20 bg-primary/10 text-primary font-bold uppercase text-[10px] tracking-widest px-3 h-6">{business?.plan || "Bronze"}</Badge>
                                                     </div>
-                                                    <Badge className="bg-primary/10 text-primary border-none px-3 font-bold">Member Rate</Badge>
-                                                </div>
-                                                <h3 className="text-xl font-extrabold mb-2">Upcoming Events</h3>
-                                                <p className="text-muted-foreground mb-6">Register for the next County Business Forum with your member discount.</p>
-                                                <Link href="/events">
-                                                    <a className="text-primary font-bold flex items-center gap-1.5 hover:gap-2.5 transition-all">
-                                                        Explore Events <ChevronRight className="w-4 h-4" />
-                                                    </a>
-                                                </Link>
-                                            </CardContent>
-                                        </Card>
-                                    </div>
-
-                                    <Card className="rounded-3xl border-border/50 shadow-xl overflow-hidden">
-                                        <CardHeader className="bg-slate-50 dark:bg-slate-900/50 border-b border-border/50 p-8">
-                                            <div className="flex justify-between items-center">
-                                                <div>
-                                                    <CardTitle className="text-2xl font-extrabold">Recent Notifications</CardTitle>
-                                                    <CardDescription>Stay updated with chamber news and alerts</CardDescription>
-                                                </div>
-                                                <Button variant="ghost" className="text-primary font-bold hover:bg-primary/5">Mark all as read</Button>
-                                            </div>
-                                        </CardHeader>
-                                        <CardContent className="p-0">
-                                            <div className="divide-y divide-border/40">
-                                                {[
-                                                    { title: "Membership Renewal Success", time: "2 hours ago", icon: BadgeCheck, color: "text-secondary", bg: "bg-secondary/10" },
-                                                    { title: "New Trade Lead: Agriculture Equipment", time: "1 day ago", icon: BaggageClaim, color: "text-secondary", bg: "bg-secondary/10" },
-                                                    { title: "Invitation: Eldoret Business Gala", time: "3 days ago", icon: Calendar, color: "text-primary", bg: "bg-primary/10" },
-                                                    { title: "System Update Complete", time: "1 week ago", icon: Shield, color: "text-muted-foreground", bg: "bg-muted" },
-                                                ].map((note, i) => (
-                                                    <div key={i} className="p-6 flex gap-4 hover:bg-slate-50 dark:hover:bg-slate-900/30 transition-colors cursor-pointer group">
-                                                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${note.bg} ${note.color}`}>
-                                                            <note.icon className="w-6 h-6" />
-                                                        </div>
-                                                        <div className="flex-1">
-                                                            <h4 className="font-bold mb-1 group-hover:text-primary transition-colors">{note.title}</h4>
-                                                            <p className="text-sm text-muted-foreground">{note.time}</p>
-                                                        </div>
-                                                        <ChevronRight className="w-5 h-5 text-muted-foreground self-center opacity-0 group-hover:opacity-100 transition-opacity" />
-                                                    </div>
-                                                ))}
-                                            </div>
-                                            <div className="p-6 bg-slate-50 dark:bg-slate-900/40 text-center border-t border-border/50">
-                                                <Button variant="outline" className="font-bold text-primary">View all notifications</Button>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                </TabsContent>
-
-                                <TabsContent value="business" className="mt-8">
-                                    <div className="space-y-6">
-                                        <Card className="rounded-3xl border-border/50 shadow-xl p-8">
-                                            <div className="flex justify-between items-start mb-8">
-                                                <div>
-                                                    <h2 className="text-2xl font-extrabold mb-2">{business?.name || "Business Name Not Set"}</h2>
-                                                    <p className="text-muted-foreground flex items-center gap-2">
-                                                        <Briefcase className="w-4 h-4" /> {business?.category || "Category Not Set"}
+                                                    <p className="text-muted-foreground font-bold flex items-center gap-2 uppercase tracking-widest text-xs">
+                                                        <Briefcase className="w-4 h-4 text-primary" /> {business?.category || "Industrial Sector"}
                                                     </p>
                                                 </div>
-                                                <Button variant="outline" className="rounded-xl font-bold" onClick={() => setIsEditDialogOpen(true)}>
-                                                    Edit Business Details
+                                                <Button className="rounded-2xl h-12 px-8 font-bold shadow-xl shadow-primary/20 group animate-pulse hover:animate-none" onClick={() => setIsEditDialogOpen(true)}>
+                                                    Modify Details
                                                 </Button>
                                             </div>
 
-                                            <div className="grid md:grid-cols-2 gap-8 mb-8">
-                                                <div>
-                                                    <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">Business Description</p>
-                                                    <p className="text-muted-foreground leading-relaxed">
-                                                        {business?.description || "No description provided yet. Complete your profile to help other members find you."}
+                                            <div className="grid md:grid-cols-2 gap-12 mb-12 relative z-10">
+                                                <div className="space-y-6">
+                                                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">Organizational Background</p>
+                                                    <p className="text-muted-foreground leading-[1.8] font-medium">
+                                                        {business?.description || "No primary organization description provided. A complete profile helps you connect with trade partners and enhances your visibility in the regional business landscape. Please click 'Modify Details' to update your background info."}
                                                     </p>
                                                 </div>
-                                                <div className="space-y-4">
-                                                    <div>
-                                                        <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">Website</p>
+                                                <div className="space-y-8">
+                                                    <div className="flex flex-col gap-2">
+                                                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">Web & Social</p>
                                                         {business?.website ? (
-                                                            <a href={business.website} target="_blank" rel="noopener noreferrer" className="text-primary font-bold flex items-center gap-2 hover:underline">
-                                                                {business.website.replace(/^https?:\/\//, '')} <ExternalLink className="w-4 h-4" />
+                                                            <a href={business.website} target="_blank" rel="noopener noreferrer" className="text-foreground font-extrabold flex items-center gap-2 hover:text-primary transition-all text-sm group">
+                                                                {business.website.replace(/^https?:\/\//, '')} <ExternalLink className="w-4 h-4 opacity-30 group-hover:opacity-100" />
                                                             </a>
                                                         ) : (
-                                                            <p className="text-sm text-muted-foreground italic">No website listed</p>
+                                                            <p className="text-sm text-muted-foreground italic font-medium">Corporate website not linked</p>
                                                         )}
                                                     </div>
-                                                    <div>
-                                                        <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">Business Email</p>
-                                                        <p className="font-bold">{business?.email || "Not set"}</p>
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">Primary Phone</p>
-                                                        <p className="font-bold">{business?.phone || "Not set"}</p>
+                                                    <div className="flex flex-col gap-3">
+                                                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">Official Contacts</p>
+                                                        <div className="space-y-1">
+                                                            <p className="font-extrabold text-sm">{business?.email || "General info missing"}</p>
+                                                            <p className="font-extrabold text-sm">{business?.phone || "Phone contact missing"}</p>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
 
-                                            <div className="pt-8 border-t border-border/50">
-                                                <h3 className="font-bold mb-6 flex items-center gap-2">
-                                                    <BadgeCheck className="w-5 h-5 text-primary" />
-                                                    Registration & Compliance
+                                            <div className="pt-12 border-t border-border/40 relative z-10">
+                                                <h3 className="font-extrabold text-[10px] uppercase tracking-[0.3em] mb-8 flex items-center gap-3 text-muted-foreground">
+                                                    <Shield className="w-4 h-4 text-primary" /> Registration Compliance
                                                 </h3>
-                                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                                                    <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-border/50">
-                                                        <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">KRA PIN</p>
-                                                        <p className="font-bold font-mono">{business?.kra_pin || "---"}</p>
+                                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                                                    <div className="p-8 rounded-[2rem] bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/60 transition-all hover:bg-white dark:hover:bg-slate-800 hover:shadow-xl hover:shadow-primary/5 group cursor-default">
+                                                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-3 group-hover:text-primary transition-colors">KRA PIN Status</p>
+                                                        <p className="font-extrabold font-mono text-foreground text-sm tracking-wider uppercase">{business?.kra_pin || "---"}</p>
                                                     </div>
-                                                    <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-border/50">
-                                                        <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">Company Reg No</p>
-                                                        <p className="font-bold font-mono">{business?.company_reg_no || "---"}</p>
+                                                    <div className="p-8 rounded-[2rem] bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/60 transition-all hover:bg-white dark:hover:bg-slate-800 hover:shadow-xl hover:shadow-primary/5 group cursor-default">
+                                                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-3 group-hover:text-primary transition-colors">Company Registry</p>
+                                                        <p className="font-extrabold font-mono text-foreground text-sm tracking-wider uppercase">{business?.company_reg_no || "---"}</p>
                                                     </div>
-                                                    <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-border/50">
-                                                        <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">Business Permit</p>
-                                                        <p className="font-bold font-mono">{business?.business_permit || "---"}</p>
+                                                    <div className="p-8 rounded-[2rem] bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/60 transition-all hover:bg-white dark:hover:bg-slate-800 hover:shadow-xl hover:shadow-primary/5 group cursor-default">
+                                                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-3 group-hover:text-primary transition-colors">Operating Permit</p>
+                                                        <p className="font-extrabold font-mono text-foreground text-sm tracking-wider uppercase">{business?.business_permit || "---"}</p>
                                                     </div>
                                                 </div>
                                             </div>
                                         </Card>
-                                    </div>
-                                </TabsContent>
-                            </Tabs>
+                                    </motion.div>
+                                )}
+
+                                {activeTab === "finances" && (
+                                    <motion.div
+                                        key="finances"
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -10 }}
+                                        className="space-y-6"
+                                    >
+                                        <Card className="rounded-[2.5rem] border-none shadow-2xl shadow-primary/5 p-12 bg-white dark:bg-slate-900 border border-border/40 min-h-[500px] flex flex-col items-center justify-center text-center">
+                                            <div className="w-24 h-24 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center mb-8 shadow-inner">
+                                                <PaymentIcon className="w-10 h-10 text-muted-foreground/30" />
+                                            </div>
+                                            <h3 className="text-3xl font-extrabold mb-4 tracking-tight">Finances & Billing</h3>
+                                            <p className="text-muted-foreground max-w-sm font-medium leading-[1.8]">
+                                                Track your investment in the chamber. View past receipts, upcoming renewals, and download tax-ready invoices. This feature is currently in final verification.
+                                            </p>
+                                            <div className="mt-10 flex gap-4">
+                                                <Button variant="ghost" className="font-bold opacity-50 cursor-not-allowed">H1 Stat</Button>
+                                                <div className="w-px h-10 bg-border/40" />
+                                                <Button variant="ghost" className="font-bold opacity-50 cursor-not-allowed">H2 Stat</Button>
+                                            </div>
+                                            <Button variant="outline" className="mt-12 rounded-2xl h-12 px-10 font-extrabold uppercase tracking-widest text-[10px]" disabled>
+                                                System locked
+                                            </Button>
+                                        </Card>
+                                    </motion.div>
+                                )}
+
+                                {activeTab === "marketplace" && (
+                                    <motion.div
+                                        key="marketplace"
+                                        initial={{ opacity: 0, scale: 0.98 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0, scale: 0.98 }}
+                                        className="space-y-6"
+                                    >
+                                        <div className="grid md:grid-cols-2 gap-8">
+                                            <motion.div whileHover={{ y: -5 }} transition={{ type: "spring", stiffness: 300 }}>
+                                                <Card className="rounded-[2.5rem] border-none shadow-2xl shadow-primary/5 p-10 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800/80 group overflow-hidden relative">
+                                                    <div className="absolute -top-10 -right-10 w-40 h-40 bg-secondary/5 rounded-full blur-[50px] group-hover:bg-secondary/10 transition-colors" />
+                                                    <div className="w-16 h-16 rounded-[1.5rem] bg-secondary/10 text-secondary flex items-center justify-center mb-8 shadow-sm group-hover:scale-110 transition-transform">
+                                                        <Store className="w-8 h-8" />
+                                                    </div>
+                                                    <h3 className="text-2xl font-extrabold mb-4 tracking-tight">Marketplace Hub</h3>
+                                                    <p className="text-sm text-muted-foreground mb-10 leading-[1.8] font-medium italic">Discover products, post services, and find verified regional suppliers within the Uasin Gishu trade network.</p>
+                                                    <Link href="/marketplace">
+                                                        <a className="text-primary font-bold text-xs flex items-center gap-2 hover:gap-4 transition-all uppercase tracking-[0.2em] group">
+                                                            Enter Marketplace <ChevronRight className="w-4 h-4 group-hover:translate-x-1" />
+                                                        </a>
+                                                    </Link>
+                                                </Card>
+                                            </motion.div>
+
+                                            <motion.div whileHover={{ y: -5 }} transition={{ type: "spring", stiffness: 300 }}>
+                                                <Card className="rounded-[2.5rem] border-none shadow-2xl shadow-primary/5 p-10 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800/80 group overflow-hidden relative">
+                                                    <div className="absolute -top-10 -right-10 w-40 h-40 bg-primary/5 rounded-full blur-[50px] group-hover:bg-primary/10 transition-colors" />
+                                                    <div className="w-16 h-16 rounded-[1.5rem] bg-primary/10 text-primary flex items-center justify-center mb-8 shadow-sm group-hover:scale-110 transition-transform">
+                                                        <Users className="w-8 h-8" />
+                                                    </div>
+                                                    <h3 className="text-2xl font-extrabold mb-4 tracking-tight">Verified Connections</h3>
+                                                    <p className="text-sm text-muted-foreground mb-10 leading-[1.8] font-medium italic">Communicate directly with verified KNCCI members to forge durable partnerships and expand your corporate reach.</p>
+                                                    <Link href="/member-directory">
+                                                        <a className="text-primary font-bold text-xs flex items-center gap-2 hover:gap-4 transition-all uppercase tracking-[0.2em] group">
+                                                            Search Members <ChevronRight className="w-4 h-4 group-hover:translate-x-1" />
+                                                        </a>
+                                                    </Link>
+                                                </Card>
+                                            </motion.div>
+                                        </div>
+                                    </motion.div>
+                                )}
+
+                                {activeTab === "events" && (
+                                    <motion.div
+                                        key="events"
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -10 }}
+                                        className="space-y-6"
+                                    >
+                                        <Card className="rounded-[2.5rem] border-none shadow-2xl shadow-primary/5 p-10 lg:p-12 bg-white dark:bg-slate-900 border border-border/40">
+                                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-12">
+                                                <div className="relative z-10">
+                                                    <h3 className="text-2xl lg:text-3xl font-extrabold tracking-tight">County Business Events</h3>
+                                                    <p className="text-sm text-muted-foreground mt-2 font-bold uppercase tracking-widest flex items-center gap-2">
+                                                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> Live Event Portal
+                                                    </p>
+                                                </div>
+                                                <Link href="/events">
+                                                    <Button className="rounded-2xl h-14 px-8 font-bold shadow-xl shadow-primary/20 bg-primary hover:scale-105 transition-transform uppercase tracking-widest text-[10px]">
+                                                        Full Calendar View
+                                                    </Button>
+                                                </Link>
+                                            </div>
+
+                                            <div className="space-y-6">
+                                                {[
+                                                    { title: "Eldoret Business Expo 2026", date: "Oct 15, 2026", type: "Conference", status: "Open for Gold", speakers: 12 },
+                                                    { title: "SME Digital Growth Forum", date: "Nov 02, 2026", type: "Workshop", status: "Limited Slots", speakers: 4 },
+                                                ].map((event, i) => (
+                                                    <motion.div
+                                                        key={i}
+                                                        initial={{ opacity: 0, x: -10 }}
+                                                        animate={{ opacity: 1, x: 0 }}
+                                                        transition={{ delay: i * 0.1 }}
+                                                        className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-8 rounded-[2rem] bg-slate-50 dark:bg-slate-800/40 hover:bg-white dark:hover:bg-slate-800 transition-all border border-transparent hover:border-border/30 hover:shadow-xl hover:shadow-primary/5 group"
+                                                    >
+                                                        <div className="flex items-center gap-6 mb-4 sm:mb-0">
+                                                            <div className="w-16 h-16 rounded-[1.5rem] bg-white dark:bg-slate-900 flex flex-col items-center justify-center border border-border/20 shadow-sm group-hover:border-primary/40 transition-colors">
+                                                                <span className="text-[10px] font-bold text-muted-foreground uppercase opacity-60 tracking-tighter">{event.date.split(' ')[0]}</span>
+                                                                <span className="text-2xl font-extrabold text-primary leading-none -mt-1">{event.date.split(' ')[1].slice(0, 2)}</span>
+                                                            </div>
+                                                            <div>
+                                                                <h4 className="font-extrabold text-base uppercase tracking-tight group-hover:text-primary transition-colors">{event.title}</h4>
+                                                                <div className="flex flex-wrap items-center gap-3 mt-2">
+                                                                    <Badge variant="outline" className="text-[9px] h-5 font-bold border-primary/20 bg-primary/5 text-primary tracking-widest uppercase">{event.type}</Badge>
+                                                                    <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full uppercase tracking-widest">{event.status}</span>
+                                                                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1">
+                                                                        <Users className="w-3 h-3" /> {event.speakers} Key Speakers
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <Button variant="ghost" className="rounded-xl font-bold text-xs uppercase tracking-widest text-primary hover:bg-primary/5 px-6">Event Details</Button>
+                                                    </motion.div>
+                                                ))}
+                                            </div>
+                                        </Card>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </div>
                     </div>
                 </div>
             </main>
 
-            <Footer />
-
             {/* Membership Certificate Modal */}
             {showCertificate && (
                 <MembershipCertificate
                     memberName={user.name}
-                    regNo={user.reg_no}
-                    businessName={business?.name}
-                    businessCategory={business?.category}
-                    plan={business?.plan}
+                    regNo={user.reg_no || "KNCCI/UG/0000"}
+                    businessName={business?.name || "Member Organization"}
+                    businessCategory={business?.category || "Sector Information"}
+                    plan={business?.plan || "Bronze"}
                     onClose={() => setShowCertificate(false)}
                 />
             )}
+
+            {/* Edit Business Profile Dialog */}
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto rounded-[2rem]">
+                    <DialogHeader>
+                        <DialogTitle className="text-2xl font-extrabold tracking-tight">Edit Business Profile</DialogTitle>
+                        <DialogDescription className="font-medium text-muted-foreground">
+                            Update your organization's details to enhance your profile visibility in the directory.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <Form {...form}>
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4 px-1">
+                            <div className="grid md:grid-cols-2 gap-6">
+                                <FormField
+                                    control={form.control}
+                                    name="name"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Organization Name</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="Business Name" {...field} className="rounded-xl h-11 border-border/40 focus:border-primary/40 focus:ring-primary/20" />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="category"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Industrial Category</FormLabel>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <FormControl>
+                                                    <SelectTrigger className="rounded-xl h-11 border-border/40">
+                                                        <SelectValue placeholder="Select sector" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent className="rounded-xl">
+                                                    <SelectItem value="Agriculture">Agriculture & Food</SelectItem>
+                                                    <SelectItem value="Manufacturing">Manufacturing</SelectItem>
+                                                    <SelectItem value="Trade">Retail & Wholesale</SelectItem>
+                                                    <SelectItem value="Services">Professional Services</SelectItem>
+                                                    <SelectItem value="Construction">Construction</SelectItem>
+                                                    <SelectItem value="Technology">Technology & Innovation</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+
+                            <div className="grid md:grid-cols-2 gap-6">
+                                <FormField
+                                    control={form.control}
+                                    name="email"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Official Email</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="office@company.com" {...field} className="rounded-xl h-11" />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="phone"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Support Contact</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="+254..." {...field} className="rounded-xl h-11" />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+
+                            <div className="grid md:grid-cols-2 gap-6">
+                                <FormField
+                                    control={form.control}
+                                    name="location"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Physical Location</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="Town, County" {...field} className="rounded-xl h-11" />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="website"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Corporate Website (Optional)</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="https://..." {...field} className="rounded-xl h-11" />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <FormField
+                                    control={form.control}
+                                    name="kra_pin"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="font-bold text-xs uppercase tracking-widest text-muted-foreground">KRA PIN</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="P0..." {...field} className="rounded-xl h-11 font-mono text-sm" />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="company_reg_no"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Reg Number</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="PV..." {...field} className="rounded-xl h-11 font-mono text-sm" />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="business_permit"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Business Permit</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="Permit ID" {...field} className="rounded-xl h-11 font-mono text-sm" />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+
+                            <FormField
+                                control={form.control}
+                                name="description"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Mission & Overview</FormLabel>
+                                        <FormControl>
+                                            <Textarea
+                                                placeholder="Tell us about your organization..."
+                                                className="min-h-[120px] rounded-[1.5rem] border-border/40 p-4 leading-relaxed"
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <DialogFooter className="pt-4">
+                                <Button type="button" variant="ghost" className="rounded-xl font-bold" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
+                                <Button type="submit" className="rounded-xl px-10 font-extrabold shadow-xl shadow-primary/20 bg-primary">Save Profile Changes</Button>
+                            </DialogFooter>
+                        </form>
+                    </Form>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

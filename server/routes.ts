@@ -2,7 +2,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertRegistrationSchema, insertNewsletterSchema, insertSponsorRequestSchema, insertContactSubmissionSchema } from "@shared/schema";
+import { insertRegistrationSchema, insertNewsletterSchema, insertSponsorRequestSchema, insertContactSubmissionSchema, insertMembershipApplicationSchema } from "@shared/schema";
 import { TicketingService } from "./services/ticketing";
 
 export async function registerRoutes(
