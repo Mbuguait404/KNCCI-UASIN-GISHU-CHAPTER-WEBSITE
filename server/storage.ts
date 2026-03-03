@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type Registration, type InsertRegistration, type NewsletterSubscription, type InsertNewsletter, type SponsorRequest, type InsertSponsorRequest, type Event, type Speaker, type Session, type Partner, type GalleryImage, type Testimonial, type Venue, type ContactSubmission, type InsertContactSubmission, type MembershipApplication, type InsertMembershipApplication } from "@shared/schema";
+import { type User, type InsertUser, type Registration, type InsertRegistration, type NewsletterSubscription, type InsertNewsletter, type SponsorRequest, type InsertSponsorRequest, type Event, type Speaker, type Session, type Partner, type GalleryImage, type Testimonial, type Venue, type ContactSubmission, type InsertContactSubmission } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -18,9 +18,6 @@ export interface IStorage {
   createContactSubmission(data: InsertContactSubmission): Promise<ContactSubmission>;
   getContactSubmissions(): Promise<ContactSubmission[]>;
 
-  createMembershipApplication(data: InsertMembershipApplication): Promise<MembershipApplication>;
-  getMembershipApplications(): Promise<MembershipApplication[]>;
-
   getEvent(): Event;
   getSpeakers(): Speaker[];
   getSchedule(): Session[];
@@ -36,7 +33,6 @@ export class MemStorage implements IStorage {
   private newsletterSubscriptions: Map<string, NewsletterSubscription>;
   private sponsorRequests: Map<string, SponsorRequest>;
   private contactSubmissions: Map<string, ContactSubmission>;
-  private membershipApplications: Map<string, MembershipApplication>;
 
   constructor() {
     this.users = new Map();
@@ -44,7 +40,6 @@ export class MemStorage implements IStorage {
     this.newsletterSubscriptions = new Map();
     this.sponsorRequests = new Map();
     this.contactSubmissions = new Map();
-    this.membershipApplications = new Map();
   }
 
   async getUser(id: string): Promise<User | undefined> {
@@ -130,22 +125,6 @@ export class MemStorage implements IStorage {
 
   async getContactSubmissions(): Promise<ContactSubmission[]> {
     return Array.from(this.contactSubmissions.values());
-  }
-
-  async createMembershipApplication(data: InsertMembershipApplication): Promise<MembershipApplication> {
-    const id = randomUUID();
-    const application: MembershipApplication = {
-      id,
-      ...data,
-      status: "pending",
-      submittedAt: new Date().toISOString(),
-    };
-    this.membershipApplications.set(id, application);
-    return application;
-  }
-
-  async getMembershipApplications(): Promise<MembershipApplication[]> {
-    return Array.from(this.membershipApplications.values());
   }
 
   getEvent(): Event {

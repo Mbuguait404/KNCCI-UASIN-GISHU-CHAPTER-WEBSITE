@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertMembershipApplicationSchema, type InsertMembershipApplication } from "@shared/schema";
 import { useMutation } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import api from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import {
     Form,
@@ -81,7 +81,7 @@ export function MembershipForm() {
 
     const mutation = useMutation({
         mutationFn: async (data: InsertMembershipApplication) => {
-            await apiRequest("POST", "/api/membership-applications", data);
+            await api.post("/membership-applications", data);
         },
         onSuccess: () => {
             setIsSubmitted(true);
@@ -159,7 +159,7 @@ export function MembershipForm() {
     return (
         <Card className="w-full max-w-3xl mx-auto border-2 border-border shadow-2xl overflow-hidden">
             <div className="h-2 bg-gradient-to-r from-primary via-kncci-green to-primary animate-gradient-x" />
-            <CardHeader className="bg-muted/50 pb-8">
+            <CardHeader className="bg-background pb-8">
                 <div className="flex items-center gap-3 mb-2">
                     <div className="p-2 bg-primary/10 rounded-lg">
                         <Briefcase className="w-6 h-6 text-primary" />
@@ -274,9 +274,21 @@ export function MembershipForm() {
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>Sub County</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="Enter Sub County" {...field} className="h-11 focus-visible:ring-primary/30" />
-                                            </FormControl>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <FormControl>
+                                                    <SelectTrigger className="h-11 focus:ring-primary/30">
+                                                        <SelectValue placeholder="Select Sub County" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    <SelectItem value="Turbo">Turbo</SelectItem>
+                                                    <SelectItem value="Kesses">Kesses</SelectItem>
+                                                    <SelectItem value="Moiben">Moiben</SelectItem>
+                                                    <SelectItem value="Kapseret">Kapseret</SelectItem>
+                                                    <SelectItem value="Ainabkoi">Ainabkoi</SelectItem>
+                                                    <SelectItem value="Soy">Soy</SelectItem>
+                                                </SelectContent>
+                                            </Select>
                                             <FormMessage />
                                         </FormItem>
                                     )}

@@ -222,25 +222,5 @@ export async function registerRoutes(
     res.json(submissions);
   });
 
-  // Membership applications endpoint
-  app.post("/api/membership-applications", async (req, res) => {
-    try {
-      const validatedData = insertMembershipApplicationSchema.parse(req.body);
-      const application = await storage.createMembershipApplication(validatedData);
-      res.status(201).json(application);
-    } catch (error) {
-      if (error instanceof Error) {
-        res.status(400).json({ error: error.message });
-      } else {
-        res.status(400).json({ error: "Invalid membership application data" });
-      }
-    }
-  });
-
-  app.get("/api/membership-applications", async (req, res) => {
-    const applications = await storage.getMembershipApplications();
-    res.json(applications);
-  });
-
   return httpServer;
 }
