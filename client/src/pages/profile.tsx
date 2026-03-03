@@ -304,7 +304,63 @@ export default function ProfilePage() {
                     </div>
                 </header>
 
-                <div className="p-6 lg:p-10 max-w-7xl mx-auto space-y-8">
+                <div className="p-6 lg:p-10 w-full max-w-[1600px] flex flex-col gap-8">
+                    {/* ═══ Compact Profile Header ═══ */}
+                    <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="w-full bg-white dark:bg-slate-900 rounded-[2rem] border border-border/40 p-4 lg:px-8 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6"
+                    >
+                        <div className="flex items-center gap-4">
+                            <Avatar className="w-12 h-12 border-2 border-primary/20 shadow-sm rounded-xl">
+                                <AvatarFallback className="bg-primary text-white text-lg font-extrabold uppercase">
+                                    {user.name.split(' ').map(n => n[0]).join('')}
+                                </AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0">
+                                <h2 className="text-base font-extrabold tracking-tight truncate">{user.name}</h2>
+                                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest truncate">{business?.category || "KNCCI Member"}</p>
+                            </div>
+                        </div>
+
+                        <div className="hidden xl:flex items-center gap-8">
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-primary">
+                                    <Mail className="w-4 h-4" />
+                                </div>
+                                <div className="min-w-0">
+                                    <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Email</p>
+                                    <p className="text-xs font-bold truncate">{user.email}</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-primary">
+                                    <Phone className="w-4 h-4" />
+                                </div>
+                                <div>
+                                    <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Contact</p>
+                                    <p className="text-xs font-bold">{user.phone || "Not set"}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-4">
+                            <div className="hidden sm:flex flex-col items-end mr-2">
+                                <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Active Plan</p>
+                                <Badge className="bg-primary/10 text-primary border-none font-bold rounded-lg px-2 py-0.5 text-[10px]">
+                                    {business?.plan || "Bronze"}
+                                </Badge>
+                            </div>
+                            <Button
+                                variant="outline"
+                                className="rounded-xl h-10 px-5 font-bold shadow-sm bg-primary/5 text-primary border-primary/20 hover:bg-primary hover:text-white transition-all text-[11px] uppercase tracking-wider"
+                                onClick={() => setShowCertificate(true)}
+                            >
+                                <Award className="w-3.5 h-3.5 mr-2" /> Certificate
+                            </Button>
+                        </div>
+                    </motion.div>
+
                     {/* Header Section with glassmorphism welcome banner */}
                     <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-primary/10 via-primary/5 to-secondary/5 border border-primary/10 p-8 lg:p-12">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full -mr-32 -mt-32 blur-[80px]" />
@@ -314,19 +370,20 @@ export default function ProfilePage() {
                             <motion.div
                                 initial={{ opacity: 0, x: -20 }}
                                 animate={{ opacity: 1, x: 0 }}
+                                className="max-w-2xl"
                             >
-                                <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary/70 mb-2">
+                                <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary/70 mb-2 font-mono">
                                     Welcome back, {user.name.split(' ')[0]}
                                 </p>
                                 <h1 className="text-3xl lg:text-5xl font-extrabold tracking-tight mb-4">
                                     {sideNavItems.find(n => n.key === activeTab)?.label || "Dashboard"}
                                 </h1>
-                                <div className="flex flex-wrap items-center gap-3">
-                                    <Badge className="bg-white dark:bg-slate-800 text-primary border-primary/20 shadow-sm font-bold px-3 py-1 flex gap-1.5 items-center">
-                                        <BadgeCheck className="w-4 h-4 text-primary" />
-                                        Verified Member
-                                    </Badge>
-                                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-widest">
+                                <div className="flex flex-wrap items-center gap-4">
+                                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white dark:bg-slate-800 shadow-sm border border-primary/10">
+                                        <BadgeCheck className="w-4 h-4 text-emerald-500" />
+                                        <span className="text-xs font-extrabold text-foreground uppercase tracking-widest">Verified Member</span>
+                                    </div>
+                                    <span className="text-[11px] font-bold text-muted-foreground/60 uppercase tracking-widest border-l border-border/40 pl-4 h-4 flex items-center">
                                         Member Since Jan 2023
                                     </span>
                                 </div>
@@ -336,95 +393,23 @@ export default function ProfilePage() {
                                 {user.role === 'admin' && (
                                     <Button
                                         variant="outline"
-                                        className="rounded-2xl border-primary/20 bg-white/50 backdrop-blur-sm hover:bg-white dark:bg-slate-900/50 dark:hover:bg-slate-900 font-bold h-12"
+                                        className="rounded-2xl border-primary/20 bg-white/50 backdrop-blur-sm hover:bg-white dark:bg-slate-900/50 dark:hover:bg-slate-900 font-bold h-12 px-6 shadow-sm"
                                         onClick={() => setLocation('/admin')}
                                     >
                                         <LayoutDashboard className="w-4 h-4 mr-2" /> Admin Panel
                                     </Button>
                                 )}
-                                <Button className="rounded-2xl shadow-xl shadow-primary/20 font-bold h-12 px-6" onClick={() => setIsEditDialogOpen(true)}>
-                                    <Settings className="w-4 h-4 mr-2" /> Settings
+                                <Button className="rounded-2xl shadow-xl shadow-primary/20 font-bold h-12 px-8" onClick={() => setIsEditDialogOpen(true)}>
+                                    <Settings className="w-4 h-4 mr-2" /> Profile Settings
                                 </Button>
                             </div>
                         </div>
                     </div>
 
-                    <div className="grid lg:grid-cols-3 gap-8">
-                        {/* ═══ Left Column: Profile Card ═══ */}
-                        <div className="lg:col-span-1 space-y-8">
-                            <Card className="rounded-[2.5rem] border-none shadow-2xl shadow-primary/5 overflow-hidden transition-all duration-500 hover:shadow-primary/10 bg-white dark:bg-slate-900 border-none">
-                                <CardHeader className="p-0 relative">
-                                    <div className="h-32 bg-gradient-to-br from-primary via-primary/80 to-secondary/80">
-                                        <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-md rounded-full px-3 py-1 text-[10px] font-bold text-white uppercase tracking-wider flex items-center gap-1">
-                                            <BadgeCheck className="w-3 h-3" /> System Active
-                                        </div>
-                                    </div>
-                                    <div className="px-8 -mt-16 flex items-end justify-between">
-                                        <Avatar className="w-32 h-32 border-[8px] border-white dark:border-slate-900 shadow-2xl rounded-[2rem]">
-                                            <AvatarFallback className="bg-primary text-white text-4xl font-extrabold uppercase">
-                                                {user.name.split(' ').map(n => n[0]).join('')}
-                                            </AvatarFallback>
-                                        </Avatar>
-                                    </div>
-                                </CardHeader>
-                                <CardContent className="p-8 space-y-6 pt-6">
-                                    <div>
-                                        <h2 className="text-2xl font-extrabold tracking-tight">{user.name}</h2>
-                                        <p className="text-muted-foreground font-medium flex items-center gap-2 mt-1">
-                                            {business?.category || "KNCCI Member"} • Uasin Gishu
-                                        </p>
-                                    </div>
-
-                                    <div className="space-y-4 pt-4">
-                                        <div className="flex items-center gap-4 text-muted-foreground group">
-                                            <div className="w-10 h-10 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all">
-                                                <Mail className="w-5 h-5" />
-                                            </div>
-                                            <div className="min-w-0">
-                                                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Email Address</p>
-                                                <p className="text-sm font-bold text-foreground truncate">{user.email}</p>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center gap-4 text-muted-foreground group">
-                                            <div className="w-10 h-10 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all">
-                                                <Phone className="w-5 h-5" />
-                                            </div>
-                                            <div>
-                                                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Direct Contact</p>
-                                                <p className="text-sm font-bold text-foreground">{user.phone || "Not set"}</p>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center gap-4 text-muted-foreground group">
-                                            <div className="w-10 h-10 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all">
-                                                <MapPin className="w-5 h-5" />
-                                            </div>
-                                            <div>
-                                                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Headquarters</p>
-                                                <p className="text-sm font-bold text-foreground">{business?.location || "Eldoret, Kenya"}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="pt-6 border-t border-border/40">
-                                        <div className="flex justify-between items-center mb-4">
-                                            <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Current Plan</p>
-                                            <Badge className="bg-primary/10 text-primary border-none font-bold rounded-lg px-3 py-1">
-                                                {business?.plan || "Bronze"}
-                                            </Badge>
-                                        </div>
-                                        <p className="text-xs text-muted-foreground leading-relaxed italic">
-                                            Membership status is currently active. Next renewal due in December 2026.
-                                        </p>
-                                        <Button className="w-full mt-6 rounded-2xl h-12 font-bold shadow-lg shadow-primary/10 bg-primary/5 text-primary border-primary/20 hover:bg-primary hover:text-white transition-all" variant="outline" onClick={() => setShowCertificate(true)}>
-                                            <Award className="w-4 h-4 mr-2" /> Download Certificate
-                                        </Button>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </div>
-
-                        {/* ═══ Right Column: Dynamic Content Tabs ═══ */}
-                        <div className="lg:col-span-2 space-y-8">
+                    {/* MAIN CONTENT AREA: Tabs (Full Width) */}
+                    <div className="w-full space-y-8">
+                        {/* ═══ Full Width Content Tabs ═══ */}
+                        <div className="w-full space-y-8">
                             <AnimatePresence mode="wait">
                                 {activeTab === "overview" && (
                                     <motion.div
@@ -435,7 +420,7 @@ export default function ProfilePage() {
                                         className="space-y-8"
                                     >
                                         {/* Quick Stats Grid */}
-                                        <div className="grid grid-cols-2 lg:grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                                             {stats.map((stat, i) => (
                                                 <motion.div
                                                     key={i}
@@ -722,7 +707,185 @@ export default function ProfilePage() {
                 />
             )}
 
-            {/* Form Dialog for Edits - Already integrated above but keeping logic intact */}
+            {/* Edit Business Profile Dialog */}
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto rounded-[2rem]">
+                    <DialogHeader>
+                        <DialogTitle className="text-2xl font-extrabold tracking-tight">Edit Business Profile</DialogTitle>
+                        <DialogDescription className="font-medium text-muted-foreground">
+                            Update your organization's details to enhance your profile visibility in the directory.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <Form {...form}>
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4 px-1">
+                            <div className="grid md:grid-cols-2 gap-6">
+                                <FormField
+                                    control={form.control}
+                                    name="name"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Organization Name</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="Business Name" {...field} className="rounded-xl h-11 border-border/40 focus:border-primary/40 focus:ring-primary/20" />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="category"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Industrial Category</FormLabel>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <FormControl>
+                                                    <SelectTrigger className="rounded-xl h-11 border-border/40">
+                                                        <SelectValue placeholder="Select sector" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent className="rounded-xl">
+                                                    <SelectItem value="Agriculture">Agriculture & Food</SelectItem>
+                                                    <SelectItem value="Manufacturing">Manufacturing</SelectItem>
+                                                    <SelectItem value="Trade">Retail & Wholesale</SelectItem>
+                                                    <SelectItem value="Services">Professional Services</SelectItem>
+                                                    <SelectItem value="Construction">Construction</SelectItem>
+                                                    <SelectItem value="Technology">Technology & Innovation</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+
+                            <div className="grid md:grid-cols-2 gap-6">
+                                <FormField
+                                    control={form.control}
+                                    name="email"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Official Email</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="office@company.com" {...field} className="rounded-xl h-11" />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="phone"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Support Contact</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="+254..." {...field} className="rounded-xl h-11" />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+
+                            <div className="grid md:grid-cols-2 gap-6">
+                                <FormField
+                                    control={form.control}
+                                    name="location"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Physical Location</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="Town, County" {...field} className="rounded-xl h-11" />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="website"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Corporate Website (Optional)</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="https://..." {...field} className="rounded-xl h-11" />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <FormField
+                                    control={form.control}
+                                    name="kra_pin"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="font-bold text-xs uppercase tracking-widest text-muted-foreground">KRA PIN</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="P0..." {...field} className="rounded-xl h-11 font-mono text-sm" />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="company_reg_no"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Reg Number</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="PV..." {...field} className="rounded-xl h-11 font-mono text-sm" />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="business_permit"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Business Permit</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="Permit ID" {...field} className="rounded-xl h-11 font-mono text-sm" />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+
+                            <FormField
+                                control={form.control}
+                                name="description"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Mission & Overview</FormLabel>
+                                        <FormControl>
+                                            <Textarea
+                                                placeholder="Tell us about your organization..."
+                                                className="min-h-[120px] rounded-[1.5rem] border-border/40 p-4 leading-relaxed"
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <DialogFooter className="pt-4">
+                                <Button type="button" variant="ghost" className="rounded-xl font-bold" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
+                                <Button type="submit" className="rounded-xl px-10 font-extrabold shadow-xl shadow-primary/20 bg-primary">Save Profile Changes</Button>
+                            </DialogFooter>
+                        </form>
+                    </Form>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
