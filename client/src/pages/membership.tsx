@@ -3,6 +3,7 @@ import { Footer } from "@/components/footer";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { SEOHead } from "@/components/seo/seo-head";
+import { MembershipForm } from "@/components/membership-form";
 import {
   Users,
   Megaphone,
@@ -11,7 +12,6 @@ import {
   Eye,
   Briefcase,
   Percent,
-  ExternalLink,
 } from "lucide-react";
 
 const membershipData = {
@@ -67,8 +67,6 @@ const membershipData = {
     },
   ],
 };
-
-const MEMBERSHIP_FORM_URL = "https://forms.gle/22EEiMTGzu7o9C6PA";
 
 export default function Membership() {
   return (
@@ -149,36 +147,18 @@ export default function Membership() {
                   })}
                 </div>
 
-                {/* CTA - Apply Now */}
-                <Card className="max-w-2xl mx-auto border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-kncci-green/5">
-                  <CardContent className="p-8 sm:p-10 text-center">
-                    <h3 className="text-2xl font-bold text-foreground mb-2">
-                      Ready to join?
-                    </h3>
-                    <p className="text-muted-foreground mb-6">
-                      Take the first step towards becoming a KNCCI member. Fill out
-                      the membership application form and unlock exclusive benefits
-                      for your business.
+                {/* Membership Application Form */}
+                <div id="apply-form" className="max-w-4xl mx-auto scroll-mt-24">
+                  <div className="text-center mb-12">
+                    <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
+                      Membership Application Form
+                    </h2>
+                    <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+                      Ready to join? Fill out the form below to start your journey with KNCCI Uasin Gishu Chapter.
                     </p>
-                    <Button
-                      size="lg"
-                      className="gap-2"
-                      asChild
-                    >
-                      <a
-                        href={MEMBERSHIP_FORM_URL}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        Apply for Membership
-                        <ExternalLink className="w-4 h-4" />
-                      </a>
-                    </Button>
-                    <p className="text-xs text-muted-foreground mt-4">
-                      You will be redirected to the official KNCCI membership form
-                    </p>
-                  </CardContent>
-                </Card>
+                  </div>
+                  <MembershipForm />
+                </div>
               </div>
             </div>
           </section>

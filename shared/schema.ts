@@ -1,5 +1,5 @@
-import { sql } from "drizzle-orm";
 import { pgTable, text, varchar, timestamp, integer, boolean } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -203,4 +203,33 @@ export const insertContactSubmissionSchema = z.object({
 });
 
 export type InsertContactSubmission = z.infer<typeof insertContactSubmissionSchema>;
+
+
+// Membership Application
+export interface MembershipApplication {
+  id: string;
+  name: string;
+  businessName: string;
+  contact: string;
+  email: string;
+  location: string;
+  subCounty: string;
+  businessClass: string;
+  subscriptionFee: string;
+  status: string;
+  submittedAt: string;
+}
+
+export const insertMembershipApplicationSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  businessName: z.string().min(1, "Business Name is required"),
+  contact: z.string().min(1, "Contact (Phone Number) is required"),
+  email: z.string().email("Valid email address is required"),
+  location: z.string().min(1, "Location (Town/Street) is required"),
+  subCounty: z.string().min(1, "Sub County is required"),
+  businessClass: z.string().min(1, "Business Class is required"),
+  subscriptionFee: z.string().min(1, "Subscription Fee category is required"),
+});
+
+export type InsertMembershipApplication = z.infer<typeof insertMembershipApplicationSchema>;
 

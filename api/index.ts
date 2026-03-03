@@ -8,6 +8,7 @@ import { randomUUID } from "crypto";
 const registrations = new Map<string, any>();
 const registrationPayloads = new Map<string, any>(); // New format (event, attendee, tickets, payment)
 const newsletterSubscriptions = new Map<string, any>();
+const membershipApplications = new Map<string, any>();
 
 const storage = {
   async createRegistration(data: any) {
@@ -54,6 +55,20 @@ const storage = {
   },
   async getNewsletterSubscriptions() {
     return Array.from(newsletterSubscriptions.values());
+  },
+  async createMembershipApplication(data: any) {
+    const id = randomUUID();
+    const application = {
+      id,
+      ...data,
+      status: "pending",
+      submittedAt: new Date().toISOString(),
+    };
+    membershipApplications.set(id, application);
+    return application;
+  },
+  async getMembershipApplications() {
+    return Array.from(membershipApplications.values());
   },
   getEvent() {
     return {
@@ -204,6 +219,22 @@ function validateNewsletter(data: any): { success: boolean; error?: string; data
   return { success: true, data };
 }
 
+function validateMembershipApplication(data: any): { success: boolean; error?: string; data?: any } {
+  if (!data || typeof data !== 'object') {
+    return { success: false, error: "Invalid application data" };
+  }
+  const requiredFields = ['name', 'businessName', 'contact', 'email', 'location', 'subCounty', 'businessClass', 'subscriptionFee'];
+  for (const field of requiredFields) {
+    if (!data[field] || typeof data[field] !== 'string') {
+      return { success: false, error: `${field} is required` };
+    }
+  }
+  if (!data.email.includes('@')) {
+    return { success: false, error: "Valid email is required" };
+  }
+  return { success: true, data };
+}
+
 // Inline ticketing proxy config (avoids import issues on Vercel)
 const TICKETING_API_URL =
   process.env.TICKETING_API_URL ||
@@ -219,35 +250,35 @@ async function ticketingFetch(endpoint: string, options?: RequestInit) {
   if (TICKETING_API_KEY) {
     headers["x-api-key"] = TICKETING_API_KEY;
   }
-  
+
   console.log(`[Ticketing] Request: ${options?.method || "GET"} ${url}`);
   console.log(`[Ticketing] Headers: x-api-key=${headers["x-api-key"] ? "PRESENT" : "MISSING"}, Content-Type=${headers["Content-Type"]}`);
-  
+
   const { headers: _, ...restOptions } = options || {};
-  
+
   try {
     const response = await fetch(url, { headers, ...restOptions });
     console.log(`[Ticketing] Response: ${response.status} ${response.statusText}`);
-    
+
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`[Ticketing] Error response body: ${errorText.substring(0, 500)}`);
-      
+
       let errorMessage = `API error: ${response.status} ${response.statusText}`;
       const contentType = response.headers.get("content-type") || "";
-      
+
       if (contentType.includes("application/json")) {
         try {
           const errorJson = JSON.parse(errorText);
           errorMessage = errorJson.message || errorJson.error || errorMessage;
-        } catch {}
+        } catch { }
       } else if (errorText) {
         errorMessage = `API returned ${contentType}. Status: ${response.status}. Body: ${errorText.substring(0, 200)}`;
       }
-      
+
       throw new Error(errorMessage);
     }
-    
+
     const contentType = response.headers.get("content-type") || "";
     if (!contentType.includes("application/json")) {
       const text = await response.text();
@@ -255,7 +286,7 @@ async function ticketingFetch(endpoint: string, options?: RequestInit) {
       console.warn(`[Ticketing] Response body (first 200 chars): ${text.substring(0, 200)}`);
       throw new Error(`API returned ${contentType} instead of JSON`);
     }
-    
+
     return response.json();
   } catch (error) {
     console.error(`[Ticketing] Fetch error:`, error);
@@ -387,6 +418,30 @@ app.get("/api/newsletter", async (req, res) => {
   }
 });
 
+app.post("/api/membership-applications", async (req, res) => {
+  try {
+    const validation = validateMembershipApplication(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: validation.error });
+    }
+    const application = await storage.createMembershipApplication(validation.data);
+    res.status(201).json(application);
+  } catch (error) {
+    console.error("Error in /api/membership-applications:", error);
+    res.status(500).json({ error: "Failed to submit membership application" });
+  }
+});
+
+app.get("/api/membership-applications", async (req, res) => {
+  try {
+    const applications = await storage.getMembershipApplications();
+    res.json(applications);
+  } catch (error) {
+    console.error("Error in /api/membership-applications:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 // KNCCI messaging endpoint - proxy to avoid CORS
 const KNCCI_MESSAGING_URL =
   process.env.KNCCI_MESSAGING_URL ||
@@ -447,7 +502,7 @@ app.get("/api/ticketing/events", async (req, res) => {
     }
     console.log(`[Ticketing] Fetching events from: ${TICKETING_API_URL}${endpoint}`);
     console.log(`[Ticketing] API Key configured: ${TICKETING_API_KEY ? `${TICKETING_API_KEY.substring(0, 15)}...` : "MISSING"}`);
-    
+
     const data = await ticketingFetch(endpoint);
     res.json(data);
   } catch (error) {
@@ -466,7 +521,7 @@ app.get("/api/ticketing/ticket-types", async (req, res) => {
     }
     console.log(`[Ticketing] Fetching ticket types for event: ${eventId}`);
     console.log(`[Ticketing] API Key configured: ${TICKETING_API_KEY ? `${TICKETING_API_KEY.substring(0, 15)}...` : "MISSING"}`);
-    
+
     const data = await ticketingFetch(
       `/ticket-types/public?eventId=${encodeURIComponent(eventId)}`,
     );
@@ -483,7 +538,7 @@ app.post("/api/ticketing/purchases", async (req, res) => {
   try {
     const purchaseData = req.body;
     console.log(`[Ticketing] Creating purchase for event: ${purchaseData.eventId}`);
-    
+
     if (!purchaseData.eventId) {
       console.error("[Ticketing] Error: eventId is required");
       return res.status(400).json({ error: "eventId is required" });
@@ -502,7 +557,7 @@ app.post("/api/ticketing/purchases", async (req, res) => {
       console.error("[Ticketing] Error: paymentMethod is required");
       return res.status(400).json({ error: "paymentMethod is required" });
     }
-    
+
     const data = await ticketingFetch("/purchases", {
       method: "POST",
       body: JSON.stringify(purchaseData),
