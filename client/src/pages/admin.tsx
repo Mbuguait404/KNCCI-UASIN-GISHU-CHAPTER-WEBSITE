@@ -6,7 +6,9 @@ import {
     LogOut, Crown, Medal, Award, Trash2, KeyRound, UserCog,
     Building2, Mail, Phone, MapPin, Globe, Eye, X, Home,
     TrendingUp, Activity, LayoutDashboard, ChevronDown,
-    AlertTriangle, Loader2, FileText
+    AlertTriangle, Loader2, FileText, MessageSquare, Send,
+    Plus, Pencil, Clock, CheckCircle2, XCircle, Smartphone,
+    AtSign, UserPlus, FileEdit
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,9 +29,11 @@ import {
     AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import { SEOHead } from "@/components/seo/seo-head";
 import { useAuth } from "@/services/auth-context";
 import { adminService, DashboardStats, MemberDoc, PaginatedMembers } from "@/services/admin-service";
+import { messagingService, MessageTemplate, MessageLogEntry, MessageChannel, MessagingStats, PaginatedLogs } from "@/services/messaging-service";
 import { useToast } from "@/hooks/use-toast";
 
 
@@ -106,6 +110,34 @@ export default function AdminDashboard() {
     // Active sidebar item
     const [activeTab, setActiveTab] = useState("overview");
 
+    // ─── Messaging state ────────────────────────────────────────────
+    const [msgSubTab, setMsgSubTab] = useState<"compose" | "templates" | "logs">("compose");
+    const [msgChannel, setMsgChannel] = useState<MessageChannel>("sms");
+    const [msgRecipientMode, setMsgRecipientMode] = useState<"all" | "select" | "manual">("all");
+    const [msgManualRecipients, setMsgManualRecipients] = useState("");
+    const [msgSelectedMemberIds, setMsgSelectedMemberIds] = useState<string[]>([]);
+    const [msgSubject, setMsgSubject] = useState("");
+    const [msgBody, setMsgBody] = useState("");
+    const [msgSending, setMsgSending] = useState(false);
+    const [msgTemplates, setMsgTemplates] = useState<MessageTemplate[]>([]);
+    const [msgLoadingTemplates, setMsgLoadingTemplates] = useState(false);
+    const [msgLogs, setMsgLogs] = useState<PaginatedLogs | null>(null);
+    const [msgLogsPage, setMsgLogsPage] = useState(1);
+    const [msgLoadingLogs, setMsgLoadingLogs] = useState(false);
+    const [msgStats, setMsgStats] = useState<MessagingStats | null>(null);
+    const [msgAllMembers, setMsgAllMembers] = useState<MemberDoc[]>([]);
+    const [msgMemberSearch, setMsgMemberSearch] = useState("");
+    // Template editor
+    const [tplEditOpen, setTplEditOpen] = useState(false);
+    const [tplEditing, setTplEditing] = useState<MessageTemplate | null>(null);
+    const [tplName, setTplName] = useState("");
+    const [tplChannel, setTplChannel] = useState<MessageChannel>("sms");
+    const [tplSubject, setTplSubject] = useState("");
+    const [tplBody, setTplBody] = useState("");
+    const [tplSaving, setTplSaving] = useState(false);
+    const [msgLogsChannelFilter, setMsgLogsChannelFilter] = useState<string>("all");
+    const [msgLogsStatusFilter, setMsgLogsStatusFilter] = useState<string>("all");
+
     // ─── Auth guard ────────────────────────────────────────────────────
     useEffect(() => {
         if (!authLoading && (!isAuthenticated || user?.role !== "admin")) {
@@ -160,6 +192,128 @@ export default function AdminDashboard() {
     }, [toast]);
 
     useEffect(() => { fetchApplications(); }, [fetchApplications]);
+
+    // ─── Messaging data fetchers ────────────────────────────────────
+    const fetchMsgTemplates = useCallback(async () => {
+        try {
+            setMsgLoadingTemplates(true);
+            const res = await messagingService.getTemplates();
+            if (res.success) setMsgTemplates(res.data);
+        } catch { /* quiet */ } finally { setMsgLoadingTemplates(false); }
+    }, []);
+
+    const fetchMsgLogs = useCallback(async () => {
+        try {
+            setMsgLoadingLogs(true);
+            const params: any = { page: msgLogsPage, limit: 15 };
+            if (msgLogsChannelFilter !== "all") params.channel = msgLogsChannelFilter;
+            if (msgLogsStatusFilter !== "all") params.status = msgLogsStatusFilter;
+            const res = await messagingService.getLogs(params);
+            if (res.success) setMsgLogs(res.data);
+        } catch { /* quiet */ } finally { setMsgLoadingLogs(false); }
+    }, [msgLogsPage, msgLogsChannelFilter, msgLogsStatusFilter]);
+
+    const fetchMsgStats = useCallback(async () => {
+        try {
+            const res = await messagingService.getStats();
+            if (res.success) setMsgStats(res.data);
+        } catch { /* quiet */ }
+    }, []);
+
+    const fetchAllMembersForMessaging = useCallback(async () => {
+        try {
+            const res = await adminService.getMembers({ page: 1, limit: 500 });
+            if (res.success) setMsgAllMembers(res.data.members);
+        } catch { /* quiet */ }
+    }, []);
+
+    useEffect(() => {
+        if (activeTab === "messaging") {
+            fetchMsgTemplates();
+            fetchMsgLogs();
+            fetchMsgStats();
+            fetchAllMembersForMessaging();
+        }
+    }, [activeTab, fetchMsgTemplates, fetchMsgLogs, fetchMsgStats, fetchAllMembersForMessaging]);
+
+    // ─── Send message handler ───────────────────────────────────────
+    const handleSendMessage = async () => {
+        let recipients: string[] = [];
+        if (msgRecipientMode === "all") {
+            recipients = msgAllMembers.map(m => msgChannel === "sms" ? (m.phone || "") : m.email).filter(Boolean);
+        } else if (msgRecipientMode === "select") {
+            recipients = msgAllMembers
+                .filter(m => msgSelectedMemberIds.includes(m._id))
+                .map(m => msgChannel === "sms" ? (m.phone || "") : m.email)
+                .filter(Boolean);
+        } else {
+            recipients = msgManualRecipients.split(/[,;\n]+/).map(s => s.trim()).filter(Boolean);
+        }
+        if (recipients.length === 0) {
+            toast({ title: "No Recipients", description: "Please add at least one recipient.", variant: "destructive" });
+            return;
+        }
+        if (!msgBody.trim()) {
+            toast({ title: "Empty Message", description: "Please enter a message body.", variant: "destructive" });
+            return;
+        }
+        setMsgSending(true);
+        try {
+            const res = await messagingService.sendMessage({
+                type: msgChannel,
+                to: recipients,
+                message: msgBody,
+                subject: msgChannel === "email" ? msgSubject : undefined,
+            });
+            if (res.success) {
+                toast({ title: "Messages Sent", description: `${res.data.sent} sent, ${res.data.failed} failed out of ${res.data.totalRecipients}.` });
+                setMsgBody(""); setMsgSubject(""); setMsgManualRecipients(""); setMsgSelectedMemberIds([]);
+                fetchMsgLogs(); fetchMsgStats();
+            }
+        } catch (err: any) {
+            toast({ title: "Send Failed", description: err.response?.data?.message || "Failed to send messages", variant: "destructive" });
+        } finally { setMsgSending(false); }
+    };
+
+    // ─── Template save handler ──────────────────────────────────────
+    const handleSaveTemplate = async () => {
+        if (!tplName.trim() || !tplBody.trim()) return;
+        setTplSaving(true);
+        try {
+            if (tplEditing) {
+                await messagingService.updateTemplate(tplEditing._id, { name: tplName, channel: tplChannel, subject: tplSubject, body: tplBody });
+                toast({ title: "Template Updated" });
+            } else {
+                await messagingService.createTemplate({ name: tplName, channel: tplChannel, subject: tplSubject, body: tplBody });
+                toast({ title: "Template Created" });
+            }
+            setTplEditOpen(false); setTplEditing(null); setTplName(""); setTplChannel("sms"); setTplSubject(""); setTplBody("");
+            fetchMsgTemplates();
+        } catch (err: any) {
+            toast({ title: "Error", description: err.response?.data?.message || "Failed to save template", variant: "destructive" });
+        } finally { setTplSaving(false); }
+    };
+
+    const handleDeleteTemplate = async (id: string) => {
+        try {
+            await messagingService.deleteTemplate(id);
+            toast({ title: "Template Deleted" });
+            fetchMsgTemplates();
+        } catch { toast({ title: "Error", description: "Failed to delete template", variant: "destructive" }); }
+    };
+
+    const openEditTemplate = (tpl: MessageTemplate) => {
+        setTplEditing(tpl); setTplName(tpl.name); setTplChannel(tpl.channel); setTplSubject(tpl.subject || ""); setTplBody(tpl.body);
+        setTplEditOpen(true);
+    };
+
+    const applyTemplate = (tpl: MessageTemplate) => {
+        setMsgChannel(tpl.channel);
+        setMsgBody(tpl.body);
+        if (tpl.subject) setMsgSubject(tpl.subject);
+        setMsgSubTab("compose");
+        toast({ title: "Template Applied", description: `"${tpl.name}" loaded into composer.` });
+    };
 
     // Debounced search
     useEffect(() => {
@@ -340,6 +494,7 @@ export default function AdminDashboard() {
                             { key: "overview", label: "Dashboard", icon: <LayoutDashboard className="w-4 h-4" /> },
                             { key: "members", label: "Members", icon: <Users className="w-4 h-4" /> },
                             { key: "applications", label: "Applications", icon: <FileText className="w-4 h-4" /> },
+                            { key: "messaging", label: "Messaging", icon: <MessageSquare className="w-4 h-4" /> },
                         ].map((item) => (
                             <button
                                 key={item.key}
@@ -404,6 +559,7 @@ export default function AdminDashboard() {
                                 <TabsTrigger value="overview" className="text-xs px-3 h-7"><BarChart3 className="w-3.5 h-3.5" /></TabsTrigger>
                                 <TabsTrigger value="members" className="text-xs px-3 h-7"><Users className="w-3.5 h-3.5" /></TabsTrigger>
                                 <TabsTrigger value="applications" className="text-xs px-3 h-7"><FileText className="w-3.5 h-3.5" /></TabsTrigger>
+                                <TabsTrigger value="messaging" className="text-xs px-3 h-7"><MessageSquare className="w-3.5 h-3.5" /></TabsTrigger>
                             </TabsList>
                         </Tabs>
                         <Button variant="ghost" size="icon" onClick={() => setLocation('/')} title="Return to Home">
@@ -426,7 +582,7 @@ export default function AdminDashboard() {
                             {new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
                         </p>
                         <h1 className="text-3xl lg:text-4xl font-extrabold tracking-tight">
-                            {activeTab === "overview" ? "Dashboard Overview" : activeTab === "members" ? "Member Management" : "Application Management"}
+                            {activeTab === "overview" ? "Dashboard Overview" : activeTab === "members" ? "Member Management" : activeTab === "applications" ? "Application Management" : "Messaging Center"}
                         </h1>
                     </motion.div>
 
@@ -850,6 +1006,354 @@ export default function AdminDashboard() {
                             </Card>
                         </motion.div>
                     )}
+
+                    {/* ═══ MESSAGING TAB ═══════════════════════════════════ */}
+                    {activeTab === "messaging" && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.3 }}
+                            className="space-y-6"
+                        >
+                            {/* Stats Row */}
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                                {[
+                                    { label: "Total Sent", value: msgStats?.totalSent ?? 0, icon: <CheckCircle2 className="w-4 h-4" />, color: "text-emerald-500", bg: "bg-emerald-500/10" },
+                                    { label: "Failed", value: msgStats?.totalFailed ?? 0, icon: <XCircle className="w-4 h-4" />, color: "text-red-500", bg: "bg-red-500/10" },
+                                    { label: "SMS Sent", value: msgStats?.totalSms ?? 0, icon: <Smartphone className="w-4 h-4" />, color: "text-blue-500", bg: "bg-blue-500/10" },
+                                    { label: "Emails Sent", value: msgStats?.totalEmail ?? 0, icon: <Mail className="w-4 h-4" />, color: "text-purple-500", bg: "bg-purple-500/10" },
+                                ].map((s, i) => (
+                                    <motion.div key={s.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
+                                        <Card className="border-border/40">
+                                            <CardContent className="p-4 flex items-center gap-3">
+                                                <div className={`w-9 h-9 rounded-xl ${s.bg} flex items-center justify-center ${s.color}`}>{s.icon}</div>
+                                                <div>
+                                                    <p className="text-xl font-extrabold">{s.value}</p>
+                                                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{s.label}</p>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    </motion.div>
+                                ))}
+                            </div>
+
+                            {/* Sub-tab nav */}
+                            <div className="flex gap-2">
+                                {[
+                                    { key: "compose" as const, label: "Compose", icon: <Send className="w-3.5 h-3.5" /> },
+                                    { key: "templates" as const, label: "Templates", icon: <FileEdit className="w-3.5 h-3.5" /> },
+                                    { key: "logs" as const, label: "History", icon: <Clock className="w-3.5 h-3.5" /> },
+                                ].map(t => (
+                                    <Button
+                                        key={t.key}
+                                        variant={msgSubTab === t.key ? "default" : "outline"}
+                                        size="sm"
+                                        className="text-xs rounded-xl gap-1.5 font-bold"
+                                        onClick={() => setMsgSubTab(t.key)}
+                                    >
+                                        {t.icon} {t.label}
+                                    </Button>
+                                ))}
+                            </div>
+
+                            {/* ── COMPOSE ─────────────────────────────────── */}
+                            {msgSubTab === "compose" && (
+                                <Card className="border-border/40">
+                                    <CardHeader className="pb-3">
+                                        <CardTitle className="text-base font-extrabold flex items-center gap-2">
+                                            <Send className="w-4 h-4 text-primary" /> Compose Message
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="space-y-5">
+                                        {/* Channel */}
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Channel</label>
+                                            <div className="flex gap-2">
+                                                <Button variant={msgChannel === "sms" ? "default" : "outline"} size="sm" className="rounded-xl gap-1.5 text-xs font-bold" onClick={() => setMsgChannel("sms")}>
+                                                    <Smartphone className="w-3.5 h-3.5" /> SMS
+                                                </Button>
+                                                <Button variant={msgChannel === "email" ? "default" : "outline"} size="sm" className="rounded-xl gap-1.5 text-xs font-bold" onClick={() => setMsgChannel("email")}>
+                                                    <Mail className="w-3.5 h-3.5" /> Email
+                                                </Button>
+                                            </div>
+                                        </div>
+
+                                        {/* Recipients */}
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Recipients</label>
+                                            <div className="flex gap-2 flex-wrap">
+                                                {([
+                                                    { key: "all" as const, label: "All Members", icon: <Users className="w-3.5 h-3.5" /> },
+                                                    { key: "select" as const, label: "Select Members", icon: <UserPlus className="w-3.5 h-3.5" /> },
+                                                    { key: "manual" as const, label: "Manual Entry", icon: <AtSign className="w-3.5 h-3.5" /> },
+                                                ]).map(r => (
+                                                    <Button key={r.key} variant={msgRecipientMode === r.key ? "default" : "outline"} size="sm" className="rounded-xl gap-1.5 text-xs font-bold" onClick={() => setMsgRecipientMode(r.key)}>
+                                                        {r.icon} {r.label}
+                                                    </Button>
+                                                ))}
+                                            </div>
+
+                                            {msgRecipientMode === "all" && (
+                                                <p className="text-xs text-muted-foreground bg-blue-50 dark:bg-blue-950/30 px-3 py-2 rounded-lg">
+                                                    📤 Message will be sent to <span className="font-bold">{msgAllMembers.length}</span> members ({msgChannel === "sms" ? "phone numbers" : "email addresses"}).
+                                                </p>
+                                            )}
+
+                                            {msgRecipientMode === "select" && (
+                                                <div className="space-y-2">
+                                                    <Input placeholder="Search members..." value={msgMemberSearch} onChange={e => setMsgMemberSearch(e.target.value)} className="h-9 rounded-xl text-xs" />
+                                                    <div className="max-h-48 overflow-y-auto border border-border/40 rounded-xl p-2 space-y-1">
+                                                        {msgAllMembers
+                                                            .filter(m => m.name.toLowerCase().includes(msgMemberSearch.toLowerCase()) || m.email.toLowerCase().includes(msgMemberSearch.toLowerCase()))
+                                                            .slice(0, 50)
+                                                            .map(m => (
+                                                                <label key={m._id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-900 cursor-pointer text-xs">
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        checked={msgSelectedMemberIds.includes(m._id)}
+                                                                        onChange={e => {
+                                                                            if (e.target.checked) setMsgSelectedMemberIds(prev => [...prev, m._id]);
+                                                                            else setMsgSelectedMemberIds(prev => prev.filter(id => id !== m._id));
+                                                                        }}
+                                                                        className="rounded"
+                                                                    />
+                                                                    <span className="font-bold">{m.name}</span>
+                                                                    <span className="text-muted-foreground">— {msgChannel === "sms" ? (m.phone || "No phone") : m.email}</span>
+                                                                </label>
+                                                            ))}
+                                                    </div>
+                                                    <p className="text-[10px] text-muted-foreground">{msgSelectedMemberIds.length} selected</p>
+                                                </div>
+                                            )}
+
+                                            {msgRecipientMode === "manual" && (
+                                                <Textarea
+                                                    placeholder={msgChannel === "sms" ? "Enter phone numbers separated by commas or new lines...\n254712345678, 254798765432" : "Enter email addresses separated by commas or new lines...\njohn@example.com, jane@example.com"}
+                                                    value={msgManualRecipients}
+                                                    onChange={e => setMsgManualRecipients(e.target.value)}
+                                                    className="min-h-[80px] rounded-xl text-xs"
+                                                />
+                                            )}
+                                        </div>
+
+                                        {/* Quick template selector */}
+                                        {msgTemplates.filter(t => t.channel === msgChannel).length > 0 && (
+                                            <div className="space-y-2">
+                                                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Quick Template</label>
+                                                <div className="flex gap-2 flex-wrap">
+                                                    {msgTemplates.filter(t => t.channel === msgChannel).map(tpl => (
+                                                        <Button key={tpl._id} variant="outline" size="sm" className="rounded-xl text-xs gap-1 font-bold" onClick={() => applyTemplate(tpl)}>
+                                                            <FileEdit className="w-3 h-3" /> {tpl.name}
+                                                        </Button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Subject (email only) */}
+                                        {msgChannel === "email" && (
+                                            <div className="space-y-2">
+                                                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Subject</label>
+                                                <Input placeholder="Email subject line..." value={msgSubject} onChange={e => setMsgSubject(e.target.value)} className="h-11 rounded-xl" />
+                                            </div>
+                                        )}
+
+                                        {/* Body */}
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Message</label>
+                                            <Textarea placeholder="Type your message here..." value={msgBody} onChange={e => setMsgBody(e.target.value)} className="min-h-[120px] rounded-xl" />
+                                            {msgChannel === "sms" && (
+                                                <p className="text-[10px] text-muted-foreground">{msgBody.length} / 160 characters {msgBody.length > 160 ? `(${Math.ceil(msgBody.length / 153)} SMS segments)` : ""}</p>
+                                            )}
+                                        </div>
+
+                                        {/* Send */}
+                                        <Button onClick={handleSendMessage} disabled={msgSending || !msgBody.trim()} className="w-full h-12 rounded-xl font-extrabold text-sm gap-2">
+                                            {msgSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                                            {msgSending ? "Sending..." : `Send ${msgChannel.toUpperCase()}`}
+                                        </Button>
+                                    </CardContent>
+                                </Card>
+                            )}
+
+                            {/* ── TEMPLATES ───────────────────────────────── */}
+                            {msgSubTab === "templates" && (
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-sm font-bold text-muted-foreground">{msgTemplates.length} templates</p>
+                                        <Button size="sm" className="rounded-xl gap-1.5 text-xs font-bold" onClick={() => { setTplEditing(null); setTplName(""); setTplChannel("sms"); setTplSubject(""); setTplBody(""); setTplEditOpen(true); }}>
+                                            <Plus className="w-3.5 h-3.5" /> New Template
+                                        </Button>
+                                    </div>
+
+                                    {msgLoadingTemplates ? (
+                                        <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
+                                    ) : msgTemplates.length === 0 ? (
+                                        <Card className="border-border/40">
+                                            <CardContent className="py-12 text-center">
+                                                <FileEdit className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                                                <p className="text-sm font-bold text-muted-foreground">No templates yet</p>
+                                                <p className="text-xs text-muted-foreground">Create templates to speed up message composition</p>
+                                            </CardContent>
+                                        </Card>
+                                    ) : (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {msgTemplates.map((tpl, i) => (
+                                                <motion.div key={tpl._id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
+                                                    <Card className="border-border/40 group hover:shadow-md transition-shadow">
+                                                        <CardContent className="p-5 space-y-3">
+                                                            <div className="flex items-start justify-between">
+                                                                <div>
+                                                                    <p className="font-bold text-sm">{tpl.name}</p>
+                                                                    <Badge variant="outline" className="text-[10px] mt-1">
+                                                                        {tpl.channel === "sms" ? <Smartphone className="w-3 h-3 mr-1" /> : <Mail className="w-3 h-3 mr-1" />}
+                                                                        {tpl.channel.toUpperCase()}
+                                                                    </Badge>
+                                                                </div>
+                                                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                    <Button variant="ghost" size="icon" className="w-7 h-7" onClick={() => applyTemplate(tpl)} title="Use template">
+                                                                        <Send className="w-3.5 h-3.5 text-primary" />
+                                                                    </Button>
+                                                                    <Button variant="ghost" size="icon" className="w-7 h-7" onClick={() => openEditTemplate(tpl)} title="Edit">
+                                                                        <Pencil className="w-3.5 h-3.5 text-amber-500" />
+                                                                    </Button>
+                                                                    <Button variant="ghost" size="icon" className="w-7 h-7" onClick={() => handleDeleteTemplate(tpl._id)} title="Delete">
+                                                                        <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                                                                    </Button>
+                                                                </div>
+                                                            </div>
+                                                            {tpl.subject && <p className="text-xs text-muted-foreground"><span className="font-bold">Subject:</span> {tpl.subject}</p>}
+                                                            <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed">{tpl.body}</p>
+                                                        </CardContent>
+                                                    </Card>
+                                                </motion.div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* ── LOGS ────────────────────────────────────── */}
+                            {msgSubTab === "logs" && (
+                                <div className="space-y-4">
+                                    {/* Filters */}
+                                    <Card className="border-border/40">
+                                        <CardContent className="p-4">
+                                            <div className="flex flex-col sm:flex-row gap-3">
+                                                <Select value={msgLogsChannelFilter} onValueChange={v => { setMsgLogsChannelFilter(v); setMsgLogsPage(1); }}>
+                                                    <SelectTrigger className="w-full sm:w-40 h-10 rounded-xl border-border/50">
+                                                        <SelectValue placeholder="Channel" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="all">All Channels</SelectItem>
+                                                        <SelectItem value="sms">SMS</SelectItem>
+                                                        <SelectItem value="email">Email</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                                <Select value={msgLogsStatusFilter} onValueChange={v => { setMsgLogsStatusFilter(v); setMsgLogsPage(1); }}>
+                                                    <SelectTrigger className="w-full sm:w-40 h-10 rounded-xl border-border/50">
+                                                        <SelectValue placeholder="Status" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="all">All Statuses</SelectItem>
+                                                        <SelectItem value="sent">Sent</SelectItem>
+                                                        <SelectItem value="failed">Failed</SelectItem>
+                                                        <SelectItem value="pending">Pending</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+
+                                    {/* Logs table */}
+                                    <Card className="border-border/40 overflow-hidden">
+                                        <div className="overflow-x-auto">
+                                            <Table>
+                                                <TableHeader>
+                                                    <TableRow className="bg-slate-50/50 dark:bg-slate-900/50">
+                                                        <TableHead className="font-extrabold text-xs uppercase tracking-wider">Channel</TableHead>
+                                                        <TableHead className="font-extrabold text-xs uppercase tracking-wider">Recipient</TableHead>
+                                                        <TableHead className="font-extrabold text-xs uppercase tracking-wider">Message</TableHead>
+                                                        <TableHead className="font-extrabold text-xs uppercase tracking-wider">Status</TableHead>
+                                                        <TableHead className="font-extrabold text-xs uppercase tracking-wider">Date</TableHead>
+                                                    </TableRow>
+                                                </TableHeader>
+                                                <TableBody>
+                                                    {msgLoadingLogs ? (
+                                                        <TableRow>
+                                                            <TableCell colSpan={5} className="h-40 text-center">
+                                                                <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto" />
+                                                                <p className="text-sm text-muted-foreground mt-2">Loading logs...</p>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    ) : !msgLogs?.logs?.length ? (
+                                                        <TableRow>
+                                                            <TableCell colSpan={5} className="h-40 text-center">
+                                                                <Clock className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                                                                <p className="text-sm font-bold text-muted-foreground">No message history</p>
+                                                                <p className="text-xs text-muted-foreground">Messages you send will appear here</p>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    ) : (
+                                                        msgLogs.logs.map((log, i) => (
+                                                            <motion.tr
+                                                                key={log._id}
+                                                                initial={{ opacity: 0, x: -10 }}
+                                                                animate={{ opacity: 1, x: 0 }}
+                                                                transition={{ delay: i * 0.02 }}
+                                                                className="border-b border-border/30 hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors"
+                                                            >
+                                                                <TableCell>
+                                                                    <Badge variant="outline" className="text-[10px] font-bold">
+                                                                        {log.channel === "sms" ? <Smartphone className="w-3 h-3 mr-1" /> : <Mail className="w-3 h-3 mr-1" />}
+                                                                        {log.channel.toUpperCase()}
+                                                                    </Badge>
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    <p className="text-xs font-mono font-bold">{log.recipient}</p>
+                                                                    {log.recipientName && <p className="text-[10px] text-muted-foreground">{log.recipientName}</p>}
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    <p className="text-xs text-muted-foreground line-clamp-2 max-w-xs">{log.message}</p>
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${log.status === "sent" ? "bg-emerald-500/10 text-emerald-600" : log.status === "failed" ? "bg-red-500/10 text-red-600" : "bg-amber-500/10 text-amber-600"}`}>
+                                                                        {log.status === "sent" ? <CheckCircle2 className="w-3 h-3" /> : log.status === "failed" ? <XCircle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
+                                                                        {log.status}
+                                                                    </span>
+                                                                    {log.errorMessage && <p className="text-[10px] text-red-500 mt-0.5">{log.errorMessage}</p>}
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    <p className="text-xs text-muted-foreground">{new Date(log.createdAt).toLocaleString()}</p>
+                                                                </TableCell>
+                                                            </motion.tr>
+                                                        ))
+                                                    )}
+                                                </TableBody>
+                                            </Table>
+                                        </div>
+
+                                        {/* Pagination */}
+                                        {msgLogs && msgLogs.pagination.totalPages > 1 && (
+                                            <div className="flex items-center justify-between px-6 py-4 border-t border-border/30">
+                                                <p className="text-xs text-muted-foreground font-medium">
+                                                    Page <span className="font-bold text-foreground">{msgLogs.pagination.page}</span> of <span className="font-bold text-foreground">{msgLogs.pagination.totalPages}</span>
+                                                </p>
+                                                <div className="flex items-center gap-2">
+                                                    <Button variant="outline" size="sm" disabled={msgLogsPage <= 1} onClick={() => setMsgLogsPage(p => p - 1)} className="h-8 px-3 rounded-lg">
+                                                        <ChevronLeft className="w-4 h-4" />
+                                                    </Button>
+                                                    <Button variant="outline" size="sm" disabled={msgLogsPage >= msgLogs.pagination.totalPages} onClick={() => setMsgLogsPage(p => p + 1)} className="h-8 px-3 rounded-lg">
+                                                        <ChevronRight className="w-4 h-4" />
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </Card>
+                                </div>
+                            )}
+                        </motion.div>
+                    )}
                 </div>
             </main>
 
@@ -1079,6 +1583,54 @@ export default function AdminDashboard() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            {/* ─── Template Editor Dialog ────────────────────────────────  */}
+            <Dialog open={tplEditOpen} onOpenChange={(open) => { if (!open) { setTplEditOpen(false); setTplEditing(null); } }}>
+                <DialogContent className="max-w-lg rounded-2xl">
+                    <DialogHeader>
+                        <DialogTitle className="font-extrabold flex items-center gap-2">
+                            <FileEdit className="w-5 h-5 text-primary" /> {tplEditing ? "Edit Template" : "New Template"}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {tplEditing ? "Update template details below." : "Create a reusable message template."}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 mt-2">
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Template Name</label>
+                            <Input placeholder="e.g. Welcome Message" value={tplName} onChange={e => setTplName(e.target.value)} className="h-11 rounded-xl" />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Channel</label>
+                            <div className="flex gap-2">
+                                <Button variant={tplChannel === "sms" ? "default" : "outline"} size="sm" className="rounded-xl gap-1.5 text-xs font-bold" onClick={() => setTplChannel("sms")}>
+                                    <Smartphone className="w-3.5 h-3.5" /> SMS
+                                </Button>
+                                <Button variant={tplChannel === "email" ? "default" : "outline"} size="sm" className="rounded-xl gap-1.5 text-xs font-bold" onClick={() => setTplChannel("email")}>
+                                    <Mail className="w-3.5 h-3.5" /> Email
+                                </Button>
+                            </div>
+                        </div>
+                        {tplChannel === "email" && (
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Subject</label>
+                                <Input placeholder="Email subject..." value={tplSubject} onChange={e => setTplSubject(e.target.value)} className="h-11 rounded-xl" />
+                            </div>
+                        )}
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Body</label>
+                            <Textarea placeholder="Type your template body... Use {{name}}, {{company}} for placeholders." value={tplBody} onChange={e => setTplBody(e.target.value)} className="min-h-[120px] rounded-xl" />
+                        </div>
+                    </div>
+                    <DialogFooter className="mt-4">
+                        <Button variant="ghost" onClick={() => { setTplEditOpen(false); setTplEditing(null); }}>Cancel</Button>
+                        <Button onClick={handleSaveTemplate} disabled={tplSaving || !tplName.trim() || !tplBody.trim()} className="rounded-xl gap-1.5">
+                            {tplSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                            {tplEditing ? "Update" : "Create"} Template
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
