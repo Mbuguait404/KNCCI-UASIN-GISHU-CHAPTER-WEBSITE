@@ -37,15 +37,15 @@ const navItems: NavItem[] = [
     children: [
       { label: "About", href: "/about", description: "Learn about our mission and vision." },
       { label: "Who We Are", href: "/about#who-we-are", description: "Membership, Governance, and Partnerships." },
+      { label: "Our Work", href: "/work", description: "Explore our impact and projects." },
       { label: "Chairman's Word", href: "/about#chairman-message", description: "A message from Willy K. Kenei." },
       { label: "Board of Directors", href: "/board", description: "Meet our leadership team." },
     ],
   },
-  { label: "Our Work", href: "/work" },
-  { label: "Events", href: "/events" },
   {
-    label: "Media",
+    label: "News & Events",
     children: [
+      { label: "Events", href: "/events", description: "Join our upcoming conferences and workshops." },
       { label: "Blog", href: "/blog", description: "Latest news and updates." },
       { label: "Gallery", href: "/gallery", description: "Photos from our events." },
     ],
