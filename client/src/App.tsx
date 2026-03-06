@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
 import { RegistrationProvider } from "@/contexts/registration-context";
+import { MembershipProvider } from "@/contexts/membership-context";
 import { WhatsAppFloat } from "@/components/whatsapp-float";
 import Home from "@/pages/home";
 import Partnership from "@/pages/partnership";
@@ -67,9 +68,12 @@ function App() {
           <TooltipProvider>
             <AuthProvider>
               <RegistrationProvider>
-                <Toaster />
-                <Router />
-                <WhatsAppFloat />
+                <MembershipProvider>
+                  <Toaster />
+                  <Router />
+                  <WhatsAppFloat />
+                  <MembershipDialogWrapper />
+                </MembershipProvider>
               </RegistrationProvider>
             </AuthProvider>
           </TooltipProvider>
@@ -79,5 +83,13 @@ function App() {
   );
 }
 
+
+import { MembershipDialog } from "@/components/membership-dialog";
+import { useMembership } from "@/contexts/membership-context";
+
+function MembershipDialogWrapper() {
+  const { isOpen, closeMembership } = useMembership();
+  return <MembershipDialog isOpen={isOpen} onOpenChange={closeMembership} />;
+}
 
 export default App;

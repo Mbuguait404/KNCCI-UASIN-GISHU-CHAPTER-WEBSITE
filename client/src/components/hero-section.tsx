@@ -5,6 +5,7 @@ import { staticEvent } from "@/data/static-data";
 import { Event } from "@shared/schema";
 import { useLocation } from "wouter";
 import { useRegistration } from "@/contexts/registration-context";
+import { useMembership } from "@/contexts/membership-context";
 
 interface CountdownValues {
   days: number;
@@ -54,6 +55,7 @@ export function HeroSection({ event: propEvent }: HeroSectionProps) {
   const event = propEvent || staticEvent;
   const [, setLocation] = useLocation();
   const { openRegistration } = useRegistration();
+  const { openMembership } = useMembership();
 
   // Remove "4th Edition" and variations from event name for display
   const displayName = useMemo(() => {
@@ -177,7 +179,7 @@ export function HeroSection({ event: propEvent }: HeroSectionProps) {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
             <Button
               size="lg"
-              onClick={() => setLocation("/membership")}
+              onClick={openMembership}
               className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground text-lg px-8 py-6 shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95"
               data-testid="button-register-hero"
             >

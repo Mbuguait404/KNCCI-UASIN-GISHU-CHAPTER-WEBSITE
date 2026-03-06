@@ -4,6 +4,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useTheme } from "@/components/theme-provider";
 import { useLocation, Link } from "wouter";
 import { useRegistration } from "@/contexts/registration-context";
+import { useMembership } from "@/contexts/membership-context";
 import { Menu, Moon, Sun, ChevronDown, User, LogOut } from "lucide-react";
 import {
   NavigationMenu,
@@ -40,6 +41,7 @@ const navItems: NavItem[] = [
       { label: "Our Work", href: "/work", description: "Explore our impact and projects." },
       { label: "Chairman's Word", href: "/about#chairman-message", description: "A message from Willy K. Kenei." },
       { label: "Board of Directors", href: "/board", description: "Meet our leadership team." },
+      { label: "Membership", href: "/membership", description: "Join our membership program." },
     ],
   },
   {
@@ -68,6 +70,7 @@ export function Navigation() {
   const isHomePage = location === "/";
   // preserving context usage just in case, primarily for mobile or if needed later
   const { openRegistration } = useRegistration();
+  const { openMembership } = useMembership();
   const { user, isAuthenticated } = useAuth();
 
   useEffect(() => {
@@ -169,20 +172,19 @@ export function Navigation() {
 
         {/* Desktop Actions */}
         <div className="hidden lg:flex items-center gap-3">
-          <Link href="/membership">
-            <Button
-              variant="outline"
-              size="sm"
-              className={cn(
-                "hidden xl:inline-flex font-medium transition-colors",
-                isScrolled || !isHomePage
-                  ? "border-border text-foreground hover:bg-accent"
-                  : "border-white/30 text-white hover:bg-white/10"
-              )}
-            >
-              Be a Member
-            </Button>
-          </Link>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={openMembership}
+            className={cn(
+              "hidden xl:inline-flex font-medium transition-colors",
+              isScrolled || !isHomePage
+                ? "border-border text-foreground hover:bg-accent"
+                : "border-white/30 text-white hover:bg-white/10"
+            )}
+          >
+            Be a Member
+          </Button>
 
           {isAuthenticated ? (
             <Link href="/profile">
@@ -331,15 +333,16 @@ export function Navigation() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    <Link href="/membership">
-                      <Button
-                        variant="outline"
-                        className="w-full justify-start h-12 rounded-xl border-border"
-                        onClick={() => setMobileOpen(false)}
-                      >
-                        Be a Member
-                      </Button>
-                    </Link>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start h-12 rounded-xl border-border"
+                      onClick={() => {
+                        setMobileOpen(false);
+                        openMembership();
+                      }}
+                    >
+                      Be a Member
+                    </Button>
 
                     <Link href="/login">
                       <Button
