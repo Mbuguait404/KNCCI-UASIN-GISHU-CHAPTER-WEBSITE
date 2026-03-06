@@ -138,82 +138,88 @@ export default function GalleryPage() {
             <div className="min-h-screen bg-background">
                 <Navigation />
 
-                <main className="pt-24 pb-20">
-                    {/* Hero Section */}
-                    <section className="relative py-16 sm:py-24 overflow-hidden mb-12">
-                        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-kncci-green/5 -z-10" />
-                        <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl -z-10" />
-                        <div className="container mx-auto px-4 text-center">
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.6 }}
-                            >
-                                <div className="inline-flex items-center gap-2 px-4 py-1.5 mb-6 text-sm font-semibold tracking-wider text-primary uppercase bg-primary/10 rounded-full">
-                                    <Camera className="w-4 h-4" />
-                                    Visual History
+                <main className="pt-20">
+                    {/* Header section */}
+                    <section className="py-20 bg-slate-50 dark:bg-slate-900/40 border-b border-border">
+                        <div className="container mx-auto px-4">
+                            <div className="max-w-4xl mx-auto text-center">
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.6 }}
+                                >
+                                    <span className="text-primary font-bold text-sm uppercase tracking-widest block mb-4">Visual History</span>
+                                    <h1 className="text-4xl md:text-6xl font-extrabold mb-6 tracking-tight">
+                                        Event <span className="text-primary">Gallery</span>
+                                    </h1>
+                                    <p className="text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto">
+                                        A collection of moments reflecting our commitment to business growth and economic transformation.
+                                    </p>
+                                </motion.div>
+                            </div>
+
+                            {/* Filter Bar - Matches Events/Marketplace Style */}
+                            <div className="mt-12 max-w-5xl mx-auto">
+                                <div className="flex flex-col lg:flex-row gap-4 p-2 bg-background rounded-2xl shadow-xl border border-border">
+                                    <div className="flex items-center gap-3 px-4 py-2 lg:py-0 border-b lg:border-b-0 lg:border-r border-border">
+                                        <Camera className="w-5 h-5 text-primary" />
+                                        <span className="font-bold text-xs uppercase tracking-wider text-muted-foreground whitespace-nowrap">Filter Gallery</span>
+                                    </div>
+
+                                    <div className="flex flex-col md:flex-row gap-4 flex-1">
+                                        {/* Year Filter */}
+                                        <div className="relative flex-1">
+                                            <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
+                                            <select
+                                                value={filterYear}
+                                                onChange={(e) => setFilterYear(e.target.value)}
+                                                className="w-full pl-12 pr-10 h-14 bg-transparent border-none focus:ring-0 text-lg rounded-xl appearance-none cursor-pointer"
+                                            >
+                                                <option value="all">All Years</option>
+                                                {years.map(year => (
+                                                    <option key={year} value={year}>{year}</option>
+                                                ))}
+                                            </select>
+                                            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                                                <ChevronRight className="w-4 h-4 text-muted-foreground rotate-90" />
+                                            </div>
+                                        </div>
+
+                                        <div className="h-10 w-px bg-border hidden md:block self-center" />
+
+                                        {/* Event Filter */}
+                                        <div className="relative flex-1">
+                                            <Filter className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
+                                            <select
+                                                value={filterEvent}
+                                                onChange={(e) => setFilterEvent(e.target.value)}
+                                                className="w-full pl-12 pr-10 h-14 bg-transparent border-none focus:ring-0 text-lg rounded-xl appearance-none cursor-pointer"
+                                            >
+                                                <option value="all">All Events</option>
+                                                {eventNames.map(event => (
+                                                    <option key={event} value={event}>{event}</option>
+                                                ))}
+                                            </select>
+                                            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                                                <ChevronRight className="w-4 h-4 text-muted-foreground rotate-90" />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <Button
+                                        variant="outline"
+                                        size="lg"
+                                        className="h-14 px-8 rounded-xl font-bold border-primary text-primary hover:bg-primary/5"
+                                        onClick={() => { setFilterYear("all"); setFilterEvent("all"); }}
+                                    >
+                                        Reset Filters
+                                    </Button>
                                 </div>
-                                <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold text-foreground mb-6 tracking-tight">
-                                    Event <span className="text-kncci-green">Gallery</span>
-                                </h1>
-                                <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-                                    A collection of moments reflecting our commitment to business growth and economic transformation.
-                                </p>
-                            </motion.div>
+                            </div>
                         </div>
                     </section>
 
-                    <div className="container mx-auto px-4">
-                        {/* Filters */}
-                        <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-12 bg-card/30 backdrop-blur-md p-6 rounded-3xl border border-border/50 sticky top-24 z-20 shadow-xl shadow-primary/5">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 rounded-xl bg-primary/10 text-primary">
-                                    <Filter className="w-5 h-5" />
-                                </div>
-                                <h3 className="font-bold text-lg hidden sm:block">Filter By:</h3>
-                            </div>
-
-                            <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-                                {/* Year Filter */}
-                                <div className="flex items-center gap-2 bg-background/50 p-1.5 rounded-2xl border border-border">
-                                    <Calendar className="w-4 h-4 ml-2 text-muted-foreground" />
-                                    <select
-                                        value={filterYear}
-                                        onChange={(e) => setFilterYear(e.target.value)}
-                                        className="bg-transparent border-none text-sm font-medium focus:ring-0 cursor-pointer pr-8"
-                                    >
-                                        <option value="all">All Years</option>
-                                        {years.map(year => (
-                                            <option key={year} value={year}>{year}</option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                {/* Event Name Filter */}
-                                <div className="flex items-center gap-2 bg-background/50 p-1.5 rounded-2xl border border-border flex-1 md:flex-none">
-                                    <Filter className="w-4 h-4 ml-2 text-muted-foreground" />
-                                    <select
-                                        value={filterEvent}
-                                        onChange={(e) => setFilterEvent(e.target.value)}
-                                        className="bg-transparent border-none text-sm font-medium focus:ring-0 cursor-pointer pr-8 w-full"
-                                    >
-                                        <option value="all">All Events</option>
-                                        {eventNames.map(event => (
-                                            <option key={event} value={event}>{event}</option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => { setFilterYear("all"); setFilterEvent("all"); }}
-                                    className="text-xs text-muted-foreground hover:text-primary transition-colors"
-                                >
-                                    Reset
-                                </Button>
-                            </div>
-                        </div>
+                    <div className="container mx-auto px-4 py-24">
 
                         {/* Gallery Grid */}
                         <AnimatePresence mode="popLayout">

@@ -90,7 +90,7 @@ export function PartnershipPackagesSection() {
                 <UtensilsCrossed className="w-6 h-6 text-chart-1" />
               </div>
               <div>
-                <h4 className="text-lg font-semibold text-foreground mb-2">Networking Opportunitiesr</h4>
+                <h4 className="text-lg font-semibold text-foreground mb-2">Networking Opportunities</h4>
                 <p className="text-sm text-muted-foreground">We create networking opportunities to connect businesses and foster collaborations.</p>
               </div>
             </div>

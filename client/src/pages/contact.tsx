@@ -83,8 +83,8 @@ export default function ContactPage() {
         {
             icon: Mail,
             title: "Email Address",
-            content: "events@uasingishuchamber.co.ke",
-            link: "mailto:events@uasingishuchamber.co.ke",
+            content: "info@uasingishuchamber.co.ke",
+            link: "mailto:info@uasingishuchamber.co.ke",
             color: "bg-secondary/10 text-secondary",
         },
         {
