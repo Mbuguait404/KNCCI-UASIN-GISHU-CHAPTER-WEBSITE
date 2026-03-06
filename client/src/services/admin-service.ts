@@ -39,8 +39,11 @@ export interface MemberDoc {
         kra_pin?: string;
         company_reg_no?: string;
         business_permit?: string;
+        certificateUrl?: string;
+        logoUrl?: string;
     };
 }
+
 
 export interface PaginatedMembers {
     members: MemberDoc[];
@@ -112,4 +115,21 @@ export const adminService = {
         const response = await api.delete(`/membership-applications/admin/${id}`);
         return response.data;
     },
+    
+    /** PATCH /admin/members/:id/profile */
+    async updateMemberProfile(id: string, data: any): Promise<{ success: boolean; data: MemberDoc; message: string }> {
+        const response = await api.patch(`/admin/members/${id}/profile`, data);
+        return response.data;
+    },
+
+    /** POST /admin/members/:id/upload/:type */
+    async uploadFile(id: string, type: 'logo' | 'certificate', file: File): Promise<{ success: boolean; data: any; message: string }> {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await api.post(`/admin/members/${id}/upload/${type}`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        return response.data;
+    },
 };
+

@@ -217,8 +217,11 @@ export interface MembershipApplication {
   businessClass: string;
   subscriptionFee: string;
   status: string;
+  certificateUrl?: string;
+  logoUrl?: string;
   submittedAt: string;
 }
+
 
 export const insertMembershipApplicationSchema = z.object({
   name: z.string().min(1, "Name is required"),

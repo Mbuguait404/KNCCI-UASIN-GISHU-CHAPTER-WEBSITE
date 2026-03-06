@@ -16,7 +16,10 @@ export interface BusinessData {
     kra_pin?: string;
     company_reg_no?: string;
     business_permit?: string;
+    certificateUrl?: string;
+    logoUrl?: string;
 }
+
 
 export const businessService = {
     async getMyBusiness() {

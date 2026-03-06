@@ -44,58 +44,55 @@ export default function BlogPage() {
 
             <Navigation />
 
-            <main className="pt-24 pb-16">
-                {/* Header Section */}
-                <section className="relative py-20 overflow-hidden">
-                    <div className="absolute inset-0 bg-primary/5 -z-10" />
-                    <div className="container mx-auto px-4 text-center">
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.5 }}
-                        >
-                            <Badge variant="outline" className="mb-4 px-4 py-1 text-primary border-primary/20 bg-primary/5 uppercase tracking-wider font-semibold">
-                                Member Resources
-                            </Badge>
-                            <h1 className="text-4xl md:text-6xl font-bold mb-6 tracking-tight">
-                                Business <span className="text-primary">Insights</span> & Updates
-                            </h1>
-                            <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-10">
-                                Explore our latest perspectives on the economy, technology, and entrepreneurship in Uasin Gishu County.
-                            </p>
-                        </motion.div>
+            <main className="pt-20">
+                {/* Header section */}
+                <section className="py-20 bg-slate-50 dark:bg-slate-900/40 border-b border-border">
+                    <div className="container mx-auto px-4">
+                        <div className="max-w-4xl mx-auto text-center">
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.6 }}
+                            >
+                                <span className="text-primary font-bold text-sm uppercase tracking-widest block mb-4">Member Resources</span>
+                                <h1 className="text-4xl md:text-6xl font-extrabold mb-6 tracking-tight">
+                                    Business <span className="text-primary">Insights</span> & Updates
+                                </h1>
+                                <p className="text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto mb-10">
+                                    Explore our latest perspectives on the economy, technology, and entrepreneurship in Uasin Gishu County.
+                                </p>
+                            </motion.div>
 
-                        {/* Search & Filter */}
-                        <div className="max-w-4xl mx-auto flex flex-col md:flex-row gap-4 items-center justify-center">
-                            <div className="relative w-full md:max-w-md">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    placeholder="Search articles..."
-                                    className="pl-10 h-12 bg-background border-border/50 focus:border-primary transition-all"
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                />
-                            </div>
-                            <div className="flex flex-wrap items-center justify-center gap-2">
-                                <Button
-                                    variant={selectedCategory === null ? "default" : "outline"}
-                                    size="sm"
-                                    onClick={() => setSelectedCategory(null)}
-                                    className="rounded-full"
-                                >
-                                    All
-                                </Button>
-                                {categories.map((category) => (
+                            {/* Search & Filter - Redesigned to match common style */}
+                            <div className="max-w-4xl mx-auto flex flex-col md:flex-row gap-4 items-center justify-center">
+                                <div className="relative w-full md:max-w-md">
+                                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                                    <Input
+                                        placeholder="Search articles..."
+                                        className="pl-12 h-14 bg-background border-border shadow-md focus-visible:ring-primary rounded-xl"
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                    />
+                                </div>
+                                <div className="flex flex-wrap items-center justify-center gap-2">
                                     <Button
-                                        key={category}
-                                        variant={selectedCategory === category ? "default" : "outline"}
-                                        size="sm"
-                                        onClick={() => setSelectedCategory(category)}
-                                        className="rounded-full"
+                                        variant={selectedCategory === null ? "default" : "outline"}
+                                        className="rounded-full px-6 h-11 font-bold"
+                                        onClick={() => setSelectedCategory(null)}
                                     >
-                                        {category}
+                                        All
                                     </Button>
-                                ))}
+                                    {categories.map((category) => (
+                                        <Button
+                                            key={category}
+                                            variant={selectedCategory === category ? "default" : "outline"}
+                                            className="rounded-full px-6 h-11 font-bold"
+                                            onClick={() => setSelectedCategory(category)}
+                                        >
+                                            {category}
+                                        </Button>
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     </div>

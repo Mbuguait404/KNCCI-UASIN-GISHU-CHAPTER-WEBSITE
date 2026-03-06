@@ -58,29 +58,19 @@ export default function AboutPage() {
                 <section className="py-20 bg-slate-50 dark:bg-slate-900/40 border-b border-border">
                     <div className="container mx-auto px-4">
                         <div className="max-w-4xl mx-auto text-center">
-                            <motion.span
+                            <motion.div
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className="text-primary font-bold text-sm uppercase tracking-widest block mb-4"
+                                transition={{ duration: 0.6 }}
                             >
-                                Get to know about us
-                            </motion.span>
-                            <motion.h1
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.1 }}
-                                className="text-4xl md:text-6xl font-extrabold mb-6 tracking-tight"
-                            >
-                                About <span className="text-primary">Us</span>
-                            </motion.h1>
-                            <motion.p
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.2 }}
-                                className="text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto"
-                            >
-                                The Voice of Business and the Champion for Economic Transformation in Uasin Gishu County.
-                            </motion.p>
+                                <span className="text-primary font-bold text-sm uppercase tracking-widest block mb-4">Get to know about us</span>
+                                <h1 className="text-4xl md:text-6xl font-extrabold mb-6 tracking-tight">
+                                    About <span className="text-primary">Us</span>
+                                </h1>
+                                <p className="text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto">
+                                    The Voice of Business and the Champion for Economic Transformation in Uasin Gishu County.
+                                </p>
+                            </motion.div>
                         </div>
                     </div>
                 </section>

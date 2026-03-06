@@ -5,6 +5,7 @@ import { boardMembers, BoardMember } from "@/data/board-members";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Users, ShieldCheck, Briefcase } from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function Board() {
     const categories = [
@@ -50,24 +51,26 @@ export default function Board() {
             />
             <div className="min-h-screen bg-background">
                 <Navigation />
-                <main>
-                    {/* Hero Section */}
-                    <section className="relative py-20 sm:py-32 overflow-hidden">
-                        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-kncci-green/5 -z-10" />
-                        <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl -z-10" />
-                        <div className="absolute bottom-0 left-0 translate-y-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-kncci-green/5 rounded-full blur-3xl -z-10" />
-
-                        <div className="max-w-7xl mx-auto px-4 text-center">
-                            <span className="inline-block px-4 py-1.5 mb-6 text-sm font-semibold tracking-wider text-primary uppercase bg-primary/10 rounded-full">
-                                Leadership Team
-                            </span>
-                            <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold text-foreground mb-6 tracking-tight">
-                                Governing <span className="text-kncci-green">Board</span>
-                            </h1>
-                            <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-                                Meet the men and women dedicated to fostering a conducive business
-                                environment and driving economic growth in Uasin Gishu County.
-                            </p>
+                <main className="pt-20">
+                    {/* Header section */}
+                    <section className="py-20 bg-slate-50 dark:bg-slate-900/40 border-b border-border">
+                        <div className="container mx-auto px-4">
+                            <div className="max-w-4xl mx-auto text-center">
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.6 }}
+                                >
+                                    <span className="text-primary font-bold text-sm uppercase tracking-widest block mb-4">Leadership Team</span>
+                                    <h1 className="text-4xl md:text-6xl font-extrabold mb-6 tracking-tight">
+                                        Governing <span className="text-primary">Board</span>
+                                    </h1>
+                                    <p className="text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto">
+                                        Meet the men and women dedicated to fostering a conducive business
+                                        environment and driving economic growth in Uasin Gishu County.
+                                    </p>
+                                </motion.div>
+                            </div>
                         </div>
                     </section>
 

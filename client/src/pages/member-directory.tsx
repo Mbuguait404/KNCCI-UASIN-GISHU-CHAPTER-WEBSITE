@@ -76,38 +76,39 @@ export default function MemberDirectoryPage() {
 
             <main className="pt-20">
                 {/* Header section */}
-                <section className="py-24 bg-slate-50 dark:bg-slate-900/40 border-b border-border relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-1/3 h-full bg-primary/5 rounded-l-full blur-3xl -z-10" />
+                <section className="py-20 bg-slate-50 dark:bg-slate-900/40 border-b border-border">
                     <div className="container mx-auto px-4">
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="max-w-4xl mx-auto text-center"
-                        >
-                            <span className="text-primary font-bold text-sm uppercase tracking-[0.2em] block mb-4">Official Member Directory</span>
-                            <h1 className="text-4xl md:text-7xl font-extrabold mb-8 tracking-tight">
-                                Connect with <span className="text-primary italic">Our Members</span>
-                            </h1>
-                            <p className="text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto mb-12">
-                                Discover thousands of verified businesses and professional services dedicated to the economic growth of Uasin Gishu County.
-                            </p>
-                        </motion.div>
+                        <div className="max-w-4xl mx-auto text-center">
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.6 }}
+                            >
+                                <span className="text-primary font-bold text-sm uppercase tracking-widest block mb-4">Official Member Directory</span>
+                                <h1 className="text-4xl md:text-6xl font-extrabold mb-6 tracking-tight">
+                                    Connect with <span className="text-primary">Our Members</span>
+                                </h1>
+                                <p className="text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto mb-10">
+                                    Discover thousands of verified businesses and professional services dedicated to the economic growth of Uasin Gishu County.
+                                </p>
+                            </motion.div>
 
-                        {/* Search Bar */}
-                        <div className="max-w-4xl mx-auto">
-                            <div className="flex flex-col md:flex-row gap-4 p-3 bg-background/80 backdrop-blur-xl rounded-[2rem] shadow-2xl border border-primary/10">
-                                <div className="relative flex-1">
-                                    <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-primary" />
-                                    <Input
-                                        placeholder="Search by name, company, or email..."
-                                        className="pl-14 h-16 border-none focus-visible:ring-0 text-lg rounded-[1.5rem] w-full bg-slate-50/50 dark:bg-slate-900/50"
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                    />
+                            {/* Search Bar */}
+                            <div className="max-w-4xl mx-auto">
+                                <div className="flex flex-col md:flex-row gap-4 p-3 bg-background/80 backdrop-blur-xl rounded-[2rem] shadow-2xl border border-primary/10">
+                                    <div className="relative flex-1">
+                                        <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-primary" />
+                                        <Input
+                                            placeholder="Search by name, company, or email..."
+                                            className="pl-14 h-16 border-none focus-visible:ring-0 text-lg rounded-[1.5rem] w-full bg-slate-50/50 dark:bg-slate-900/50"
+                                            value={searchQuery}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                        />
+                                    </div>
+                                    <Button size="lg" className="h-16 px-12 rounded-[1.5rem] font-bold shadow-xl shadow-primary/20 transition-all hover:scale-105 bg-primary">
+                                        Search Directory
+                                    </Button>
                                 </div>
-                                <Button size="lg" className="h-16 px-12 rounded-[1.5rem] font-bold shadow-xl shadow-primary/20 transition-all hover:scale-105 bg-primary">
-                                    Search Directory
-                                </Button>
                             </div>
                         </div>
                     </div>

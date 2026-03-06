@@ -703,6 +703,8 @@ export default function ProfilePage() {
                     businessName={business?.name || "Member Organization"}
                     businessCategory={business?.category || "Sector Information"}
                     plan={business?.plan || "Bronze"}
+                    certificateUrl={business?.certificateUrl}
+                    logoUrl={business?.logoUrl}
                     onClose={() => setShowCertificate(false)}
                 />
             )}

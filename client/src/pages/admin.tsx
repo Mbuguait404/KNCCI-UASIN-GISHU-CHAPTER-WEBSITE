@@ -8,12 +8,13 @@ import {
     TrendingUp, Activity, LayoutDashboard, ChevronDown,
     AlertTriangle, Loader2, FileText, MessageSquare, Send,
     Plus, Pencil, Clock, CheckCircle2, XCircle, Smartphone,
-    AtSign, UserPlus, FileEdit
+    AtSign, UserPlus, FileEdit, Upload
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -29,7 +30,6 @@ import {
     AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
 import { SEOHead } from "@/components/seo/seo-head";
 import { useAuth } from "@/services/auth-context";
 import { adminService, DashboardStats, MemberDoc, PaginatedMembers } from "@/services/admin-service";
@@ -106,6 +106,9 @@ export default function AdminDashboard() {
     const [resetPwTarget, setResetPwTarget] = useState<MemberDoc | null>(null);
     const [newPassword, setNewPassword] = useState("");
     const [actionLoading, setActionLoading] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editForm, setEditForm] = useState<any>({});
+    const [fileUploading, setFileUploading] = useState<{ logo: boolean; certificate: boolean }>({ logo: false, certificate: false });
 
     // Active sidebar item
     const [activeTab, setActiveTab] = useState("overview");
@@ -408,11 +411,62 @@ export default function AdminDashboard() {
         }
     };
 
+    const handleSaveProfile = async () => {
+        if (!selectedMember) return;
+        setActionLoading(true);
+        try {
+            const res = await adminService.updateMemberProfile(selectedMember._id, editForm);
+            if (res.success) {
+                setSelectedMember(res.data);
+                setIsEditing(false);
+                toast({ title: "Profile Updated", description: "Member details have been saved." });
+                fetchMembers();
+            }
+        } catch (err: any) {
+            toast({ title: "Error", description: err.response?.data?.message || "Failed to update profile", variant: "destructive" });
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, type: 'logo' | 'certificate') => {
+        const file = e.target.files?.[0];
+        if (!file || !selectedMember) return;
+
+        setFileUploading(prev => ({ ...prev, [type]: true }));
+        try {
+            const res = await adminService.uploadFile(selectedMember._id, type, file);
+            if (res.success) {
+                toast({ title: `${type === 'logo' ? 'Logo' : 'Certificate'} Uploaded` });
+                // Refresh member data
+                const updated = await adminService.getMember(selectedMember._id);
+                if (updated.success) setSelectedMember(updated.data);
+                fetchMembers();
+            }
+        } catch (err: any) {
+            toast({ title: "Upload Failed", description: err.response?.data?.message || "File upload failed", variant: "destructive" });
+        } finally {
+            setFileUploading(prev => ({ ...prev, [type]: false }));
+        }
+    };
+
     const openDetail = async (member: MemberDoc) => {
+        setIsEditing(false);
         try {
             const res = await adminService.getMember(member._id);
             if (res.success) {
                 setSelectedMember(res.data);
+                setEditForm({
+                    name: res.data.name,
+                    email: res.data.email,
+                    phone: res.data.phone || "",
+                    reg_no: res.data.reg_no,
+                    name_biz: res.data.business?.name || "",
+                    category: res.data.business?.category || "",
+                    location: res.data.business?.location || "",
+                    website: res.data.business?.website || "",
+                    description: res.data.business?.description || "",
+                });
                 setDetailOpen(true);
             }
         } catch {
@@ -1363,162 +1417,329 @@ export default function AdminDashboard() {
 
             {/* ─── Member Detail Dialog ──────────────────────────────────  */}
             <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
-                <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto rounded-2xl">
-                    <DialogHeader>
-                        <DialogTitle className="text-xl font-extrabold flex items-center gap-3">
-                            <Avatar className="w-10 h-10">
-                                <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs">
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl p-0 border-none bg-slate-50 dark:bg-slate-950">
+                    <div className="sticky top-0 z-50 flex items-center justify-between p-6 bg-white dark:bg-slate-900 border-b border-border/40">
+                        <div className="flex items-center gap-4">
+                            <Avatar className="w-12 h-12 border-2 border-primary/10">
+                                <AvatarFallback className="bg-primary/10 text-primary font-bold text-sm">
                                     {selectedMember?.name?.split(" ").map((n) => n[0]).join("").slice(0, 2)}
                                 </AvatarFallback>
                             </Avatar>
-                            {selectedMember?.name}
-                        </DialogTitle>
-                        <DialogDescription>Full member and business details</DialogDescription>
-                    </DialogHeader>
-
-                    {selectedMember && (
-                        <div className="space-y-6 mt-4">
-                            {/* Personal Info */}
-                            <div className="space-y-3">
-                                <h4 className="text-xs font-extrabold uppercase tracking-[0.2em] text-muted-foreground">Personal Information</h4>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-900">
-                                        <Mail className="w-4 h-4 text-muted-foreground" />
-                                        <div>
-                                            <p className="text-[10px] text-muted-foreground font-bold uppercase">Email</p>
-                                            <p className="text-sm font-medium">{selectedMember.email}</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-900">
-                                        <Phone className="w-4 h-4 text-muted-foreground" />
-                                        <div>
-                                            <p className="text-[10px] text-muted-foreground font-bold uppercase">Phone</p>
-                                            <p className="text-sm font-medium">{selectedMember.phone || "N/A"}</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-900">
-                                        <Shield className="w-4 h-4 text-muted-foreground" />
-                                        <div>
-                                            <p className="text-[10px] text-muted-foreground font-bold uppercase">Role</p>
-                                            <RoleBadge role={selectedMember.role} />
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-900">
-                                        <Users className="w-4 h-4 text-muted-foreground" />
-                                        <div>
-                                            <p className="text-[10px] text-muted-foreground font-bold uppercase">Reg No.</p>
-                                            <p className="text-sm font-mono font-bold">{selectedMember.reg_no}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Business Info */}
-                            {selectedMember.business && (
-                                <div className="space-y-3">
-                                    <h4 className="text-xs font-extrabold uppercase tracking-[0.2em] text-muted-foreground">Business Profile</h4>
-                                    <div className="p-5 rounded-2xl border border-border/40 bg-white dark:bg-slate-900/50 space-y-4">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                                                    <Building2 className="w-5 h-5 text-primary" />
-                                                </div>
-                                                <div>
-                                                    <p className="font-bold">{selectedMember.business.name}</p>
-                                                    <p className="text-xs text-muted-foreground">{selectedMember.business.category}</p>
-                                                </div>
-                                            </div>
-                                            <PlanBadge plan={selectedMember.business.plan} />
-                                        </div>
-
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                                            {selectedMember.business.location && (
-                                                <div className="flex items-center gap-2 text-muted-foreground">
-                                                    <MapPin className="w-3.5 h-3.5" /> {selectedMember.business.location}
-                                                </div>
-                                            )}
-                                            {selectedMember.business.email && (
-                                                <div className="flex items-center gap-2 text-muted-foreground">
-                                                    <Mail className="w-3.5 h-3.5" /> {selectedMember.business.email}
-                                                </div>
-                                            )}
-                                            {selectedMember.business.phone && (
-                                                <div className="flex items-center gap-2 text-muted-foreground">
-                                                    <Phone className="w-3.5 h-3.5" /> {selectedMember.business.phone}
-                                                </div>
-                                            )}
-                                            {selectedMember.business.website && (
-                                                <div className="flex items-center gap-2 text-muted-foreground">
-                                                    <Globe className="w-3.5 h-3.5" /> {selectedMember.business.website}
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        {selectedMember.business.description && (
-                                            <p className="text-sm text-muted-foreground leading-relaxed">{selectedMember.business.description}</p>
-                                        )}
-
-                                        {selectedMember.business.services && selectedMember.business.services.length > 0 && (
-                                            <div className="flex flex-wrap gap-2">
-                                                {selectedMember.business.services.map((s) => (
-                                                    <Badge key={s} variant="secondary" className="text-[10px] font-bold">{s}</Badge>
-                                                ))}
-                                            </div>
-                                        )}
-
-                                        {/* Plan change inline */}
-                                        <div className="pt-3 border-t border-border/30">
-                                            <p className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground mb-2">Change Plan</p>
-                                            <div className="flex gap-2">
-                                                {(["Bronze", "Silver", "Gold"] as const).map((plan) => (
-                                                    <Button
-                                                        key={plan}
-                                                        size="sm"
-                                                        variant={selectedMember.business?.plan === plan ? "default" : "outline"}
-                                                        className="text-xs rounded-lg"
-                                                        onClick={() => handlePlanUpdate(selectedMember._id, plan)}
-                                                        disabled={actionLoading || selectedMember.business?.plan === plan}
-                                                    >
-                                                        {plan}
-                                                    </Button>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Quick actions in detail modal */}
-                            <div className="flex flex-wrap gap-2 pt-2">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="text-xs rounded-lg gap-1.5"
-                                    onClick={() => { handleRoleToggle(selectedMember); setDetailOpen(false); }}
-                                    disabled={actionLoading}
-                                >
-                                    <UserCog className="w-3.5 h-3.5" />
-                                    {selectedMember.role === "admin" ? "Demote to Member" : "Promote to Admin"}
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="text-xs rounded-lg gap-1.5"
-                                    onClick={() => { setResetPwTarget(selectedMember); setDetailOpen(false); }}
-                                >
-                                    <KeyRound className="w-3.5 h-3.5" /> Reset Password
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="text-xs rounded-lg gap-1.5 text-red-500 hover:text-red-600 border-red-200 hover:bg-red-50 dark:hover:bg-red-950/20"
-                                    onClick={() => { setDeleteTarget(selectedMember); setDetailOpen(false); }}
-                                >
-                                    <Trash2 className="w-3.5 h-3.5" /> Delete Member
-                                </Button>
+                            <div>
+                                <DialogTitle className="text-xl font-extrabold tracking-tight">
+                                    {selectedMember?.name}
+                                </DialogTitle>
+                                <DialogDescription className="text-xs font-medium">Member ID: {selectedMember?._id}</DialogDescription>
                             </div>
                         </div>
-                    )}
+                        <div className="flex gap-2">
+                            <Button
+                                variant={isEditing ? "default" : "outline"}
+                                size="sm"
+                                className="rounded-xl font-bold text-xs h-9 px-4"
+                                onClick={() => setIsEditing(!isEditing)}
+                            >
+                                {isEditing ? <X className="w-3.5 h-3.5 mr-2" /> : <Pencil className="w-3.5 h-3.5 mr-2" />}
+                                {isEditing ? "Cancel" : "Edit Profile"}
+                            </Button>
+                            <Button variant="ghost" size="icon" className="rounded-xl h-9 w-9" onClick={() => setDetailOpen(false)}>
+                                <X className="w-5 h-5" />
+                            </Button>
+                        </div>
+                    </div>
+
+                    <div className="p-6 space-y-8 pb-10">
+                        {selectedMember && (
+                            <div className="space-y-8">
+                                {/* Personal Info Section */}
+                                <section className="space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <h4 className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
+                                            <Shield className="w-3 h-3" /> Personal Account Details
+                                        </h4>
+                                        {isEditing && (
+                                            <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20 text-[10px] font-bold">Editing Mode</Badge>
+                                        )}
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Full Name</label>
+                                            {isEditing ? (
+                                                <Input
+                                                    value={editForm.name}
+                                                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                                                    className="h-11 rounded-xl bg-white dark:bg-slate-900 border-border/50"
+                                                />
+                                            ) : (
+                                                <div className="h-11 flex items-center px-4 rounded-xl bg-white dark:bg-slate-900 border border-border/20 font-medium text-sm">
+                                                    {selectedMember.name}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Registration Number</label>
+                                            {isEditing ? (
+                                                <Input
+                                                    value={editForm.reg_no}
+                                                    onChange={(e) => setEditForm({ ...editForm, reg_no: e.target.value })}
+                                                    className="h-11 rounded-xl bg-white dark:bg-slate-900 border-border/50 font-mono"
+                                                />
+                                            ) : (
+                                                <div className="h-11 flex items-center px-4 rounded-xl bg-white dark:bg-slate-900 border border-border/20 font-mono font-bold text-sm text-primary">
+                                                    {selectedMember.reg_no}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="space-y-1.5 focus-within:ring-0">
+                                            <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Email Address</label>
+                                            {isEditing ? (
+                                                <Input
+                                                    value={editForm.email}
+                                                    onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                                                    className="h-11 rounded-xl bg-white dark:bg-slate-900 border-border/50"
+                                                />
+                                            ) : (
+                                                <div className="h-11 flex items-center px-4 rounded-xl bg-white dark:bg-slate-900 border border-border/20 font-medium text-sm overflow-hidden text-ellipsis">
+                                                    {selectedMember.email}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Phone Number</label>
+                                            {isEditing ? (
+                                                <Input
+                                                    value={editForm.phone}
+                                                    onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                                                    className="h-11 rounded-xl bg-white dark:bg-slate-900 border-border/50"
+                                                />
+                                            ) : (
+                                                <div className="h-11 flex items-center px-4 rounded-xl bg-white dark:bg-slate-900 border border-border/20 font-medium text-sm">
+                                                    {selectedMember.phone || "Not Provided"}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </section>
+
+                                {/* Business Profile Section */}
+                                <section className="space-y-4">
+                                    <h4 className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
+                                        <Building2 className="w-3 h-3" /> Business Information
+                                    </h4>
+
+                                    <div className="p-6 rounded-2xl border border-border/40 bg-white dark:bg-slate-900 space-y-6">
+                                        {/* Business Logo & Basic Info */}
+                                        <div className="flex flex-col sm:flex-row items-start gap-6">
+                                            <div className="flex flex-col items-center gap-3">
+                                                <div className="w-24 h-24 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-border/60 flex items-center justify-center overflow-hidden relative group">
+                                                    {selectedMember.business?.logoUrl ? (
+                                                        <img src={selectedMember.business.logoUrl} alt="Logo" className="w-full h-full object-contain" />
+                                                    ) : (
+                                                        <Building2 className="w-8 h-8 text-muted-foreground/40" />
+                                                    )}
+
+                                                    {fileUploading.logo && (
+                                                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                                                            <Loader2 className="w-6 h-6 animate-spin text-white" />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="relative">
+                                                    <input
+                                                        type="file"
+                                                        accept="image/*"
+                                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                                        onChange={(e) => handleFileChange(e, 'logo')}
+                                                        disabled={fileUploading.logo}
+                                                    />
+                                                    <Button variant="outline" size="sm" className="text-[10px] font-bold h-7 rounded-lg">
+                                                        <Upload className="w-3 h-3 mr-1.5" /> {selectedMember.business?.logoUrl ? "Change Logo" : "Upload Logo"}
+                                                    </Button>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex-1 grid grid-cols-1 gap-4 w-full">
+                                                <div className="space-y-1.5">
+                                                    <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Business Name</label>
+                                                    {isEditing ? (
+                                                        <Input
+                                                            value={editForm.name_biz}
+                                                            onChange={(e) => setEditForm({ ...editForm, name_biz: e.target.value })}
+                                                            className="h-11 rounded-xl bg-slate-50 dark:bg-slate-800 border-border/50"
+                                                        />
+                                                    ) : (
+                                                        <p className="text-lg font-extrabold tracking-tight">{selectedMember.business?.name || "No Business Name"}</p>
+                                                    )}
+                                                </div>
+                                                <div className="space-y-1.5">
+                                                    <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Industry / Category</label>
+                                                    {isEditing ? (
+                                                        <Input
+                                                            value={editForm.category}
+                                                            onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
+                                                            className="h-11 rounded-xl bg-slate-50 dark:bg-slate-800 border-border/50"
+                                                        />
+                                                    ) : (
+                                                        <Badge variant="secondary" className="font-bold text-[10px] px-3">{selectedMember.business?.category || "General"}</Badge>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Contact & Location Details */}
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                                            <div className="space-y-1.5">
+                                                <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Physical Location</label>
+                                                {isEditing ? (
+                                                    <Input
+                                                        value={editForm.location}
+                                                        onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
+                                                        className="h-11 rounded-xl bg-slate-50 dark:bg-slate-800 border-border/50"
+                                                    />
+                                                ) : (
+                                                    <div className="flex items-center gap-2 text-sm text-muted-foreground font-medium">
+                                                        <MapPin className="w-3.5 h-3.5" /> {selectedMember.business?.location || "N/A"}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Website URL</label>
+                                                {isEditing ? (
+                                                    <Input
+                                                        value={editForm.website}
+                                                        onChange={(e) => setEditForm({ ...editForm, website: e.target.value })}
+                                                        className="h-11 rounded-xl bg-slate-50 dark:bg-slate-800 border-border/50 font-mono"
+                                                    />
+                                                ) : (
+                                                    <div className="flex items-center gap-2 text-sm text-blue-500 font-medium">
+                                                        <Globe className="w-3.5 h-3.5" /> {selectedMember.business?.website || "N/A"}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Company Description</label>
+                                            {isEditing ? (
+                                                <Textarea
+                                                    value={editForm.description}
+                                                    onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                                                    className="min-h-[100px] rounded-xl bg-slate-50 dark:bg-slate-800 border-border/50 text-sm"
+                                                />
+                                            ) : (
+                                                <p className="text-sm text-muted-foreground leading-relaxed">{selectedMember.business?.description || "No description provided."}</p>
+                                            )}
+                                        </div>
+
+                                        {/* Certificate Manager */}
+                                        <div className="pt-4 border-t border-border/30">
+                                            <div className="flex items-center justify-between mb-4">
+                                                <div>
+                                                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">Membership Certificate</p>
+                                                    <p className="text-[10px] text-muted-foreground italic">Uploaded certificates are available for member download</p>
+                                                </div>
+                                                <div className="relative">
+                                                    <input
+                                                        type="file"
+                                                        accept=".pdf,image/*"
+                                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                                        onChange={(e) => handleFileChange(e, 'certificate')}
+                                                        disabled={fileUploading.certificate}
+                                                    />
+                                                    <Button variant="default" size="sm" className="rounded-xl font-bold h-9 px-4 bg-emerald-600 hover:bg-emerald-700">
+                                                        {fileUploading.certificate ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-2" /> : <Upload className="w-3.5 h-3.5 mr-2" />}
+                                                        {selectedMember.business?.certificateUrl ? "Replace Certificate" : "Upload Certificate"}
+                                                    </Button>
+                                                </div>
+                                            </div>
+
+                                            {selectedMember.business?.certificateUrl && (
+                                                <div className="flex items-center justify-between p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/20">
+                                                    <div className="flex items-center gap-3 text-emerald-600 dark:text-emerald-400">
+                                                        <FileText className="w-5 h-5" />
+                                                        <span className="text-sm font-bold truncate max-w-[200px]">Official_Certificate.pdf</span>
+                                                    </div>
+                                                    <Button variant="ghost" size="sm" className="text-emerald-600 hover:text-emerald-700 font-bold" onClick={() => window.open(selectedMember.business?.certificateUrl, '_blank')}>
+                                                        <Eye className="w-4 h-4 mr-2" /> View
+                                                    </Button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </section>
+
+                                {/* Membership Level Control */}
+                                <section className="space-y-4">
+                                    <h4 className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
+                                        <Activity className="w-3 h-3" /> Membership Strategy
+                                    </h4>
+                                    <div className="p-6 rounded-2xl border border-border/40 bg-white dark:bg-slate-900 space-y-4">
+                                        <div className="flex items-center justify-between">
+                                            <p className="text-sm font-bold">Assigned Tier</p>
+                                            <PlanBadge plan={selectedMember.business?.plan || "Bronze"} />
+                                        </div>
+                                        <div className="grid grid-cols-3 gap-3">
+                                            {(["Bronze", "Silver", "Gold"] as const).map((plan) => (
+                                                <Button
+                                                    key={plan}
+                                                    size="sm"
+                                                    variant={selectedMember.business?.plan === plan ? "default" : "outline"}
+                                                    className={`h-11 rounded-xl font-bold ${selectedMember.business?.plan === plan ? "bg-primary shadow-lg shadow-primary/20" : ""}`}
+                                                    onClick={() => handlePlanUpdate(selectedMember._id, plan)}
+                                                    disabled={actionLoading}
+                                                >
+                                                    {plan}
+                                                </Button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </section>
+
+                                {isEditing ? (
+                                    <div className="pt-4 sticky bottom-0 bg-slate-50 dark:bg-slate-950 py-4 border-t border-border/40">
+                                        <Button className="w-full h-12 rounded-xl bg-primary font-bold shadow-xl shadow-primary/20" onClick={handleSaveProfile} disabled={actionLoading}>
+                                            {actionLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
+                                            Save Changes
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-wrap gap-2 pt-2">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="text-xs rounded-lg gap-1.5"
+                                            onClick={() => { handleRoleToggle(selectedMember); setDetailOpen(false); }}
+                                            disabled={actionLoading}
+                                        >
+                                            <UserCog className="w-3.5 h-3.5" />
+                                            {selectedMember.role === "admin" ? "Demote to Member" : "Promote to Admin"}
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="text-xs rounded-lg gap-1.5"
+                                            onClick={() => { setResetPwTarget(selectedMember); setDetailOpen(false); }}
+                                        >
+                                            <KeyRound className="w-3.5 h-3.5" /> Reset Password
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="text-xs rounded-lg gap-1.5 text-red-500 hover:text-red-600 border-red-200 hover:bg-red-50 dark:hover:bg-red-950/20"
+                                            onClick={() => { setDeleteTarget(selectedMember); setDetailOpen(false); }}
+                                        >
+                                            <Trash2 className="w-3.5 h-3.5" /> Delete Member
+                                        </Button>
+                                    </div>
+                                )}
+
+                            </div>
+                        )}
+                    </div>
                 </DialogContent>
             </Dialog>
 
@@ -1631,6 +1852,6 @@ export default function AdminDashboard() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-        </div>
+        </div >
     );
 }
