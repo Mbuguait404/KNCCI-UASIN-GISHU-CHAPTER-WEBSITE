@@ -26,7 +26,10 @@ import {
     Users,
     FileText,
     Download,
-    CreditCard as PaymentIcon
+    CreditCard as PaymentIcon,
+    Camera,
+    Upload,
+    Edit
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -73,10 +76,12 @@ import { MembershipCertificate } from "@/components/membership-certificate";
 
 export default function ProfilePage() {
     const [, setLocation] = useLocation();
-    const { user, logout, loading: authLoading } = useAuth();
+    const { user, logout, loading: authLoading, updateUser } = useAuth();
     const [business, setBusiness] = useState<BusinessData | null>(null);
     const [loading, setLoading] = useState(true);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+    const [isPersonalEditDialogOpen, setIsPersonalEditDialogOpen] = useState(false);
+    const [isUploadingLogo, setIsUploadingLogo] = useState(false);
     const [showCertificate, setShowCertificate] = useState(false);
     const [activeTab, setActiveTab] = useState("overview");
 
@@ -94,6 +99,11 @@ export default function ProfilePage() {
         business_permit: z.string().optional().or(z.literal("")),
     });
 
+    const personalSchema = z.object({
+        name: z.string().min(2, "Name must be at least 2 characters"),
+        phone: z.string().min(10, "Phone number must be at least 10 characters").optional().or(z.literal("")),
+    });
+
     const form = useForm<z.infer<typeof businessSchema>>({
         resolver: zodResolver(businessSchema),
         defaultValues: {
@@ -108,6 +118,14 @@ export default function ProfilePage() {
             kra_pin: "",
             company_reg_no: "",
             business_permit: "",
+        },
+    });
+
+    const personalForm = useForm<z.infer<typeof personalSchema>>({
+        resolver: zodResolver(personalSchema),
+        defaultValues: {
+            name: user?.name || "",
+            phone: user?.phone || "",
         },
     });
 
@@ -145,8 +163,12 @@ export default function ProfilePage() {
 
         if (user) {
             fetchBusiness();
+            personalForm.reset({
+                name: user.name || "",
+                phone: user.phone || "",
+            });
         }
-    }, [user, authLoading, setLocation, form]);
+    }, [user, authLoading, setLocation, form, personalForm]);
 
     const onSubmit = async (data: z.infer<typeof businessSchema>) => {
         try {
@@ -171,6 +193,72 @@ export default function ProfilePage() {
                 description: error.response?.data?.message || "Failed to update business profile.",
                 variant: "destructive",
             });
+        }
+    };
+
+    const onPersonalSubmit = async (data: z.infer<typeof personalSchema>) => {
+        try {
+            const { authService } = await import('@/lib/auth-service');
+            const response = await authService.updateProfile(data);
+
+            if (response.success) {
+                updateUser(response.data);
+                toast({
+                    title: "Success",
+                    description: "Personal profile updated successfully.",
+                });
+                setIsPersonalEditDialogOpen(false);
+            }
+        } catch (error: any) {
+            toast({
+                title: "Error",
+                description: error.response?.data?.message || "Failed to update personal profile.",
+                variant: "destructive",
+            });
+        }
+    };
+
+    const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        // Basic validation
+        if (!file.type.startsWith('image/')) {
+            toast({
+                title: "Invalid file type",
+                description: "Please upload an image file.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        if (file.size > 2 * 1024 * 1024) {
+            toast({
+                title: "File too large",
+                description: "Image size should be less than 2MB.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        try {
+            setIsUploadingLogo(true);
+            const response = await businessService.uploadLogo(file);
+            if (response.success) {
+                setBusiness(response.data);
+                toast({
+                    title: "Success",
+                    description: "Organization logo updated successfully.",
+                });
+            }
+        } catch (error: any) {
+            toast({
+                title: "Error",
+                description: error.response?.data?.message || "Failed to upload logo.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsUploadingLogo(false);
         }
     };
 
@@ -266,7 +354,10 @@ export default function ProfilePage() {
                 {/* User & Logout */}
                 <div className="mt-8 space-y-4">
                     <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-border/20 text-foreground">
-                        <Avatar className="w-9 h-9">
+                        <Avatar className="w-9 h-9 border border-border/40">
+                            {business?.logoUrl ? (
+                                <AvatarImage src={business.logoUrl} className="object-cover" />
+                            ) : null}
                             <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs uppercase">
                                 {user.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
                             </AvatarFallback>
@@ -312,7 +403,10 @@ export default function ProfilePage() {
                         className="w-full bg-white dark:bg-slate-900 rounded-[2rem] border border-border/40 p-4 lg:px-8 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6"
                     >
                         <div className="flex items-center gap-4">
-                            <Avatar className="w-12 h-12 border-2 border-primary/20 shadow-sm rounded-xl">
+                            <Avatar className="w-12 h-12 border-2 border-primary/20 shadow-sm rounded-xl overflow-hidden bg-white">
+                                {business?.logoUrl ? (
+                                    <AvatarImage src={business.logoUrl} className="object-cover" />
+                                ) : null}
                                 <AvatarFallback className="bg-primary text-white text-lg font-extrabold uppercase">
                                     {user.name.split(' ').map(n => n[0]).join('')}
                                 </AvatarFallback>
@@ -399,7 +493,7 @@ export default function ProfilePage() {
                                         <LayoutDashboard className="w-4 h-4 mr-2" /> Admin Panel
                                     </Button>
                                 )}
-                                <Button className="rounded-2xl shadow-xl shadow-primary/20 font-bold h-12 px-8" onClick={() => setIsEditDialogOpen(true)}>
+                                <Button className="rounded-2xl shadow-xl shadow-primary/20 font-bold h-12 px-8" onClick={() => setIsPersonalEditDialogOpen(true)}>
                                     <Settings className="w-4 h-4 mr-2" /> Profile Settings
                                 </Button>
                             </div>
@@ -494,16 +588,41 @@ export default function ProfilePage() {
                                             <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -mr-32 -mt-32 blur-3xl opacity-50" />
 
                                             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-12">
-                                                <div className="relative z-10">
-                                                    <div className="flex items-center gap-3 mb-2">
-                                                        <h2 className="text-3xl lg:text-4xl font-extrabold tracking-tight">{business?.name || "Member Organization"}</h2>
-                                                        <Badge variant="outline" className="border-primary/20 bg-primary/10 text-primary font-bold uppercase text-[10px] tracking-widest px-3 h-6">{business?.plan || "Bronze"}</Badge>
+                                                <div className="flex flex-col md:flex-row gap-6 items-center">
+                                                    <div className="relative group">
+                                                        <Avatar className="w-24 h-24 border-4 border-white dark:border-slate-800 shadow-xl rounded-2xl overflow-hidden bg-white">
+                                                            {business?.logoUrl ? (
+                                                                <AvatarImage src={business.logoUrl} className="object-cover" />
+                                                            ) : null}
+                                                            <AvatarFallback className="bg-primary/10 text-primary text-2xl font-extrabold uppercase">
+                                                                {business?.name?.slice(0, 2) || user.name.slice(0, 2)}
+                                                            </AvatarFallback>
+                                                        </Avatar>
+                                                        <label className="absolute inset-0 flex items-center justify-center bg-black/40 text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer rounded-2xl">
+                                                            <div className="flex flex-col items-center">
+                                                                <Camera className="w-6 h-6 mb-1" />
+                                                                <span className="text-[10px] font-bold uppercase">Change</span>
+                                                            </div>
+                                                            <input type="file" className="hidden" accept="image/*" onChange={handleLogoUpload} disabled={isUploadingLogo} />
+                                                        </label>
+                                                        {isUploadingLogo && (
+                                                            <div className="absolute inset-0 flex items-center justify-center bg-white/60 dark:bg-slate-900/60 rounded-2xl">
+                                                                <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                                                            </div>
+                                                        )}
                                                     </div>
-                                                    <p className="text-muted-foreground font-bold flex items-center gap-2 uppercase tracking-widest text-xs">
-                                                        <Briefcase className="w-4 h-4 text-primary" /> {business?.category || "Industrial Sector"}
-                                                    </p>
+
+                                                    <div className="relative z-10 text-center md:text-left">
+                                                        <div className="flex flex-col md:flex-row items-center gap-3 mb-2">
+                                                            <h2 className="text-3xl lg:text-4xl font-extrabold tracking-tight">{business?.name || "Member Organization"}</h2>
+                                                            <Badge variant="outline" className="border-primary/20 bg-primary/10 text-primary font-bold uppercase text-[10px] tracking-widest px-3 h-6">{business?.plan || "Bronze"}</Badge>
+                                                        </div>
+                                                        <p className="text-muted-foreground font-bold flex items-center justify-center md:justify-start gap-2 uppercase tracking-widest text-xs">
+                                                            <Briefcase className="w-4 h-4 text-primary" /> {business?.category || "Industrial Sector"}
+                                                        </p>
+                                                    </div>
                                                 </div>
-                                                <Button className="rounded-2xl h-12 px-8 font-bold shadow-xl shadow-primary/20 group animate-pulse hover:animate-none" onClick={() => setIsEditDialogOpen(true)}>
+                                                <Button className="rounded-2xl h-12 px-8 font-bold shadow-xl shadow-primary/20 group hover:scale-105 transition-transform" onClick={() => setIsEditDialogOpen(true)}>
                                                     Modify Details
                                                 </Button>
                                             </div>
@@ -883,6 +1002,54 @@ export default function ProfilePage() {
                             <DialogFooter className="pt-4">
                                 <Button type="button" variant="ghost" className="rounded-xl font-bold" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
                                 <Button type="submit" className="rounded-xl px-10 font-extrabold shadow-xl shadow-primary/20 bg-primary">Save Profile Changes</Button>
+                            </DialogFooter>
+                        </form>
+                    </Form>
+                </DialogContent>
+            </Dialog>
+
+            {/* Edit Personal Profile Dialog */}
+            <Dialog open={isPersonalEditDialogOpen} onOpenChange={setIsPersonalEditDialogOpen}>
+                <DialogContent className="sm:max-w-[500px] rounded-[2rem]">
+                    <DialogHeader>
+                        <DialogTitle className="text-2xl font-extrabold tracking-tight">Personal Settings</DialogTitle>
+                        <DialogDescription className="font-medium text-muted-foreground">
+                            Update your personal information used for communications.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <Form {...personalForm}>
+                        <form onSubmit={personalForm.handleSubmit(onPersonalSubmit)} className="space-y-6 pt-4">
+                            <FormField
+                                control={personalForm.control}
+                                name="name"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Full Name</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="Your Name" {...field} className="rounded-xl h-11 border-border/40 focus:border-primary/40 focus:ring-primary/20" />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={personalForm.control}
+                                name="phone"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="font-bold text-xs uppercase tracking-widest text-muted-foreground">Phone Number</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="+254..." {...field} className="rounded-xl h-11 border-border/40 focus:border-primary/40 focus:ring-primary/20" />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <DialogFooter className="pt-4">
+                                <Button type="button" variant="ghost" className="rounded-xl font-bold" onClick={() => setIsPersonalEditDialogOpen(false)}>Cancel</Button>
+                                <Button type="submit" className="rounded-xl px-10 font-extrabold shadow-xl shadow-primary/20 bg-primary">Save Changes</Button>
                             </DialogFooter>
                         </form>
                     </Form>

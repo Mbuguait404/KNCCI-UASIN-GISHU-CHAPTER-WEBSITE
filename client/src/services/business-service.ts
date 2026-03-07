@@ -35,5 +35,16 @@ export const businessService = {
     async updateBusiness(data: Partial<BusinessData>) {
         const response = await api.patch('/business', data);
         return response.data;
+    },
+
+    async uploadLogo(file: File) {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await api.post('/business/upload-logo', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
     }
 };

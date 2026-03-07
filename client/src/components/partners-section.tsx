@@ -127,7 +127,7 @@ export function PartnersSection() {
             Interested in becoming a partner or sponsor?
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link href="/partnership">
+            <Link href="/contact">
               <Button size="lg" className="bg-primary text-primary-foreground" data-testid="button-become-partner">
                 Become a Partner
               </Button>

@@ -203,11 +203,43 @@ export async function registerRoutes(
   });
 
   // Contact submissions endpoint
+  const KNCCI_API_BASE_URL = process.env.KNCCI_API_BASE_URL || "http://localhost:4000/api/v1";
+
   app.post("/api/contact", async (req, res) => {
     try {
       const validatedData = insertContactSubmissionSchema.parse(req.body);
+
+      // Forward to main API
+      const apiResponse = await fetch(`${KNCCI_API_BASE_URL}/contact`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(validatedData),
+      });
+
+      const responseText = await apiResponse.text();
+      let responseData: unknown;
+      try {
+        responseData = responseText ? JSON.parse(responseText) : {};
+      } catch {
+        responseData = { message: responseText };
+      }
+
+      if (!apiResponse.ok) {
+        console.error("[Contact] API proxy error:", apiResponse.status, responseData);
+        return res.status(apiResponse.status).json(
+          typeof responseData === "object" && responseData !== null && "error" in (responseData as object)
+            ? responseData
+            : { error: "Contact service error", details: responseData }
+        );
+      }
+
+      // Also save locally to mem storage for backup
       const submission = await storage.createContactSubmission(validatedData);
-      res.status(201).json(submission);
+
+      res.status(201).json({
+        ...submission,
+        remoteResponse: responseData
+      });
     } catch (error) {
       if (error instanceof Error) {
         res.status(400).json({ error: error.message });

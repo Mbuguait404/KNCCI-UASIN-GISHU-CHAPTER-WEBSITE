@@ -120,4 +120,24 @@ export const messagingService = {
         const response = await api.get('/messaging/stats');
         return response.data;
     },
+
+    // ── Settings ─────────────────────────────────────────────────────────────
+    async getSettings(): Promise<{ success: boolean; data: MessagingSettings }> {
+        const response = await api.get('/messaging/settings');
+        return response.data;
+    },
+
+    async updateSettings(payload: Partial<MessagingSettings>): Promise<{ success: boolean; data: MessagingSettings }> {
+        const response = await api.post('/messaging/settings', payload);
+        return response.data;
+    },
 };
+
+export interface MessagingSettings {
+    _id: string;
+    useCustomApiKey: boolean;
+    customApiKey?: string;
+    customBaseUrl: string;
+    updatedBy?: string;
+    updatedAt: string;
+}

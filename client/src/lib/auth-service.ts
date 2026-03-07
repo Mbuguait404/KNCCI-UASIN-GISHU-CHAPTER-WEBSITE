@@ -20,6 +20,11 @@ export const authService = {
     async getBusiness() {
         const response = await api.get('/business');
         return response.data;
+    },
+
+    async updateProfile(data: any) {
+        const response = await api.patch('/profile', data);
+        return response.data;
     }
 };
 

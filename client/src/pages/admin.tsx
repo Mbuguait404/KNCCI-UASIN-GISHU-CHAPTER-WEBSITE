@@ -33,7 +33,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SEOHead } from "@/components/seo/seo-head";
 import { useAuth } from "@/services/auth-context";
 import { adminService, DashboardStats, MemberDoc, PaginatedMembers } from "@/services/admin-service";
-import { messagingService, MessageTemplate, MessageLogEntry, MessageChannel, MessagingStats, PaginatedLogs } from "@/services/messaging-service";
+import { messagingService, MessageTemplate, MessageLogEntry, MessageChannel, MessagingStats, PaginatedLogs, MessagingSettings } from "@/services/messaging-service";
 import { useToast } from "@/hooks/use-toast";
 
 
@@ -114,7 +114,10 @@ export default function AdminDashboard() {
     const [activeTab, setActiveTab] = useState("overview");
 
     // ─── Messaging state ────────────────────────────────────────────
-    const [msgSubTab, setMsgSubTab] = useState<"compose" | "templates" | "logs">("compose");
+    const [msgSubTab, setMsgSubTab] = useState<"compose" | "templates" | "logs" | "settings">("compose");
+    const [msgSettings, setMsgSettings] = useState<MessagingSettings | null>(null);
+    const [msgLoadingSettings, setMsgLoadingSettings] = useState(false);
+    const [msgSavingSettings, setMsgSavingSettings] = useState(false);
     const [msgChannel, setMsgChannel] = useState<MessageChannel>("sms");
     const [msgRecipientMode, setMsgRecipientMode] = useState<"all" | "select" | "manual">("all");
     const [msgManualRecipients, setMsgManualRecipients] = useState("");
@@ -223,6 +226,14 @@ export default function AdminDashboard() {
         } catch { /* quiet */ }
     }, []);
 
+    const fetchMsgSettings = useCallback(async () => {
+        try {
+            setMsgLoadingSettings(true);
+            const res = await messagingService.getSettings();
+            if (res.success) setMsgSettings(res.data);
+        } catch { /* quiet */ } finally { setMsgLoadingSettings(false); }
+    }, []);
+
     const fetchAllMembersForMessaging = useCallback(async () => {
         try {
             const res = await adminService.getMembers({ page: 1, limit: 500 });
@@ -235,9 +246,23 @@ export default function AdminDashboard() {
             fetchMsgTemplates();
             fetchMsgLogs();
             fetchMsgStats();
+            fetchMsgSettings();
             fetchAllMembersForMessaging();
         }
-    }, [activeTab, fetchMsgTemplates, fetchMsgLogs, fetchMsgStats, fetchAllMembersForMessaging]);
+    }, [activeTab, fetchMsgTemplates, fetchMsgLogs, fetchMsgStats, fetchMsgSettings, fetchAllMembersForMessaging]);
+
+    const handleSaveSettings = async (payload: Partial<MessagingSettings>) => {
+        setMsgSavingSettings(true);
+        try {
+            const res = await messagingService.updateSettings(payload);
+            if (res.success) {
+                setMsgSettings(res.data);
+                toast({ title: "Settings Saved", description: "Messaging configuration updated successfully." });
+            }
+        } catch (err: any) {
+            toast({ title: "Save Failed", description: err.response?.data?.message || "Failed to save settings", variant: "destructive" });
+        } finally { setMsgSavingSettings(false); }
+    };
 
     // ─── Send message handler ───────────────────────────────────────
     const handleSendMessage = async () => {
@@ -1097,6 +1122,7 @@ export default function AdminDashboard() {
                                     { key: "compose" as const, label: "Compose", icon: <Send className="w-3.5 h-3.5" /> },
                                     { key: "templates" as const, label: "Templates", icon: <FileEdit className="w-3.5 h-3.5" /> },
                                     { key: "logs" as const, label: "History", icon: <Clock className="w-3.5 h-3.5" /> },
+                                    { key: "settings" as const, label: "Settings", icon: <UserCog className="w-3.5 h-3.5" /> },
                                 ].map(t => (
                                     <Button
                                         key={t.key}
@@ -1403,6 +1429,105 @@ export default function AdminDashboard() {
                                                 </div>
                                             </div>
                                         )}
+                                    </Card>
+                                </div>
+                            )}
+
+                            {/* ── SETTINGS ────────────────────────────────── */}
+                            {msgSubTab === "settings" && (
+                                <div className="space-y-6">
+                                    <Card className="border-border/40">
+                                        <CardHeader>
+                                            <CardTitle className="text-base font-extrabold flex items-center gap-2">
+                                                <KeyRound className="w-4 h-4 text-primary" /> API Configuration
+                                            </CardTitle>
+                                            <p className="text-xs text-muted-foreground">Configure the API settings used for sending notifications via Uniflow.</p>
+                                        </CardHeader>
+                                        <CardContent className="space-y-6">
+                                            {msgLoadingSettings ? (
+                                                <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
+                                            ) : !msgSettings ? (
+                                                <p className="text-sm text-center text-muted-foreground py-12">Failed to load settings.</p>
+                                            ) : (
+                                                <div className="space-y-6">
+                                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-border/30">
+                                                        <div className="space-y-1">
+                                                            <p className="text-sm font-bold">Use Custom API Key</p>
+                                                            <p className="text-[10px] text-muted-foreground">Toggle between system default and your own Uniflow API key.</p>
+                                                        </div>
+                                                        <Button
+                                                            variant={msgSettings.useCustomApiKey ? "default" : "outline"}
+                                                            size="sm"
+                                                            className={`rounded-xl font-bold h-9 px-6 ${msgSettings.useCustomApiKey ? "bg-emerald-600 hover:bg-emerald-700" : ""}`}
+                                                            onClick={() => handleSaveSettings({ useCustomApiKey: !msgSettings.useCustomApiKey })}
+                                                            disabled={msgSavingSettings}
+                                                        >
+                                                            {msgSavingSettings ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-2" /> : null}
+                                                            {msgSettings.useCustomApiKey ? "Custom Key Active" : "Using System Default"}
+                                                        </Button>
+                                                    </div>
+
+                                                    <AnimatePresence>
+                                                        {msgSettings.useCustomApiKey && (
+                                                            <motion.div
+                                                                initial={{ opacity: 0, height: 0 }}
+                                                                animate={{ opacity: 1, height: "auto" }}
+                                                                exit={{ opacity: 0, height: 0 }}
+                                                                className="space-y-4 overflow-hidden"
+                                                            >
+                                                                <div className="space-y-2">
+                                                                    <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Custom Uniflow API Key</label>
+                                                                    <div className="relative">
+                                                                        <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                                                        <Input
+                                                                            type="password"
+                                                                            placeholder="Enter your API key..."
+                                                                            value={msgSettings.customApiKey || ""}
+                                                                            onChange={e => setMsgSettings({ ...msgSettings, customApiKey: e.target.value })}
+                                                                            className="pl-10 h-11 rounded-xl"
+                                                                        />
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="space-y-2">
+                                                                    <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Custom Base URL</label>
+                                                                    <div className="relative">
+                                                                        <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                                                        <Input
+                                                                            placeholder="https://smsapi.solby.io:8443"
+                                                                            value={msgSettings.customBaseUrl || ""}
+                                                                            onChange={e => setMsgSettings({ ...msgSettings, customBaseUrl: e.target.value })}
+                                                                            className="pl-10 h-11 rounded-xl"
+                                                                        />
+                                                                    </div>
+                                                                </div>
+
+                                                                <Button
+                                                                    className="w-full h-11 rounded-xl font-bold gap-2"
+                                                                    onClick={() => handleSaveSettings({ customApiKey: msgSettings.customApiKey, customBaseUrl: msgSettings.customBaseUrl })}
+                                                                    disabled={msgSavingSettings}
+                                                                >
+                                                                    {msgSavingSettings ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                                                                    Save API Credentials
+                                                                </Button>
+                                                            </motion.div>
+                                                        )}
+                                                    </AnimatePresence>
+
+                                                    <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/30">
+                                                        <div className="flex gap-3">
+                                                            <AlertTriangle className="w-5 h-5 text-blue-500 shrink-0" />
+                                                            <div className="space-y-2">
+                                                                <p className="text-xs font-bold text-blue-700 dark:text-blue-400">Default Configuration</p>
+                                                                <p className="text-[10px] text-blue-600/80 dark:text-blue-400/70 leading-relaxed">
+                                                                    When "Using System Default" is active, the application uses the API key configured in the server's environment variables. Custom credentials allow for independent billing or specific channel configurations.
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </CardContent>
                                     </Card>
                                 </div>
                             )}
