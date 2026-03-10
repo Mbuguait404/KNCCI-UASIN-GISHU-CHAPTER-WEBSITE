@@ -109,6 +109,12 @@ export const adminService = {
         const response = await api.patch(`/membership-applications/admin/${id}/status`, { status });
         return response.data;
     },
+    
+    /** PATCH /membership-applications/admin/:id */
+    async updateApplication(id: string, data: any): Promise<{ success: boolean; message: string }> {
+        const response = await api.patch(`/membership-applications/admin/${id}`, data);
+        return response.data;
+    },
 
     /** DELETE /membership-applications/admin/:id */
     async deleteApplication(id: string): Promise<{ success: boolean; message: string }> {

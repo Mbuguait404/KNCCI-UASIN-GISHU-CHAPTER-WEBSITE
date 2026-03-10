@@ -8,7 +8,9 @@ import {
     TrendingUp, Activity, LayoutDashboard, ChevronDown,
     AlertTriangle, Loader2, FileText, MessageSquare, Send,
     Plus, Pencil, Clock, CheckCircle2, XCircle, Smartphone,
-    AtSign, UserPlus, FileEdit, Upload
+    AtSign, UserPlus, FileEdit, Upload,
+    User,
+    CreditCard
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -109,6 +111,12 @@ export default function AdminDashboard() {
     const [isEditing, setIsEditing] = useState(false);
     const [editForm, setEditForm] = useState<any>({});
     const [fileUploading, setFileUploading] = useState<{ logo: boolean; certificate: boolean }>({ logo: false, certificate: false });
+
+    // Application Modals
+    const [selectedApplication, setSelectedApplication] = useState<any>(null);
+    const [appDetailOpen, setAppDetailOpen] = useState(false);
+    const [appEditForm, setAppEditForm] = useState<any>({});
+    const [isAppEditing, setIsAppEditing] = useState(false);
 
     // Active sidebar item
     const [activeTab, setActiveTab] = useState("overview");
@@ -434,6 +442,35 @@ export default function AdminDashboard() {
         } finally {
             setActionLoading(false);
         }
+    };
+
+    const handleSaveApplication = async () => {
+        if (!selectedApplication) return;
+        setActionLoading(true);
+        try {
+            const res = await adminService.updateApplication(selectedApplication._id, appEditForm);
+            if (res.success) {
+                setSelectedApplication({ ...selectedApplication, ...appEditForm });
+                setIsAppEditing(false);
+                toast({ title: "Application Updated", description: "Details have been saved." });
+                fetchApplications();
+            }
+        } catch (err: any) {
+            toast({ title: "Error", description: err.response?.data?.message || "Failed to update application", variant: "destructive" });
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const openAppDetail = (app: any) => {
+        setSelectedApplication(app);
+        setAppEditForm({
+            paymentMethod: app.paymentMethod || "Not Set",
+            paymentStatus: app.paymentStatus || "Pending",
+            amountToPay: app.amountToPay || 0,
+        });
+        setIsAppEditing(false);
+        setAppDetailOpen(true);
     };
 
     const handleSaveProfile = async () => {
@@ -1048,6 +1085,15 @@ export default function AdminDashboard() {
                                                         </TableCell>
                                                         <TableCell>
                                                             <div className="flex items-center justify-end gap-1">
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="text-blue-500 hover:text-blue-600 hover:bg-blue-50"
+                                                                    onClick={() => openAppDetail(app)}
+                                                                    title="View Details"
+                                                                >
+                                                                    <Eye className="w-4 h-4" />
+                                                                </Button>
                                                                 <Button
                                                                     variant="ghost"
                                                                     size="sm"
@@ -1862,6 +1908,202 @@ export default function AdminDashboard() {
                                     </div>
                                 )}
 
+                            </div>
+                        )}
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* ─── Application Detail Dialog ──────────────────────────────  */}
+            <Dialog open={appDetailOpen} onOpenChange={setAppDetailOpen}>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl p-0 border-none bg-slate-50 dark:bg-slate-950">
+                    <div className="sticky top-0 z-50 flex items-center justify-between p-6 bg-white dark:bg-slate-900 border-b border-border/40">
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                                <FileText className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <DialogTitle className="text-xl font-extrabold tracking-tight">
+                                    {selectedApplication?.name}
+                                </DialogTitle>
+                                <DialogDescription className="text-xs font-medium">Application ID: {selectedApplication?._id}</DialogDescription>
+                            </div>
+                        </div>
+                        <div className="flex gap-2">
+                            <Button
+                                variant={isAppEditing ? "default" : "outline"}
+                                size="sm"
+                                className="rounded-xl font-bold text-xs h-9 px-4"
+                                onClick={() => setIsAppEditing(!isAppEditing)}
+                            >
+                                {isAppEditing ? <X className="w-3.5 h-3.5 mr-2" /> : <Pencil className="w-3.5 h-3.5 mr-2" />}
+                                {isAppEditing ? "Cancel" : "Modify Info"}
+                            </Button>
+                            <Button variant="ghost" size="icon" className="rounded-xl h-9 w-9" onClick={() => setAppDetailOpen(false)}>
+                                <X className="w-5 h-5" />
+                            </Button>
+                        </div>
+                    </div>
+
+                    <div className="p-6 space-y-8 pb-10">
+                        {selectedApplication && (
+                            <div className="space-y-8">
+                                {/* Applicant Info */}
+                                <section className="space-y-4">
+                                    <h4 className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
+                                        <User className="w-3 h-3" /> Applicant & Business Details
+                                    </h4>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-border/20">
+                                            <p className="text-[10px] font-bold uppercase text-muted-foreground mb-1">Company</p>
+                                            <p className="text-sm font-extrabold">{selectedApplication.businessName}</p>
+                                            <p className="text-xs text-muted-foreground mt-1">{selectedApplication.businessClass}</p>
+                                        </div>
+                                        <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-border/20">
+                                            <p className="text-[10px] font-bold uppercase text-muted-foreground mb-1">Contact Info</p>
+                                            <p className="text-sm font-bold">{selectedApplication.email}</p>
+                                            <p className="text-xs text-muted-foreground mt-1">{selectedApplication.contact}</p>
+                                        </div>
+                                        <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-border/20">
+                                            <p className="text-[10px] font-bold uppercase text-muted-foreground mb-1">Location</p>
+                                            <p className="text-sm font-bold">{selectedApplication.location}</p>
+                                            <p className="text-xs text-muted-foreground mt-1">{selectedApplication.subCounty} Sub-county</p>
+                                        </div>
+                                        <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-border/20">
+                                            <p className="text-[10px] font-bold uppercase text-muted-foreground mb-1">Status</p>
+                                            <Badge variant={selectedApplication.status === 'pending' ? 'outline' : selectedApplication.status === 'approved' ? 'default' : 'destructive'}>
+                                                {selectedApplication.status}
+                                            </Badge>
+                                        </div>
+                                    </div>
+                                </section>
+
+                                {/* Payment Info Section */}
+                                <section className="space-y-4">
+                                    <h4 className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
+                                        <CreditCard className="w-3 h-3" /> Payment & Subscription
+                                    </h4>
+                                    <div className="p-6 rounded-2xl border border-border/40 bg-white dark:bg-slate-900 space-y-6">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                            <div className="space-y-1.5">
+                                                <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Subscription Selection</label>
+                                                <div className="h-11 flex items-center px-4 rounded-xl bg-slate-50 dark:bg-slate-800 border border-border/20 font-medium text-xs">
+                                                    {selectedApplication.subscriptionFee}
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-1.5">
+                                                <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Amount to Pay (Ksh)</label>
+                                                {isAppEditing ? (
+                                                    <Input
+                                                        type="number"
+                                                        value={appEditForm.amountToPay}
+                                                        onChange={(e) => setAppEditForm({ ...appEditForm, amountToPay: parseInt(e.target.value) || 0 })}
+                                                        className="h-11 rounded-xl bg-slate-50 dark:bg-slate-800 border-border/50 font-bold"
+                                                    />
+                                                ) : (
+                                                    <div className="h-11 flex items-center px-4 rounded-xl bg-slate-50 dark:bg-slate-800 border border-border/20 font-extrabold text-lg text-primary">
+                                                        {selectedApplication.amountToPay?.toLocaleString()}
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <div className="space-y-1.5">
+                                                <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Payment Method</label>
+                                                {isAppEditing ? (
+                                                    <Select value={appEditForm.paymentMethod} onValueChange={(v) => setAppEditForm({ ...appEditForm, paymentMethod: v })}>
+                                                        <SelectTrigger className="h-11 rounded-xl bg-slate-50 dark:bg-slate-800 border-border/50">
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="Not Set">Not Set</SelectItem>
+                                                            <SelectItem value="M-Pesa">M-Pesa</SelectItem>
+                                                            <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                                                            <SelectItem value="Cash">Cash</SelectItem>
+                                                            <SelectItem value="Other">Other</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                ) : (
+                                                    <div className="h-11 flex items-center px-4 rounded-xl bg-slate-50 dark:bg-slate-800 border border-border/20 font-medium text-sm">
+                                                        {selectedApplication.paymentMethod || "Not Set"}
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <div className="space-y-1.5">
+                                                <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Payment Status</label>
+                                                {isAppEditing ? (
+                                                    <Select value={appEditForm.paymentStatus} onValueChange={(v) => setAppEditForm({ ...appEditForm, paymentStatus: v })}>
+                                                        <SelectTrigger className="h-11 rounded-xl bg-slate-50 dark:bg-slate-800 border-border/50">
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="Pending">Pending</SelectItem>
+                                                            <SelectItem value="Partial">Partial</SelectItem>
+                                                            <SelectItem value="Paid">Paid</SelectItem>
+                                                            <SelectItem value="Verified">Verified</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                ) : (
+                                                    <div className="h-11">
+                                                        <Badge variant={selectedApplication.paymentStatus === 'Verified' ? 'default' : selectedApplication.paymentStatus === 'Paid' ? 'secondary' : 'outline'} className="h-full px-4 rounded-xl text-xs font-bold">
+                                                            {selectedApplication.paymentStatus || "Pending"}
+                                                        </Badge>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {isAppEditing && (
+                                            <div className="pt-4 border-t border-border/30">
+                                                <Button className="w-full h-12 rounded-xl bg-primary font-bold shadow-xl shadow-primary/20" onClick={handleSaveApplication} disabled={actionLoading}>
+                                                    {actionLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
+                                                    Save Payment Info
+                                                </Button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </section>
+
+                                {/* Action Buttons */}
+                                {!isAppEditing && (
+                                    <section className="pt-4 flex flex-wrap gap-3">
+                                        <Button
+                                            className="h-12 px-8 rounded-xl bg-emerald-600 hover:bg-emerald-700 font-bold"
+                                            onClick={() => {
+                                                if (selectedApplication.paymentMethod === 'Not Set' || selectedApplication.paymentStatus === 'Pending') {
+                                                    toast({
+                                                        title: "Payment Info Required",
+                                                        description: "Please set the payment method and status before approving.",
+                                                        variant: "destructive"
+                                                    });
+                                                    return;
+                                                }
+                                                handleApplicationStatus(selectedApplication._id, 'approved');
+                                                setAppDetailOpen(false);
+                                            }}
+                                            disabled={actionLoading || selectedApplication.status === 'approved'}
+                                        >
+                                            <CheckCircle2 className="w-4 h-4 mr-2" /> Approve Application
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            className="h-12 px-8 rounded-xl border-amber-200 text-amber-600 hover:bg-amber-50 font-bold"
+                                            onClick={() => { handleApplicationStatus(selectedApplication._id, 'rejected'); setAppDetailOpen(false); }}
+                                            disabled={actionLoading || selectedApplication.status === 'rejected'}
+                                        >
+                                            <XCircle className="w-4 h-4 mr-2" /> Reject
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            className="h-12 px-4 rounded-xl text-red-500 hover:bg-red-50 font-bold ml-auto"
+                                            onClick={() => { handleApplicationDelete(selectedApplication._id); setAppDetailOpen(false); }}
+                                            disabled={actionLoading}
+                                        >
+                                            <Trash2 className="w-4 h-4 mr-2" /> Delete
+                                        </Button>
+                                    </section>
+                                )}
                             </div>
                         )}
                     </div>
