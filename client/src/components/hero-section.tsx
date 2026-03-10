@@ -188,7 +188,7 @@ export function HeroSection({ event: propEvent }: HeroSectionProps) {
             <Button
               size="lg"
               variant="outline"
-              onClick={() => scrollToSection("#who-we-are")}
+              onClick={() => setLocation("/work")}
               className="w-full sm:w-auto border-white/40 text-white bg-white/10 hover:bg-white/20 backdrop-blur-md text-lg px-8 py-6 transition-all hover:scale-105 active:scale-95"
               data-testid="button-about-hero"
             >
