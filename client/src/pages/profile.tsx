@@ -29,7 +29,10 @@ import {
     CreditCard as PaymentIcon,
     Camera,
     Upload,
-    Edit
+    Edit,
+    KeyRound,
+    Eye,
+    EyeOff
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -83,6 +86,10 @@ export default function ProfilePage() {
     const [isPersonalEditDialogOpen, setIsPersonalEditDialogOpen] = useState(false);
     const [isUploadingLogo, setIsUploadingLogo] = useState(false);
     const [showCertificate, setShowCertificate] = useState(false);
+    const [isPasswordOpen, setIsPasswordOpen] = useState(false);
+    const [passwordForm, setPasswordForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
+    const [isSubmittingPassword, setIsSubmittingPassword] = useState(false);
+    const [showPasswords, setShowPasswords] = useState({ current: false, new: false, confirm: false });
     const [activeTab, setActiveTab] = useState("overview");
 
     const businessSchema = z.object({
@@ -167,6 +174,9 @@ export default function ProfilePage() {
                 name: user.name || "",
                 phone: user.phone || "",
             });
+            if (user.requirePasswordChange) {
+                setIsPasswordOpen(true);
+            }
         }
     }, [user, authLoading, setLocation, form, personalForm]);
 
@@ -259,6 +269,65 @@ export default function ProfilePage() {
             });
         } finally {
             setIsUploadingLogo(false);
+        }
+    };
+
+    const handlePasswordSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        
+        if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+            toast({
+                title: "Passwords don't match",
+                description: "New password and confirmation must match exactly.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        if (passwordForm.newPassword.length < 8) {
+            toast({
+                title: "Password too short",
+                description: "New password must be at least 8 characters long.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        try {
+            setIsSubmittingPassword(true);
+            const { authService } = await import('@/lib/auth-service');
+            const response = await authService.changePassword({ 
+                oldPassword: passwordForm.currentPassword, 
+                newPassword: passwordForm.newPassword,
+                confirmPassword: passwordForm.confirmPassword
+            });
+            
+            if (response.success) {
+                toast({
+                    title: "Success",
+                    description: "Password updated successfully.",
+                });
+                setIsPasswordOpen(false);
+                if (user) {
+                    updateUser({ ...user, requirePasswordChange: false });
+                }
+                setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+            }
+        } catch (error: any) {
+            let errorMessage = "Failed to update password.";
+            if (error.response?.data?.details && Array.isArray(error.response.data.details) && error.response.data.details.length > 0) {
+                errorMessage = error.response.data.details[0].message;
+            } else if (error.response?.data?.message) {
+                errorMessage = error.response.data.message;
+            }
+
+            toast({
+                title: "Error",
+                description: errorMessage,
+                variant: "destructive",
+            });
+        } finally {
+            setIsSubmittingPassword(false);
         }
     };
 
@@ -1047,7 +1116,27 @@ export default function ProfilePage() {
                                 )}
                             />
 
-                            <DialogFooter className="pt-4">
+                            <div className="pt-2 border-t border-border/20 flex items-center justify-between">
+                                <div>
+                                    <h4 className="font-extrabold text-sm text-foreground">Account Security</h4>
+                                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Update your password</p>
+                                </div>
+                                <Button 
+                                    type="button" 
+                                    variant="outline" 
+                                    size="sm" 
+                                    className="rounded-xl font-bold border-primary/20 text-primary hover:bg-primary/5 gap-2"
+                                    onClick={() => {
+                                        setIsPersonalEditDialogOpen(false);
+                                        setIsPasswordOpen(true);
+                                    }}
+                                >
+                                    <KeyRound className="w-3.5 h-3.5" />
+                                    Change Password
+                                </Button>
+                            </div>
+
+                            <DialogFooter className="pt-4 border-t border-border/20">
                                 <Button type="button" variant="ghost" className="rounded-xl font-bold" onClick={() => setIsPersonalEditDialogOpen(false)}>Cancel</Button>
                                 <Button type="submit" className="rounded-xl px-10 font-extrabold shadow-xl shadow-primary/20 bg-primary">Save Changes</Button>
                             </DialogFooter>
@@ -1055,6 +1144,111 @@ export default function ProfilePage() {
                     </Form>
                 </DialogContent>
             </Dialog>
+
+            {/* Change Password Dialog */}
+            <Dialog 
+                open={isPasswordOpen} 
+                onOpenChange={(val) => {
+                    // Prevent closing if required
+                    if (user?.requirePasswordChange && !val) return;
+                    setIsPasswordOpen(val);
+                }}
+            >
+                <DialogContent className="sm:max-w-[400px] rounded-[2rem] outline-none">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl font-extrabold tracking-tight">
+                            {user?.requirePasswordChange ? "Action Required" : "Change Password"}
+                        </DialogTitle>
+                        <DialogDescription className="font-medium text-muted-foreground text-xs leading-relaxed">
+                            {user?.requirePasswordChange 
+                                ? "For security reasons, you must update your temporary password before accessing the member portal." 
+                                : "Keep your account secure by updating your password regularly."}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <form onSubmit={handlePasswordSubmit} className="space-y-4 pt-4">
+                        {!user?.requirePasswordChange && (
+                            <div className="space-y-1.5">
+                                <label className="font-bold text-[10px] uppercase tracking-widest text-muted-foreground ml-1">Current Password</label>
+                                <div className="relative">
+                                    <Input 
+                                        type={showPasswords.current ? "text" : "password"} 
+                                        required 
+                                        value={passwordForm.currentPassword}
+                                        onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                                        className="rounded-xl h-12 bg-slate-50 dark:bg-slate-900 border-border/50 pr-10" 
+                                    />
+                                    <button 
+                                        type="button" 
+                                        onClick={() => setShowPasswords(prev => ({...prev, current: !prev.current}))} 
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                                    >
+                                        {showPasswords.current ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                        
+                        <div className="space-y-1.5">
+                            <label className="font-bold text-[10px] uppercase tracking-widest text-muted-foreground ml-1">New Password</label>
+                            <div className="relative">
+                                <Input 
+                                    type={showPasswords.new ? "text" : "password"} 
+                                    required 
+                                    minLength={8}
+                                    value={passwordForm.newPassword}
+                                    onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                                    className="rounded-xl h-12 bg-slate-50 dark:bg-slate-900 border-border/50 pr-10" 
+                                />
+                                <button 
+                                    type="button" 
+                                    onClick={() => setShowPasswords(prev => ({...prev, new: !prev.new}))} 
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                                >
+                                    {showPasswords.new ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <label className="font-bold text-[10px] uppercase tracking-widest text-muted-foreground ml-1">Confirm New Password</label>
+                            <div className="relative">
+                                <Input 
+                                    type={showPasswords.confirm ? "text" : "password"} 
+                                    required 
+                                    minLength={8}
+                                    value={passwordForm.confirmPassword}
+                                    onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                                    className="rounded-xl h-12 bg-slate-50 dark:bg-slate-900 border-border/50 pr-10" 
+                                />
+                                <button 
+                                    type="button" 
+                                    onClick={() => setShowPasswords(prev => ({...prev, confirm: !prev.confirm}))} 
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                                >
+                                    {showPasswords.confirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                </button>
+                            </div>
+                        </div>
+
+                        <DialogFooter className="pt-6">
+                            {!user?.requirePasswordChange && (
+                                <Button type="button" variant="ghost" className="rounded-xl font-bold h-12" onClick={() => setIsPasswordOpen(false)}>
+                                    Cancel
+                                </Button>
+                            )}
+                            <Button 
+                                type="submit" 
+                                disabled={isSubmittingPassword || !passwordForm.newPassword || passwordForm.newPassword.length < 8} 
+                                className="rounded-xl h-12 px-8 font-extrabold shadow-xl shadow-primary/20 bg-primary flex-1"
+                            >
+                                {isSubmittingPassword ? "Updating..." : "Update Password"}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
         </div>
     );
 }

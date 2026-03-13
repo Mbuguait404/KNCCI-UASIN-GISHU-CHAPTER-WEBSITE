@@ -29,6 +29,29 @@ export const staticEvent: Event = {
   },
 };
 
+// Organization data
+export const staticOrganization = {
+  name: "KNCCI Uasin Gishu Chapter",
+  subtitle: "The Voice of Business in Uasin Gishu County",
+  description: "The Kenya National Chamber of Commerce & Industry (KNCCI) Uasin Gishu Chapter is a member-based organization dedicated to advancing the commercial and industrial interests of our business community. As the premier voice of business in the region, we facilitate trade, advocate for favorable policies, and provide essential services that empower our members to thrive in both local and international markets.",
+  highlights: [
+    "Policy Advocacy & Business Reform",
+    "Trade Facilitation & Export Support",
+    "Business Networking & Strategic Partnerships",
+    "SME Capacity Building & Mentorship",
+    "Access to Market Intelligence",
+    "Certification of Origin & Trade Documentation",
+  ],
+  stats: {
+    activeMembers: "1,000+",
+    chapters: "47",
+    partners: "15+",
+    sectors: "20+",
+    mentors: "50+",
+    years: "50+",
+  }
+};
+
 // Speakers data
 export const staticSpeakers: Speaker[] = [
   {

@@ -4,7 +4,7 @@ import { useLocation } from "wouter";
 import {
     Users, BarChart3, Shield, Search, ChevronLeft, ChevronRight,
     LogOut, Crown, Medal, Award, Trash2, KeyRound, UserCog,
-    Building2, Mail, Phone, MapPin, Globe, Eye, X, Home,
+    Building2, Mail, Phone, MapPin, Globe, Eye, EyeOff, X, Home,
     TrendingUp, Activity, LayoutDashboard, ChevronDown,
     AlertTriangle, Loader2, FileText, MessageSquare, Send,
     Plus, Pencil, Clock, CheckCircle2, XCircle, Smartphone,
@@ -107,6 +107,7 @@ export default function AdminDashboard() {
     const [deleteTarget, setDeleteTarget] = useState<MemberDoc | null>(null);
     const [resetPwTarget, setResetPwTarget] = useState<MemberDoc | null>(null);
     const [newPassword, setNewPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
     const [actionLoading, setActionLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [editForm, setEditForm] = useState<any>({});
@@ -468,6 +469,7 @@ export default function AdminDashboard() {
             paymentMethod: app.paymentMethod || "Not Set",
             paymentStatus: app.paymentStatus || "Pending",
             amountToPay: app.amountToPay || 0,
+            amountPaid: app.amountPaid || 0,
         });
         setIsAppEditing(false);
         setAppDetailOpen(true);
@@ -1035,6 +1037,7 @@ export default function AdminDashboard() {
                                                 <TableHead className="font-extrabold text-xs uppercase tracking-wider">Applicant</TableHead>
                                                 <TableHead className="font-extrabold text-xs uppercase tracking-wider">Business</TableHead>
                                                 <TableHead className="font-extrabold text-xs uppercase tracking-wider">Location</TableHead>
+                                                <TableHead className="font-extrabold text-xs uppercase tracking-wider">Payment</TableHead>
                                                 <TableHead className="font-extrabold text-xs uppercase tracking-wider">Status</TableHead>
                                                 <TableHead className="font-extrabold text-xs uppercase tracking-wider text-right">Actions</TableHead>
                                             </TableRow>
@@ -1042,14 +1045,14 @@ export default function AdminDashboard() {
                                         <TableBody>
                                             {loadingApplications ? (
                                                 <TableRow>
-                                                    <TableCell colSpan={5} className="h-40 text-center">
+                                                    <TableCell colSpan={6} className="h-40 text-center">
                                                         <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto" />
                                                         <p className="text-sm text-muted-foreground mt-2">Loading applications...</p>
                                                     </TableCell>
                                                 </TableRow>
                                             ) : applications.length === 0 ? (
                                                 <TableRow>
-                                                    <TableCell colSpan={5} className="h-40 text-center">
+                                                    <TableCell colSpan={6} className="h-40 text-center">
                                                         <FileText className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
                                                         <p className="text-sm font-bold text-muted-foreground">No applications found</p>
                                                     </TableCell>
@@ -1077,6 +1080,10 @@ export default function AdminDashboard() {
                                                         <TableCell>
                                                             <p className="text-xs">{app.location}</p>
                                                             <p className="text-[10px] text-muted-foreground">{app.subCounty}</p>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <p className="text-sm font-medium">KES {app.amountToPay?.toLocaleString() || '0'}</p>
+                                                            <p className="text-[11px] text-muted-foreground">Paid: <span className={app.amountPaid >= app.amountToPay && app.amountToPay > 0 ? "text-emerald-500 font-bold" : ""}>KES {app.amountPaid?.toLocaleString() || '0'}</span></p>
                                                         </TableCell>
                                                         <TableCell>
                                                             <Badge variant={app.status === 'pending' ? 'outline' : app.status === 'approved' ? 'default' : 'destructive'}>
@@ -1993,7 +2000,7 @@ export default function AdminDashboard() {
                                             </div>
 
                                             <div className="space-y-1.5">
-                                                <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Amount to Pay (Ksh)</label>
+                                                <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Amount Required (Ksh)</label>
                                                 {isAppEditing ? (
                                                     <Input
                                                         type="number"
@@ -2004,6 +2011,22 @@ export default function AdminDashboard() {
                                                 ) : (
                                                     <div className="h-11 flex items-center px-4 rounded-xl bg-slate-50 dark:bg-slate-800 border border-border/20 font-extrabold text-lg text-primary">
                                                         {selectedApplication.amountToPay?.toLocaleString()}
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <div className="space-y-1.5">
+                                                <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Amount Paid (Ksh)</label>
+                                                {isAppEditing ? (
+                                                    <Input
+                                                        type="number"
+                                                        value={appEditForm.amountPaid}
+                                                        onChange={(e) => setAppEditForm({ ...appEditForm, amountPaid: parseInt(e.target.value) || 0 })}
+                                                        className="h-11 rounded-xl bg-slate-50 dark:bg-slate-800 border-border/50 font-bold"
+                                                    />
+                                                ) : (
+                                                    <div className="h-11 flex items-center px-4 rounded-xl bg-slate-50 dark:bg-slate-800 border border-border/20 font-extrabold text-lg text-emerald-500">
+                                                        {(selectedApplication.amountPaid || 0).toLocaleString()}
                                                     </div>
                                                 )}
                                             </div>
@@ -2071,10 +2094,13 @@ export default function AdminDashboard() {
                                         <Button
                                             className="h-12 px-8 rounded-xl bg-emerald-600 hover:bg-emerald-700 font-bold"
                                             onClick={() => {
-                                                if (selectedApplication.paymentMethod === 'Not Set' || selectedApplication.paymentStatus === 'Pending') {
+                                                const amountRequired = selectedApplication.amountToPay || 0;
+                                                const amountPaid = selectedApplication.amountPaid || 0;
+
+                                                if (selectedApplication.paymentMethod === 'Not Set' || selectedApplication.paymentStatus === 'Pending' || amountPaid < amountRequired) {
                                                     toast({
-                                                        title: "Payment Info Required",
-                                                        description: "Please set the payment method and status before approving.",
+                                                        title: "Payment Incomplete",
+                                                        description: `Approval requires full payment. Required: Ksh ${amountRequired.toLocaleString()}, Paid: Ksh ${amountPaid.toLocaleString()}`,
                                                         variant: "destructive"
                                                     });
                                                     return;
@@ -2111,7 +2137,7 @@ export default function AdminDashboard() {
             </Dialog>
 
             {/* ─── Reset Password Dialog ─────────────────────────────────  */}
-            <Dialog open={!!resetPwTarget} onOpenChange={(open) => { if (!open) { setResetPwTarget(null); setNewPassword(""); } }}>
+            <Dialog open={!!resetPwTarget} onOpenChange={(open) => { if (!open) { setResetPwTarget(null); setNewPassword(""); setShowPassword(false); } }}>
                 <DialogContent className="max-w-md rounded-2xl">
                     <DialogHeader>
                         <DialogTitle className="font-extrabold flex items-center gap-2">
@@ -2122,13 +2148,22 @@ export default function AdminDashboard() {
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 mt-2">
-                        <Input
-                            type="password"
-                            placeholder="Enter new password"
-                            value={newPassword}
-                            onChange={(e) => setNewPassword(e.target.value)}
-                            className="h-12 rounded-xl"
-                        />
+                        <div className="relative">
+                            <Input
+                                type={showPassword ? "text" : "password"}
+                                placeholder="Enter new password"
+                                value={newPassword}
+                                onChange={(e) => setNewPassword(e.target.value)}
+                                className="h-12 rounded-xl pr-10"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </button>
+                        </div>
                         <p className="text-[10px] text-muted-foreground">
                             Password must be at least 8 characters with one uppercase letter and one number.
                         </p>

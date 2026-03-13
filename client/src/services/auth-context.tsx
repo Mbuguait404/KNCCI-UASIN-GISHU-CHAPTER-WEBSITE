@@ -9,6 +9,7 @@ interface User {
     reg_no: string;
     role: string;
     phone?: string;
+    requirePasswordChange?: boolean;
 }
 
 interface AuthContextType {

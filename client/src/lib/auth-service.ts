@@ -25,6 +25,11 @@ export const authService = {
     async updateProfile(data: any) {
         const response = await api.patch('/profile', data);
         return response.data;
+    },
+
+    async changePassword(data: any) {
+        const response = await api.patch('/auth/change-password', data);
+        return response.data;
     }
 };
 
