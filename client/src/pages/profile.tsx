@@ -32,7 +32,16 @@ import {
     Edit,
     KeyRound,
     Eye,
-    EyeOff
+    EyeOff,
+    CheckCircle2,
+    XCircle,
+    Plus,
+    Package,
+    ShoppingCart,
+    DollarSign,
+    Loader2,
+    Trash2,
+    AlertCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -44,6 +53,7 @@ import { Link, useLocation } from "wouter";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/services/auth-context";
 import { businessService, BusinessData } from "@/services/business-service";
+import { cmsService, CmsStatus, CmsDashboard, CmsProduct } from "@/services/cms-service";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -783,39 +793,7 @@ export default function ProfilePage() {
                                         exit={{ opacity: 0, scale: 0.98 }}
                                         className="space-y-6"
                                     >
-                                        <div className="grid md:grid-cols-2 gap-8">
-                                            <motion.div whileHover={{ y: -5 }} transition={{ type: "spring", stiffness: 300 }}>
-                                                <Card className="rounded-[2.5rem] border-none shadow-2xl shadow-primary/5 p-10 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800/80 group overflow-hidden relative">
-                                                    <div className="absolute -top-10 -right-10 w-40 h-40 bg-secondary/5 rounded-full blur-[50px] group-hover:bg-secondary/10 transition-colors" />
-                                                    <div className="w-16 h-16 rounded-[1.5rem] bg-secondary/10 text-secondary flex items-center justify-center mb-8 shadow-sm group-hover:scale-110 transition-transform">
-                                                        <Store className="w-8 h-8" />
-                                                    </div>
-                                                    <h3 className="text-2xl font-extrabold mb-4 tracking-tight">Marketplace Hub</h3>
-                                                    <p className="text-sm text-muted-foreground mb-10 leading-[1.8] font-medium italic">Discover products, post services, and find verified regional suppliers within the Uasin Gishu trade network.</p>
-                                                    <Link href="/marketplace">
-                                                        <a className="text-primary font-bold text-xs flex items-center gap-2 hover:gap-4 transition-all uppercase tracking-[0.2em] group">
-                                                            Enter Marketplace <ChevronRight className="w-4 h-4 group-hover:translate-x-1" />
-                                                        </a>
-                                                    </Link>
-                                                </Card>
-                                            </motion.div>
-
-                                            <motion.div whileHover={{ y: -5 }} transition={{ type: "spring", stiffness: 300 }}>
-                                                <Card className="rounded-[2.5rem] border-none shadow-2xl shadow-primary/5 p-10 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800/80 group overflow-hidden relative">
-                                                    <div className="absolute -top-10 -right-10 w-40 h-40 bg-primary/5 rounded-full blur-[50px] group-hover:bg-primary/10 transition-colors" />
-                                                    <div className="w-16 h-16 rounded-[1.5rem] bg-primary/10 text-primary flex items-center justify-center mb-8 shadow-sm group-hover:scale-110 transition-transform">
-                                                        <Users className="w-8 h-8" />
-                                                    </div>
-                                                    <h3 className="text-2xl font-extrabold mb-4 tracking-tight">Verified Connections</h3>
-                                                    <p className="text-sm text-muted-foreground mb-10 leading-[1.8] font-medium italic">Communicate directly with verified KNCCI members to forge durable partnerships and expand your corporate reach.</p>
-                                                    <Link href="/member-directory">
-                                                        <a className="text-primary font-bold text-xs flex items-center gap-2 hover:gap-4 transition-all uppercase tracking-[0.2em] group">
-                                                            Search Members <ChevronRight className="w-4 h-4 group-hover:translate-x-1" />
-                                                        </a>
-                                                    </Link>
-                                                </Card>
-                                            </motion.div>
-                                        </div>
+                                        <MarketplaceTab business={business} user={user} onBusinessTabSwitch={() => setActiveTab("business")} />
                                     </motion.div>
                                 )}
 
@@ -1249,6 +1227,445 @@ export default function ProfilePage() {
                 </DialogContent>
             </Dialog>
 
+        </div>
+    );
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ═══ MARKETPLACE TAB COMPONENT ════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════
+
+interface MarketplaceTabProps {
+    business: BusinessData | null;
+    user: { name: string; email: string; phone?: string; [key: string]: any };
+    onBusinessTabSwitch: () => void;
+}
+
+function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabProps) {
+    const [cmsStatus, setCmsStatus] = useState<CmsStatus | null>(null);
+    const [dashboard, setDashboard] = useState<CmsDashboard | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [connecting, setConnecting] = useState(false);
+    const [cmsPassword, setCmsPassword] = useState("");
+    const [cmsConfirmPassword, setCmsConfirmPassword] = useState("");
+    const [showCmsPassword, setShowCmsPassword] = useState(false);
+    const [addingProduct, setAddingProduct] = useState(false);
+    const [showAddForm, setShowAddForm] = useState(false);
+    const [newProduct, setNewProduct] = useState({ name: "", description: "", price: "", category: "", stock: "" });
+
+    useEffect(() => {
+        loadCmsData();
+    }, [business]);
+
+    const loadCmsData = async () => {
+        if (!business) { setLoading(false); return; }
+        try {
+            const statusRes = await cmsService.getStatus();
+            setCmsStatus(statusRes.data);
+
+            if (statusRes.data.connected) {
+                const dashRes = await cmsService.getDashboard();
+                setDashboard(dashRes.data);
+            }
+        } catch (err) {
+            console.error("CMS status check failed:", err);
+            setCmsStatus({ connected: false, tenantId: null, connectedAt: null });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleConnect = async () => {
+        if (cmsPassword.length < 8) {
+            toast({ title: "Password too short", description: "Password must be at least 8 characters.", variant: "destructive" });
+            return;
+        }
+        if (cmsPassword !== cmsConfirmPassword) {
+            toast({ title: "Passwords don't match", description: "Please make sure both passwords match.", variant: "destructive" });
+            return;
+        }
+        try {
+            setConnecting(true);
+            const res = await cmsService.connect({ password: cmsPassword, confirmPassword: cmsConfirmPassword });
+            toast({ title: "🎉 Marketplace Activated!", description: res.data.message });
+            setCmsPassword(""); setCmsConfirmPassword("");
+            await loadCmsData();
+        } catch (error: any) {
+            toast({ title: "Activation Failed", description: error.response?.data?.message || "Could not activate marketplace account.", variant: "destructive" });
+        } finally {
+            setConnecting(false);
+        }
+    };
+
+    const handleAddProduct = async () => {
+        if (!newProduct.name || !newProduct.description || !newProduct.price || !newProduct.category) {
+            toast({ title: "Incomplete", description: "Please fill in all required fields.", variant: "destructive" });
+            return;
+        }
+        try {
+            setAddingProduct(true);
+            await cmsService.createProduct({
+                name: newProduct.name,
+                description: newProduct.description,
+                price: parseFloat(newProduct.price),
+                category: newProduct.category,
+                stock: newProduct.stock ? parseInt(newProduct.stock) : undefined,
+            });
+            toast({ title: "Product Added", description: `"${newProduct.name}" is now listed on the marketplace.` });
+            setNewProduct({ name: "", description: "", price: "", category: "", stock: "" });
+            setShowAddForm(false);
+            await loadCmsData();
+        } catch (error: any) {
+            toast({ title: "Error", description: error.response?.data?.message || "Failed to create product.", variant: "destructive" });
+        } finally {
+            setAddingProduct(false);
+        }
+    };
+
+    const handleDeleteProduct = async (productId: string, productName: string) => {
+        if (!confirm(`Delete "${productName}"? This cannot be undone.`)) return;
+        try {
+            await cmsService.deleteProduct(productId);
+            toast({ title: "Deleted", description: `"${productName}" has been removed.` });
+            await loadCmsData();
+        } catch (error: any) {
+            toast({ title: "Error", description: "Failed to delete product.", variant: "destructive" });
+        }
+    };
+
+    // ─── Loading ──────────────────────────────────────────────────
+    if (loading) {
+        return (
+            <Card className="rounded-[2.5rem] border-none shadow-2xl shadow-primary/5 p-12 bg-white dark:bg-slate-900 min-h-[400px] flex items-center justify-center">
+                <div className="flex flex-col items-center gap-4">
+                    <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                    <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Loading marketplace...</p>
+                </div>
+            </Card>
+        );
+    }
+
+    // ─── No business profile ─────────────────────────────────────
+    if (!business) {
+        return (
+            <Card className="rounded-[2.5rem] border-none shadow-2xl shadow-primary/5 p-12 bg-white dark:bg-slate-900 min-h-[500px] flex flex-col items-center justify-center text-center">
+                <div className="w-24 h-24 rounded-full bg-amber-500/10 flex items-center justify-center mb-8">
+                    <Store className="w-10 h-10 text-amber-500" />
+                </div>
+                <h3 className="text-3xl font-extrabold mb-4 tracking-tight">Business Profile Required</h3>
+                <p className="text-muted-foreground max-w-md font-medium leading-relaxed mb-8">
+                    To sell on the KNCCI Marketplace, you first need to set up your business profile. This ensures all marketplace sellers are verified KNCCI members.
+                </p>
+                <Button className="rounded-2xl h-12 px-8 font-extrabold shadow-xl shadow-primary/20" onClick={onBusinessTabSwitch}>
+                    <Briefcase className="w-4 h-4 mr-2" /> Set Up Business Profile
+                </Button>
+            </Card>
+        );
+    }
+
+    // ─── Readiness check items ───────────────────────────────────
+    const checks = [
+        { label: "Business Name", value: business.name, ok: !!business.name },
+        { label: "Email Address", value: business.email, ok: !!business.email },
+        { label: "Phone Number", value: business.phone, ok: !!business.phone },
+        { label: "Category", value: business.category, ok: !!business.category },
+        { label: "Location", value: business.location || "Not set", ok: !!business.location, optional: true },
+        { label: "Description", value: business.description ? "Provided" : "Not set", ok: !!business.description, optional: true },
+    ];
+    const requiredComplete = checks.filter(c => !c.optional).every(c => c.ok);
+
+    // ─── Not connected: Activation flow ──────────────────────────
+    if (!cmsStatus?.connected) {
+        return (
+            <div className="space-y-8">
+                {/* Hero */}
+                <Card className="rounded-[2.5rem] border-none shadow-2xl shadow-primary/5 p-10 lg:p-12 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800/80 overflow-hidden relative">
+                    <div className="absolute -top-20 -right-20 w-64 h-64 bg-secondary/10 rounded-full blur-[80px]" />
+                    <div className="relative z-10">
+                        <div className="flex items-center gap-4 mb-6">
+                            <div className="w-16 h-16 rounded-[1.5rem] bg-gradient-to-br from-secondary to-secondary/70 flex items-center justify-center text-white shadow-lg shadow-secondary/20">
+                                <Store className="w-8 h-8" />
+                            </div>
+                            <div>
+                                <h3 className="text-2xl lg:text-3xl font-extrabold tracking-tight">Activate Your Marketplace Store</h3>
+                                <p className="text-sm text-muted-foreground font-bold uppercase tracking-widest mt-1">Sell to the KNCCI Trade Network</p>
+                            </div>
+                        </div>
+                        <p className="text-muted-foreground max-w-2xl leading-relaxed font-medium">
+                            As a verified KNCCI member, you can list your products and services on the marketplace.
+                            Your business details will be used to set up your seller storefront. Complete the checklist below and choose a marketplace password to get started.
+                        </p>
+                    </div>
+                </Card>
+
+                <div className="grid md:grid-cols-2 gap-8">
+                    {/* Readiness Checklist */}
+                    <Card className="rounded-[2.5rem] border-none shadow-xl shadow-primary/5 p-8 bg-white dark:bg-slate-900">
+                        <h4 className="font-extrabold text-sm uppercase tracking-[0.2em] text-muted-foreground mb-6 flex items-center gap-2">
+                            <Shield className="w-4 h-4 text-primary" /> Pre-flight Checklist
+                        </h4>
+                        <div className="space-y-4">
+                            {checks.map((check, i) => (
+                                <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                                    <div className="flex items-center gap-3">
+                                        {check.ok ? (
+                                            <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
+                                        ) : (
+                                            <XCircle className={`w-5 h-5 shrink-0 ${check.optional ? 'text-amber-400' : 'text-red-400'}`} />
+                                        )}
+                                        <div>
+                                            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                                                {check.label} {check.optional && <span className="text-[9px] opacity-50">(optional)</span>}
+                                            </p>
+                                            <p className="text-sm font-extrabold truncate max-w-[200px]">{check.value}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        {!requiredComplete && (
+                            <Button variant="outline" className="w-full mt-6 rounded-xl h-11 font-bold border-primary/20 text-primary" onClick={onBusinessTabSwitch}>
+                                <Edit className="w-4 h-4 mr-2" /> Complete Business Profile
+                            </Button>
+                        )}
+                    </Card>
+
+                    {/* Activation Form */}
+                    <Card className="rounded-[2.5rem] border-none shadow-xl shadow-primary/5 p-8 bg-white dark:bg-slate-900">
+                        <h4 className="font-extrabold text-sm uppercase tracking-[0.2em] text-muted-foreground mb-2 flex items-center gap-2">
+                            <KeyRound className="w-4 h-4 text-primary" /> Marketplace Credentials
+                        </h4>
+                        <p className="text-xs text-muted-foreground mb-6 leading-relaxed font-medium">
+                            Choose a password for your marketplace seller account. Your KNCCI email <span className="font-bold text-foreground">{user.email}</span> will be your login.
+                        </p>
+
+                        <div className="space-y-4">
+                            <div className="space-y-1.5">
+                                <label className="font-bold text-[10px] uppercase tracking-widest text-muted-foreground ml-1">Marketplace Password</label>
+                                <div className="relative">
+                                    <Input
+                                        type={showCmsPassword ? "text" : "password"}
+                                        placeholder="Min 8 characters"
+                                        value={cmsPassword}
+                                        onChange={(e) => setCmsPassword(e.target.value)}
+                                        className="rounded-xl h-12 bg-slate-50 dark:bg-slate-800 border-border/50 pr-10"
+                                    />
+                                    <button type="button" onClick={() => setShowCmsPassword(!showCmsPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                                        {showCmsPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="font-bold text-[10px] uppercase tracking-widest text-muted-foreground ml-1">Confirm Password</label>
+                                <Input
+                                    type="password"
+                                    placeholder="Re-enter password"
+                                    value={cmsConfirmPassword}
+                                    onChange={(e) => setCmsConfirmPassword(e.target.value)}
+                                    className="rounded-xl h-12 bg-slate-50 dark:bg-slate-800 border-border/50"
+                                />
+                            </div>
+                        </div>
+
+                        <Button
+                            className="w-full mt-8 rounded-2xl h-14 font-extrabold text-sm shadow-xl shadow-primary/20 uppercase tracking-widest"
+                            disabled={!requiredComplete || connecting || cmsPassword.length < 8 || cmsPassword !== cmsConfirmPassword}
+                            onClick={handleConnect}
+                        >
+                            {connecting ? (
+                                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Activating...</>
+                            ) : (
+                                <><Store className="w-4 h-4 mr-2" /> Activate Seller Account</>
+                            )}
+                        </Button>
+
+                        {!requiredComplete && (
+                            <div className="mt-4 flex items-center gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                                <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
+                                <p className="text-xs font-bold text-amber-600 dark:text-amber-400">Complete required business fields first</p>
+                            </div>
+                        )}
+                    </Card>
+                </div>
+            </div>
+        );
+    }
+
+    // ─── Connected: Dashboard ────────────────────────────────────
+    const products: CmsProduct[] = dashboard?.products?.data || (Array.isArray(dashboard?.products) ? dashboard?.products as any : []);
+    const totalProducts = dashboard?.products?.total || products.length;
+    const totalOrders = dashboard?.orderStats?.totalOrders || 0;
+    const totalRevenue = dashboard?.orderStats?.totalRevenue || 0;
+
+    return (
+        <div className="space-y-8">
+            {/* Stats Row */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                {[
+                    { label: "Products", value: totalProducts, icon: <Package className="w-5 h-5" />, color: "from-secondary to-secondary/70", bg: "bg-secondary/10" },
+                    { label: "Orders", value: totalOrders, icon: <ShoppingCart className="w-5 h-5" />, color: "from-blue-500 to-indigo-600", bg: "bg-blue-500/10" },
+                    { label: "Revenue", value: `KES ${totalRevenue.toLocaleString()}`, icon: <DollarSign className="w-5 h-5" />, color: "from-emerald-500 to-teal-600", bg: "bg-emerald-500/10" },
+                    { label: "Status", value: "Active", icon: <CheckCircle2 className="w-5 h-5" />, color: "from-primary to-primary/70", bg: "bg-primary/10" },
+                ].map((stat, i) => (
+                    <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}>
+                        <Card className="rounded-3xl border-none shadow-xl shadow-primary/5 overflow-hidden relative group hover:shadow-primary/10 transition-all">
+                            <div className={`absolute top-0 right-0 w-24 h-24 ${stat.bg} rounded-full -mr-12 -mt-12 blur-2xl group-hover:scale-150 transition-transform duration-700`} />
+                            <CardContent className="p-6 relative">
+                                <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${stat.color} flex items-center justify-center text-white mb-4 shadow-lg group-hover:scale-110 transition-transform`}>
+                                    {stat.icon}
+                                </div>
+                                <p className="text-2xl font-extrabold tracking-tight">{stat.value}</p>
+                                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-1 opacity-70">{stat.label}</p>
+                            </CardContent>
+                        </Card>
+                    </motion.div>
+                ))}
+            </div>
+
+            {/* Products Card */}
+            <Card className="rounded-[2.5rem] border-none shadow-2xl shadow-primary/5 bg-white dark:bg-slate-900 overflow-hidden">
+                <CardHeader className="p-8 pb-4">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div>
+                            <CardTitle className="text-xl font-extrabold">Your Products</CardTitle>
+                            <CardDescription className="font-medium">Manage your marketplace listings</CardDescription>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <Link href="/marketplace">
+                                <Button variant="outline" className="rounded-xl font-bold text-xs uppercase tracking-widest border-primary/20 text-primary h-10 px-5">
+                                    <ExternalLink className="w-3.5 h-3.5 mr-2" /> View Store
+                                </Button>
+                            </Link>
+                            <Button className="rounded-xl font-bold text-xs uppercase tracking-widest h-10 px-5 shadow-lg shadow-primary/20" onClick={() => setShowAddForm(!showAddForm)}>
+                                <Plus className="w-4 h-4 mr-2" /> Add Product
+                            </Button>
+                        </div>
+                    </div>
+                </CardHeader>
+
+                {/* Add Product Form (inline) */}
+                <AnimatePresence>
+                    {showAddForm && (
+                        <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="overflow-hidden"
+                        >
+                            <div className="px-8 pb-6 pt-2 border-t border-border/20">
+                                <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary mb-4">New Product</p>
+                                <div className="grid sm:grid-cols-2 gap-4">
+                                    <Input placeholder="Product name *" value={newProduct.name} onChange={e => setNewProduct({ ...newProduct, name: e.target.value })} className="rounded-xl h-11" />
+                                    <Input placeholder="Category *" value={newProduct.category} onChange={e => setNewProduct({ ...newProduct, category: e.target.value })} className="rounded-xl h-11" />
+                                    <Input placeholder="Price (KES) *" type="number" value={newProduct.price} onChange={e => setNewProduct({ ...newProduct, price: e.target.value })} className="rounded-xl h-11" />
+                                    <Input placeholder="Stock quantity" type="number" value={newProduct.stock} onChange={e => setNewProduct({ ...newProduct, stock: e.target.value })} className="rounded-xl h-11" />
+                                </div>
+                                <Textarea placeholder="Product description *" value={newProduct.description} onChange={e => setNewProduct({ ...newProduct, description: e.target.value })} className="mt-4 rounded-xl min-h-[80px]" />
+                                <div className="flex justify-end gap-3 mt-4">
+                                    <Button variant="ghost" className="rounded-xl font-bold" onClick={() => setShowAddForm(false)}>Cancel</Button>
+                                    <Button className="rounded-xl px-8 font-bold shadow-lg shadow-primary/20" onClick={handleAddProduct} disabled={addingProduct}>
+                                        {addingProduct ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</> : "Save Product"}
+                                    </Button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* Products List */}
+                <CardContent className="p-0">
+                    {products.length === 0 ? (
+                        <div className="p-12 text-center">
+                            <div className="w-20 h-20 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center mx-auto mb-6">
+                                <Package className="w-8 h-8 text-muted-foreground/30" />
+                            </div>
+                            <h4 className="font-extrabold text-lg mb-2">No Products Yet</h4>
+                            <p className="text-sm text-muted-foreground max-w-sm mx-auto font-medium">Start listing your products and services to reach the KNCCI trade network.</p>
+                            <Button className="mt-6 rounded-xl font-bold shadow-lg shadow-primary/20" onClick={() => setShowAddForm(true)}>
+                                <Plus className="w-4 h-4 mr-2" /> Add Your First Product
+                            </Button>
+                        </div>
+                    ) : (
+                        <div className="divide-y divide-border/20">
+                            {products.map((product, i) => (
+                                <motion.div
+                                    key={product._id || i}
+                                    initial={{ opacity: 0, x: -10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: i * 0.05 }}
+                                    className="p-6 flex items-center justify-between gap-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all group"
+                                >
+                                    <div className="flex items-center gap-4 min-w-0">
+                                        <div className="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0 overflow-hidden">
+                                            {product.images?.[0] ? (
+                                                <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
+                                            ) : (
+                                                <Package className="w-6 h-6 text-muted-foreground/40" />
+                                            )}
+                                        </div>
+                                        <div className="min-w-0">
+                                            <h4 className="font-extrabold text-sm truncate group-hover:text-primary transition-colors">{product.name}</h4>
+                                            <div className="flex items-center gap-3 mt-1">
+                                                <span className="text-xs font-bold text-primary">KES {product.price?.toLocaleString()}</span>
+                                                <Badge variant="outline" className={`text-[9px] h-5 font-bold tracking-widest uppercase ${
+                                                    product.isActive !== false ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600' : 'border-red-500/30 bg-red-500/10 text-red-500'
+                                                }`}>
+                                                    {product.isActive !== false ? "Active" : "Inactive"}
+                                                </Badge>
+                                                {product.category && <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{product.category}</span>}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="rounded-xl text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 opacity-0 group-hover:opacity-100 transition-all"
+                                        onClick={() => handleDeleteProduct(product._id, product.name)}
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                </motion.div>
+                            ))}
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+
+            {/* Quick links */}
+            <div className="grid md:grid-cols-2 gap-6">
+                <motion.div whileHover={{ y: -3 }} transition={{ type: "spring", stiffness: 300 }}>
+                    <Card className="rounded-[2rem] border-none shadow-xl shadow-primary/5 p-8 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800/80 group overflow-hidden relative cursor-pointer" onClick={() => window.open('/marketplace', '_blank')}>
+                        <div className="absolute -top-10 -right-10 w-32 h-32 bg-secondary/5 rounded-full blur-[40px] group-hover:bg-secondary/10 transition-colors" />
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-xl bg-secondary/10 text-secondary flex items-center justify-center group-hover:scale-110 transition-transform">
+                                <Store className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <h4 className="font-extrabold text-sm">Visit Marketplace</h4>
+                                <p className="text-xs text-muted-foreground font-medium">Browse the public storefront</p>
+                            </div>
+                            <ChevronRight className="w-5 h-5 text-muted-foreground ml-auto group-hover:translate-x-1 transition-transform" />
+                        </div>
+                    </Card>
+                </motion.div>
+                <motion.div whileHover={{ y: -3 }} transition={{ type: "spring", stiffness: 300 }}>
+                    <Link href="/member-directory">
+                        <Card className="rounded-[2rem] border-none shadow-xl shadow-primary/5 p-8 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800/80 group overflow-hidden relative cursor-pointer">
+                            <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary/5 rounded-full blur-[40px] group-hover:bg-primary/10 transition-colors" />
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center group-hover:scale-110 transition-transform">
+                                    <Users className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h4 className="font-extrabold text-sm">Member Directory</h4>
+                                    <p className="text-xs text-muted-foreground font-medium">Connect with verified members</p>
+                                </div>
+                                <ChevronRight className="w-5 h-5 text-muted-foreground ml-auto group-hover:translate-x-1 transition-transform" />
+                            </div>
+                        </Card>
+                    </Link>
+                </motion.div>
+            </div>
         </div>
     );
 }
