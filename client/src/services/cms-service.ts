@@ -11,14 +11,28 @@ export interface CmsProduct {
     name: string;
     description: string;
     price: number;
+    basePrice?: number;
+    additions?: number;
     category: string;
     images: string[];
     isActive: boolean;
     stock?: number;
+    unit?: string;
     slug?: string;
     createdAt?: string;
     updatedAt?: string;
 }
+
+export interface CmsCategory {
+    _id: string;
+    name: string;
+    slug: string;
+    categoryType: 'product' | 'service';
+    description?: string;
+    status: 'Active' | 'Inactive';
+    createdAt: string;
+}
+
 
 export interface CmsDashboard {
     products: {
@@ -44,7 +58,16 @@ export interface CreateProductPayload {
     images?: string[];
     isActive?: boolean;
     stock?: number;
+    unit?: string;
 }
+
+export interface CreateCategoryPayload {
+    name: string;
+    categoryType: 'product' | 'service';
+    description?: string;
+    status?: 'Active' | 'Inactive';
+}
+
 
 export const cmsService = {
     /** Check if the member's business is connected to the CMS marketplace */
@@ -95,6 +118,27 @@ export const cmsService = {
     /** Delete a product */
     async deleteProduct(productId: string): Promise<{ success: boolean }> {
         const response = await api.delete(`/cms/products/${productId}`);
+        return response.data;
+    },
+
+    /** Categories */
+    async getCategories(params?: Record<string, any>): Promise<{ success: boolean; data: { data: CmsCategory[]; total: number } }> {
+        const response = await api.get('/cms/categories', { params });
+        return response.data;
+    },
+
+    async createCategory(payload: CreateCategoryPayload): Promise<{ success: boolean; data: CmsCategory }> {
+        const response = await api.post('/cms/categories', payload);
+        return response.data;
+    },
+
+    async updateCategory(categoryId: string, payload: Partial<CreateCategoryPayload>): Promise<{ success: boolean; data: CmsCategory }> {
+        const response = await api.patch(`/cms/categories/${categoryId}`, payload);
+        return response.data;
+    },
+
+    async deleteCategory(categoryId: string): Promise<{ success: boolean }> {
+        const response = await api.delete(`/cms/categories/${categoryId}`);
         return response.data;
     },
 };
