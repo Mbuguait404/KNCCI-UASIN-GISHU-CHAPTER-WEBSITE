@@ -1685,11 +1685,17 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
                             <Button variant="outline" className="rounded-xl font-bold text-xs uppercase tracking-widest border-primary/20 text-primary h-10 px-5" onClick={() => setShowCategoryMgmt(true)}>
                                 <Settings className="w-3.5 h-3.5 mr-2" /> Categories
                             </Button>
-                            <Link href="/marketplace">
-                                <Button variant="outline" className="rounded-xl font-bold text-xs uppercase tracking-widest border-primary/20 text-primary h-10 px-5">
-                                    <ExternalLink className="w-3.5 h-3.5 mr-2" /> View Store
-                                </Button>
-                            </Link>
+                            <Button
+                                variant="outline"
+                                className="rounded-xl font-bold text-xs uppercase tracking-widest border-primary/20 text-primary h-10 px-5"
+                                onClick={() => {
+                                    const token = localStorage.getItem('accessToken');
+                                    const url = token ? `${import.meta.env.VITE_MARKETPLACE_URL || 'http://localhost:3000'}/?token=${token}` : `${import.meta.env.VITE_MARKETPLACE_URL || 'http://localhost:3000'}/`;
+                                    window.open(url, '_blank');
+                                }}
+                            >
+                                <ExternalLink className="w-3.5 h-3.5 mr-2" /> View Store
+                            </Button>
                             <Button className="rounded-xl font-bold text-xs uppercase tracking-widest h-10 px-5 shadow-lg shadow-primary/20" onClick={() => {
                                 setShowAddForm(!showAddForm);
                                 if (!showAddForm) loadCategories();
@@ -1827,7 +1833,11 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
             {/* Quick links */}
             <div className="grid md:grid-cols-2 gap-6">
                 <motion.div whileHover={{ y: -3 }} transition={{ type: "spring", stiffness: 300 }}>
-                    <Card className="rounded-[2rem] border-none shadow-xl shadow-primary/5 p-8 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800/80 group overflow-hidden relative cursor-pointer" onClick={() => window.open('/marketplace', '_blank')}>
+                    <Card className="rounded-[2rem] border-none shadow-xl shadow-primary/5 p-8 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800/80 group overflow-hidden relative cursor-pointer" onClick={() => {
+                        const token = localStorage.getItem('accessToken');
+                        const url = token ? `${import.meta.env.VITE_MARKETPLACE_URL || 'http://localhost:3000'}/?token=${token}` : `${import.meta.env.VITE_MARKETPLACE_URL || 'http://localhost:3000'}/`;
+                        window.open(url, '_blank');
+                    }}>
                         <div className="absolute -top-10 -right-10 w-32 h-32 bg-secondary/5 rounded-full blur-[40px] group-hover:bg-secondary/10 transition-colors" />
                         <div className="flex items-center gap-4">
                             <div className="w-12 h-12 rounded-xl bg-secondary/10 text-secondary flex items-center justify-center group-hover:scale-110 transition-transform">
