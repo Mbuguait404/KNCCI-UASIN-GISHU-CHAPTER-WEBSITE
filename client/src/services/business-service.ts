@@ -18,6 +18,9 @@ export interface BusinessData {
     business_permit?: string;
     certificateUrl?: string;
     logoUrl?: string;
+    // CMS Marketplace
+    cms_tenant_id?: string;
+    cms_connected_at?: string;
 }
 
 
