@@ -53,7 +53,7 @@ import { Link, useLocation } from "wouter";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/services/auth-context";
 import { businessService, BusinessData } from "@/services/business-service";
-import { cmsService, CmsStatus, CmsDashboard, CmsProduct, CmsCategory } from "@/services/cms-service";
+import { cmsService, CmsStatus, CmsDashboard, CmsProduct, CmsCategory, CmsOrder } from "@/services/cms-service";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -1264,6 +1264,13 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
     const [newCategory, setNewCategory] = useState({ name: "", categoryType: 'product' as 'product' | 'service', description: "" });
     const [creatingCategory, setCreatingCategory] = useState(false);
 
+    // Sub-tab navigation
+    const [subTab, setSubTab] = useState<'overview' | 'products' | 'categories' | 'orders'>('overview');
+    
+    // Orders state
+    const [orders, setOrders] = useState<CmsOrder[]>([]);
+    const [loadingOrders, setLoadingOrders] = useState(false);
+    
     useEffect(() => {
         loadCmsData();
     }, [business]);
@@ -1427,7 +1434,6 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
         }
     };
 
-
     const handleDeleteProduct = async (productId: string, productName: string) => {
         if (!confirm(`Delete "${productName}"? This cannot be undone.`)) return;
         try {
@@ -1436,6 +1442,94 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
             await loadCmsData();
         } catch (error: any) {
             toast({ title: "Error", description: "Failed to delete product.", variant: "destructive" });
+        }
+    };
+
+    const loadOrders = async () => {
+        try {
+            setLoadingOrders(true);
+            const res = await cmsService.getOrders();
+            if (res.success) {
+                // Handle different response shapes from CMS
+                const responseData = res.data as any;
+                let fetchedOrders = [];
+                if (Array.isArray(responseData)) fetchedOrders = responseData;
+                else if (Array.isArray(responseData?.data)) fetchedOrders = responseData.data;
+                else if (Array.isArray(responseData?.orders)) fetchedOrders = responseData.orders;
+                setOrders(fetchedOrders);
+            } else {
+                setOrders([]);
+            }
+        } catch (err: any) {
+            console.error("Failed to load orders:", err);
+            if (err.response?.status === 400 && err.response?.data?.error?.includes("Session expired")) {
+                setIsSessionExpired(true);
+            }
+        } finally {
+            setLoadingOrders(false);
+        }
+    };
+
+    useEffect(() => {
+        if (subTab === 'orders' && cmsStatus?.connected && !isSessionExpired) {
+            loadOrders();
+        }
+        if (subTab === 'categories' && categories.length === 0 && cmsStatus?.connected && !isSessionExpired) {
+            loadCategories();
+        }
+    }, [subTab, cmsStatus?.connected, isSessionExpired]);
+
+    const handleUpdateOrderStatus = async (orderId: string, status: string) => {
+        try {
+            await cmsService.updateOrderStatus(orderId, status);
+            toast({ title: "Updated", description: "Order status has been updated." });
+            await loadOrders();
+            await loadCmsData(); // Update dashboard stats
+        } catch (err: any) {
+            toast({ title: "Error", description: "Failed to update order status.", variant: "destructive" });
+        }
+    };
+
+    const handleSeedOrders = async () => {
+        try {
+            const product = dashboard?.products?.data?.[0];
+            const productId = product?._id || "640a1b2c3d4e5f6a7b8c9d0e"; // Dummy or real ID
+            const productName = product?.name || "Marketplace Product";
+
+            const testOrder = {
+                guestInfo: {
+                    name: "Jane Doe Test",
+                    email: "jane.doe@example.com",
+                    phone: "+254 711 222333"
+                },
+                items: [
+                   { 
+                     productId: productId,
+                     name: productName, 
+                     quantity: 2, 
+                     basePrice: 500,
+                     totalPrice: 1000
+                   }
+                ],
+                paymentInfo: {
+                    method: 'mpesa',
+                    paymentReference: 'SEED-' + Math.random().toString(36).substring(7).toUpperCase(),
+                    paidAmount: 1000,
+                    paidAt: new Date().toISOString()
+                },
+                shipping: {
+                    type: 'pickup',
+                    price: 0
+                },
+                totalAmount: 1000,
+                status: "Pending"
+            };
+            await cmsService.createTestOrder(testOrder);
+            toast({ title: "Success", description: "Test order seeded successfully." });
+            await loadOrders();
+            await loadCmsData(); // Update dash
+        } catch (err: any) {
+            toast({ title: "Error", description: err.response?.data?.message || "Failed to seed order.", variant: "destructive" });
         }
     };
 
@@ -1673,23 +1767,93 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
                 ))}
             </div>
 
-            {/* Products Card */}
-            <Card className="rounded-[2.5rem] border-none shadow-2xl shadow-primary/5 bg-white dark:bg-slate-900 overflow-hidden">
-                <CardHeader className="p-8 pb-4">
+            {/* Marketplace Navigation Tabs */}
+            <div className="flex flex-wrap gap-2 border-b border-border/40 pb-2">
+                {[
+                    { id: 'overview', label: 'Overview', icon: <LayoutDashboard className="w-4 h-4" /> },
+                    { id: 'products', label: 'Products', icon: <Package className="w-4 h-4" /> },
+                    { id: 'categories', label: 'Categories', icon: <Settings className="w-4 h-4" /> },
+                    { id: 'orders', label: 'Orders', icon: <ShoppingCart className="w-4 h-4" /> },
+                ].map(tab => (
+                    <Button
+                        key={tab.id}
+                        variant={subTab === tab.id ? "secondary" : "ghost"}
+                        className={`rounded-xl font-bold uppercase tracking-widest text-[10px] h-10 px-5 ${subTab === tab.id ? 'bg-primary/10 text-primary hover:bg-primary/20' : 'text-muted-foreground hover:text-foreground'}`}
+                        onClick={() => setSubTab(tab.id as any)}
+                    >
+                        {tab.icon}
+                        <span className="ml-2">{tab.label}</span>
+                    </Button>
+                ))}
+            </div>
+
+            {/* Content Switch */}
+            <AnimatePresence mode="wait">
+                {subTab === 'overview' && (
+                    <motion.div key="overview" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }} className="space-y-6">
+                        <div className="grid md:grid-cols-2 gap-6">
+                            <motion.div whileHover={{ y: -3 }} transition={{ type: "spring", stiffness: 300 }}>
+                                <Card className="rounded-[2rem] border-none shadow-xl shadow-primary/5 p-8 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800/80 group overflow-hidden relative cursor-pointer" onClick={() => {
+                                    const token = localStorage.getItem('accessToken');
+                                    const url = token ? `${import.meta.env.VITE_MARKETPLACE_URL || 'http://localhost:3000'}/?token=${token}` : `${import.meta.env.VITE_MARKETPLACE_URL || 'http://localhost:3000'}/`;
+                                    window.open(url, '_blank');
+                                }}>
+                                    <div className="absolute -top-10 -right-10 w-32 h-32 bg-secondary/5 rounded-full blur-[40px] group-hover:bg-secondary/10 transition-colors" />
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 rounded-xl bg-secondary/10 text-secondary flex items-center justify-center group-hover:scale-110 transition-transform">
+                                            <Store className="w-6 h-6" />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-extrabold text-sm">Visit Marketplace</h4>
+                                            <p className="text-xs text-muted-foreground font-medium">Browse the public storefront</p>
+                                        </div>
+                                        <ChevronRight className="w-5 h-5 text-muted-foreground ml-auto group-hover:translate-x-1 transition-transform" />
+                                    </div>
+                                </Card>
+                            </motion.div>
+                            <motion.div whileHover={{ y: -3 }} transition={{ type: "spring", stiffness: 300 }}>
+                                <Link href="/member-directory">
+                                    <Card className="rounded-[2rem] border-none shadow-xl shadow-primary/5 p-8 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800/80 group overflow-hidden relative cursor-pointer">
+                                        <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary/5 rounded-full blur-[40px] group-hover:bg-primary/10 transition-colors" />
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center group-hover:scale-110 transition-transform">
+                                                <Users className="w-6 h-6" />
+                                            </div>
+                                            <div>
+                                                <h4 className="font-extrabold text-sm">Member Directory</h4>
+                                                <p className="text-xs text-muted-foreground font-medium">Connect with verified members</p>
+                                            </div>
+                                            <ChevronRight className="w-5 h-5 text-muted-foreground ml-auto group-hover:translate-x-1 transition-transform" />
+                                        </div>
+                                    </Card>
+                                </Link>
+                            </motion.div>
+                        </div>
+                    </motion.div>
+                )}
+
+                {subTab === 'products' && (
+                    <motion.div key="products" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }}>
+                        {/* Products Card */}
+                        <Card className="rounded-[2.5rem] border-none shadow-2xl shadow-primary/5 bg-white dark:bg-slate-900 overflow-hidden">
+                            <CardHeader className="p-8 pb-4">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                         <div>
                             <CardTitle className="text-xl font-extrabold">Your Products</CardTitle>
                             <CardDescription className="font-medium">Manage your marketplace listings</CardDescription>
                         </div>
                         <div className="flex items-center gap-3">
-                            <Button variant="outline" className="rounded-xl font-bold text-xs uppercase tracking-widest border-primary/20 text-primary h-10 px-5" onClick={() => setShowCategoryMgmt(true)}>
-                                <Settings className="w-3.5 h-3.5 mr-2" /> Categories
+                            <Button
+                                variant="outline"
+                                className="rounded-xl font-bold text-xs uppercase tracking-widest border-primary/20 text-primary h-10 px-5"
+                                onClick={() => {
+                                    const token = localStorage.getItem('accessToken');
+                                    const url = token ? `${import.meta.env.VITE_MARKETPLACE_URL || 'http://localhost:3000'}/?token=${token}` : `${import.meta.env.VITE_MARKETPLACE_URL || 'http://localhost:3000'}/`;
+                                    window.open(url, '_blank');
+                                }}
+                            >
+                                <ExternalLink className="w-3.5 h-3.5 mr-2" /> View Store
                             </Button>
-                            <Link href="/marketplace">
-                                <Button variant="outline" className="rounded-xl font-bold text-xs uppercase tracking-widest border-primary/20 text-primary h-10 px-5">
-                                    <ExternalLink className="w-3.5 h-3.5 mr-2" /> View Store
-                                </Button>
-                            </Link>
                             <Button className="rounded-xl font-bold text-xs uppercase tracking-widest h-10 px-5 shadow-lg shadow-primary/20" onClick={() => {
                                 setShowAddForm(!showAddForm);
                                 if (!showAddForm) loadCategories();
@@ -1823,42 +1987,170 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
                     )}
                 </CardContent>
             </Card>
+            </motion.div>
+                )}
 
-            {/* Quick links */}
-            <div className="grid md:grid-cols-2 gap-6">
-                <motion.div whileHover={{ y: -3 }} transition={{ type: "spring", stiffness: 300 }}>
-                    <Card className="rounded-[2rem] border-none shadow-xl shadow-primary/5 p-8 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800/80 group overflow-hidden relative cursor-pointer" onClick={() => window.open('/marketplace', '_blank')}>
-                        <div className="absolute -top-10 -right-10 w-32 h-32 bg-secondary/5 rounded-full blur-[40px] group-hover:bg-secondary/10 transition-colors" />
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-xl bg-secondary/10 text-secondary flex items-center justify-center group-hover:scale-110 transition-transform">
-                                <Store className="w-6 h-6" />
-                            </div>
-                            <div>
-                                <h4 className="font-extrabold text-sm">Visit Marketplace</h4>
-                                <p className="text-xs text-muted-foreground font-medium">Browse the public storefront</p>
-                            </div>
-                            <ChevronRight className="w-5 h-5 text-muted-foreground ml-auto group-hover:translate-x-1 transition-transform" />
-                        </div>
-                    </Card>
-                </motion.div>
-                <motion.div whileHover={{ y: -3 }} transition={{ type: "spring", stiffness: 300 }}>
-                    <Link href="/member-directory">
-                        <Card className="rounded-[2rem] border-none shadow-xl shadow-primary/5 p-8 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800/80 group overflow-hidden relative cursor-pointer">
-                            <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary/5 rounded-full blur-[40px] group-hover:bg-primary/10 transition-colors" />
-                            <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center group-hover:scale-110 transition-transform">
-                                    <Users className="w-6 h-6" />
+                {subTab === 'categories' && (
+                    <motion.div key="categories" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }}>
+                        <Card className="rounded-[2.5rem] border-none shadow-2xl shadow-primary/5 bg-white dark:bg-slate-900 overflow-hidden min-h-[400px]">
+                            <CardHeader className="p-8 pb-4">
+                                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                                    <div>
+                                        <CardTitle className="text-xl font-extrabold">Categories</CardTitle>
+                                        <CardDescription className="font-medium">Organize your marketplace offerings</CardDescription>
+                                    </div>
                                 </div>
-                                <div>
-                                    <h4 className="font-extrabold text-sm">Member Directory</h4>
-                                    <p className="text-xs text-muted-foreground font-medium">Connect with verified members</p>
+                            </CardHeader>
+                            <CardContent className="p-8 pt-0 space-y-8">
+                                <div className="p-6 bg-primary/5 rounded-[2rem] border border-primary/10 max-w-xl">
+                                    <p className="text-[10px] font-bold uppercase tracking-widest text-primary mb-4">Add New Category</p>
+                                    <div className="grid gap-4">
+                                        <Input
+                                            placeholder="Category Name"
+                                            value={newCategory.name}
+                                            onChange={e => setNewCategory({ ...newCategory, name: e.target.value })}
+                                            className="rounded-xl h-11"
+                                        />
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <Select
+                                                value={newCategory.categoryType}
+                                                onValueChange={(val: any) => setNewCategory({ ...newCategory, categoryType: val })}
+                                            >
+                                                <SelectTrigger className="rounded-xl h-11"><SelectValue /></SelectTrigger>
+                                                <SelectContent className="rounded-xl">
+                                                    <SelectItem value="product">Product</SelectItem>
+                                                    <SelectItem value="service">Service</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <Button
+                                                className="rounded-xl h-11 font-extrabold bg-primary shadow-lg shadow-primary/10"
+                                                onClick={handleCreateCategory}
+                                                disabled={creatingCategory || !newCategory.name}
+                                            >
+                                                {creatingCategory ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Plus className="w-4 h-4 mr-2" /> Create</>}
+                                            </Button>
+                                        </div>
+                                    </div>
                                 </div>
-                                <ChevronRight className="w-5 h-5 text-muted-foreground ml-auto group-hover:translate-x-1 transition-transform" />
-                            </div>
+
+                                <div className="space-y-4">
+                                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Existing Categories</p>
+                                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                        {categories.map(c => (
+                                            <div key={c._id} className="flex items-center justify-between p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-border/20 group">
+                                                <div className="min-w-0">
+                                                    <p className="text-sm font-bold truncate">{c.name}</p>
+                                                    <Badge variant="outline" className="text-[9px] mt-1 h-5 font-bold tracking-widest uppercase border-primary/20 text-primary">
+                                                        {c.categoryType}
+                                                    </Badge>
+                                                </div>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all"
+                                                    onClick={() => handleDeleteCategory(c._id, c.name)}
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </Button>
+                                            </div>
+                                        ))}
+                                        {categories.length === 0 && (
+                                            <div className="text-center py-12 text-muted-foreground col-span-full">
+                                                <p className="text-sm font-medium">No categories created yet.</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </CardContent>
                         </Card>
-                    </Link>
-                </motion.div>
-            </div>
+                    </motion.div>
+                )}
+
+                {subTab === 'orders' && (
+                    <motion.div key="orders" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }}>
+                        <Card className="rounded-[2.5rem] border-none shadow-2xl shadow-primary/5 bg-white dark:bg-slate-900 overflow-hidden min-h-[400px]">
+                            <CardHeader className="p-8 pb-4">
+                                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                                    <div>
+                                        <CardTitle className="text-xl font-extrabold">Order Management</CardTitle>
+                                        <CardDescription className="font-medium">Track and fulfill customer orders</CardDescription>
+                                    </div>
+                                    <Button
+                                        variant="outline"
+                                        className="rounded-xl font-bold text-xs uppercase tracking-widest border-primary/20 text-primary h-10 px-5"
+                                        onClick={handleSeedOrders}
+                                    >
+                                        <Plus className="w-3.5 h-3.5 mr-2" /> Seed Test Order
+                                    </Button>
+                                </div>
+                            </CardHeader>
+                            <CardContent className="p-0">
+                                {loadingOrders ? (
+                                    <div className="flex items-center justify-center p-12">
+                                        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                                    </div>
+                                ) : (orders || []).length === 0 ? (
+                                    <div className="p-12 text-center">
+                                        <div className="w-20 h-20 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center mx-auto mb-6">
+                                            <ShoppingCart className="w-8 h-8 text-muted-foreground/30" />
+                                        </div>
+                                        <h4 className="font-extrabold text-lg mb-2">No Orders Yet</h4>
+                                        <p className="text-sm text-muted-foreground max-w-sm mx-auto font-medium">When customers buy your products, orders will appear here.</p>
+                                    </div>
+                                ) : (
+                                    <div className="divide-y divide-border/20">
+                                        {(orders || []).map((order, i) => (
+                                            <div key={order._id || i} className="p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all">
+                                                <div className="flex items-start gap-4 flex-1 min-w-0">
+                                                    <div className="flex-1 min-w-0 space-y-1">
+                                                        <div className="flex items-center gap-2">
+                                                            <h4 className="font-extrabold text-sm truncate">{order.guestInfo?.name || 'Guest Customer'}</h4>
+                                                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
+                                                                {order.id || `#${order._id.slice(-6)}`}
+                                                            </span>
+                                                        </div>
+                                                        <p className="text-xs text-muted-foreground font-medium truncate">{order.guestInfo?.email}</p>
+                                                        <div className="pt-2 flex items-center gap-3">
+                                                            <span className="text-xs font-bold text-primary">KES {(order.totalAmount || 0).toLocaleString()}</span>
+                                                            <span className="text-[10px] text-muted-foreground">•</span>
+                                                            <span className="text-xs font-medium text-muted-foreground">
+                                                                {order.items?.length || 0} item(s)
+                                                            </span>
+                                                            <span className="text-[10px] text-muted-foreground">•</span>
+                                                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{new Date(order.createdAt).toLocaleDateString()}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-3 w-full md:w-auto mt-4 md:mt-0">
+                                                    <Select
+                                                        value={(order.status || 'Pending').toLowerCase()}
+                                                        onValueChange={(val) => handleUpdateOrderStatus(order._id, val.charAt(0).toUpperCase() + val.slice(1))}
+                                                    >
+                                                        <SelectTrigger className="rounded-xl h-10 w-[140px] text-xs font-bold uppercase tracking-widest">
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                        <SelectContent className="rounded-xl">
+                                                            <SelectItem value="pending">Pending</SelectItem>
+                                                            <SelectItem value="paid">Paid</SelectItem>
+                                                            <SelectItem value="processing">Processing</SelectItem>
+                                                            <SelectItem value="shipped">Shipped</SelectItem>
+                                                            <SelectItem value="completed">Completed</SelectItem>
+                                                            <SelectItem value="cancelled">Cancelled</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+
+
 
             {/* Product Detail Dialog */}
             <Dialog open={!!selectedProduct} onOpenChange={(open) => !open && setSelectedProduct(null)}>
@@ -2002,75 +2294,7 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
                 </DialogContent>
             </Dialog>
 
-            {/* Category Management Dialog */}
-            <Dialog open={showCategoryMgmt} onOpenChange={setShowCategoryMgmt}>
-                <DialogContent className="sm:max-w-[500px] rounded-[2rem]">
-                    <DialogHeader>
-                        <DialogTitle className="text-xl font-extrabold tracking-tight">Category management</DialogTitle>
-                        <DialogDescription className="text-xs font-medium">Create and manage your product/service categories.</DialogDescription>
-                    </DialogHeader>
 
-                    <div className="space-y-6 pt-4">
-                        <div className="p-4 bg-primary/5 rounded-2xl border border-primary/10 space-y-4">
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-primary">Add New Category</p>
-                            <div className="grid gap-3">
-                                <Input
-                                    placeholder="Category Name"
-                                    value={newCategory.name}
-                                    onChange={e => setNewCategory({ ...newCategory, name: e.target.value })}
-                                    className="rounded-xl h-10"
-                                />
-                                <div className="grid grid-cols-2 gap-3">
-                                    <Select
-                                        value={newCategory.categoryType}
-                                        onValueChange={(val: any) => setNewCategory({ ...newCategory, categoryType: val })}
-                                    >
-                                        <SelectTrigger className="rounded-xl h-10"><SelectValue /></SelectTrigger>
-                                        <SelectContent className="rounded-xl">
-                                            <SelectItem value="product">Product</SelectItem>
-                                            <SelectItem value="service">Service</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <Button
-                                        className="rounded-xl h-10 font-bold bg-primary shadow-lg shadow-primary/10"
-                                        onClick={handleCreateCategory}
-                                        disabled={creatingCategory || !newCategory.name}
-                                    >
-                                        {creatingCategory ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Plus className="w-4 h-4 mr-2" /> Add</>}
-                                    </Button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="space-y-3">
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Existing Categories</p>
-                            <div className="max-h-[300px] overflow-y-auto space-y-2 pr-2">
-                                {categories.map(c => (
-                                    <div key={c._id} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-border/20 group">
-                                        <div className="min-w-0">
-                                            <p className="text-sm font-bold truncate">{c.name}</p>
-                                            <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">{c.categoryType}</p>
-                                        </div>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-8 w-8 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all"
-                                            onClick={() => handleDeleteCategory(c._id, c.name)}
-                                        >
-                                            <Trash2 className="w-3.5 h-3.5" />
-                                        </Button>
-                                    </div>
-                                ))}
-                                {categories.length === 0 && (
-                                    <div className="text-center py-8 text-muted-foreground">
-                                        <p className="text-xs font-medium italic">No categories created yet</p>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </DialogContent>
-            </Dialog>
         </div>
     );
 }

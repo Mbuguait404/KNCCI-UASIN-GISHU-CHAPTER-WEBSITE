@@ -33,6 +33,36 @@ export interface CmsCategory {
     createdAt: string;
 }
 
+export interface CmsOrder {
+    _id: string;
+    id: string; // CMS order number/id
+    guestInfo?: {
+        name?: string;
+        email: string;
+        phone?: string;
+    };
+    status: 'Pending' | 'Paid' | 'Processing' | 'Completed' | 'Cancelled';
+    totalAmount: number;
+    paymentInfo?: {
+        method: string;
+        paymentReference: string;
+        paidAmount: number;
+        paidAt: string;
+    };
+    shipping: {
+        type: 'pickup' | 'shipping';
+        price: number;
+        town?: string;
+    };
+    items: Array<{
+        productId: string;
+        name: string;
+        quantity: number;
+        basePrice: number;
+        totalPrice: number;
+    }>;
+    createdAt: string;
+}
 
 export interface CmsDashboard {
     products: {
@@ -141,4 +171,20 @@ export const cmsService = {
         const response = await api.delete(`/cms/categories/${categoryId}`);
         return response.data;
     },
+
+    /** Orders */
+    async getOrders(params?: Record<string, any>): Promise<{ success: boolean; data: { data: CmsOrder[]; total: number } }> {
+        const response = await api.get('/cms/orders', { params });
+        return response.data;
+    },
+
+    async updateOrderStatus(orderId: string, status: string): Promise<{ success: boolean; data: CmsOrder }> {
+        const response = await api.patch(`/cms/orders/${orderId}/status`, { status });
+        return response.data;
+    },
+
+    async createTestOrder(payload: any): Promise<{ success: boolean; data: CmsOrder }> {
+        const response = await api.post('/cms/orders/seed', payload);
+        return response.data;
+    }
 };
