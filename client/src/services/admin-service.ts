@@ -8,6 +8,8 @@ export interface DashboardStats {
         Silver: number;
         Gold: number;
     };
+    totalSellers?: number;
+    pendingSellers?: number;
 }
 
 export interface MemberListParams {
@@ -53,6 +55,64 @@ export interface PaginatedMembers {
         limit: number;
         totalPages: number;
     };
+}
+
+// ── Seller Types ────────────────────────────────────────────────────────────
+
+export type SellerStatus = 'pending' | 'approved' | 'rejected' | 'deactivated';
+
+export interface SellerDoc {
+    _id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    phone?: string;
+    businessName: string;
+    businessCategory: string;
+    businessDescription?: string;
+    businessLocation?: string;
+    businessWebsite?: string;
+    businessPhone?: string;
+    businessEmail?: string;
+    kraPin?: string;
+    businessRegistrationNo?: string;
+    logoUrl?: string;
+    status: SellerStatus;
+    rejectionReason?: string;
+    adminNotes?: string;
+    approvedAt?: string;
+    approvedBy?: string;
+    isEmailVerified: boolean;
+    lastLogin?: string;
+    cms_tenant_id?: string;
+    cms_org_slug?: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface PaginatedSellers {
+    sellers: SellerDoc[];
+    pagination: {
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+    };
+}
+
+export interface SellerStats {
+    total: number;
+    pending: number;
+    approved: number;
+    rejected: number;
+    deactivated: number;
+}
+
+export interface SellerListParams {
+    page?: number;
+    limit?: number;
+    search?: string;
+    status?: SellerStatus;
 }
 
 export const adminService = {
@@ -135,6 +195,49 @@ export const adminService = {
         const response = await api.post(`/admin/members/${id}/upload/${type}`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
+        return response.data;
+    },
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // ── SELLER MANAGEMENT ───────────────────────────────────────────────────
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    /** GET /admin/sellers/stats */
+    async getSellerStats(): Promise<{ success: boolean; data: SellerStats; message: string }> {
+        const response = await api.get('/admin/sellers/stats');
+        return response.data;
+    },
+
+    /** GET /admin/sellers (paginated, searchable, filterable) */
+    async getSellers(params?: SellerListParams): Promise<{ success: boolean; data: PaginatedSellers; message: string }> {
+        const response = await api.get('/admin/sellers', { params });
+        return response.data;
+    },
+
+    /** GET /admin/sellers/:id */
+    async getSeller(id: string): Promise<{ success: boolean; data: SellerDoc; message: string }> {
+        const response = await api.get(`/admin/sellers/${id}`);
+        return response.data;
+    },
+
+    /** PATCH /admin/sellers/:id/status */
+    async updateSellerStatus(
+        id: string,
+        status: SellerStatus,
+        rejectionReason?: string,
+        adminNotes?: string,
+    ): Promise<{ success: boolean; data: SellerDoc; message: string }> {
+        const response = await api.patch(`/admin/sellers/${id}/status`, {
+            status,
+            rejectionReason,
+            adminNotes,
+        });
+        return response.data;
+    },
+
+    /** DELETE /admin/sellers/:id */
+    async deleteSeller(id: string): Promise<{ success: boolean; message: string }> {
+        const response = await api.delete(`/admin/sellers/${id}`);
         return response.data;
     },
 };
