@@ -1744,6 +1744,30 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
 
     return (
         <div className="space-y-8">
+            {/* Connection Indicator */}
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 shadow-sm shadow-emerald-500/5">
+                        <div className="relative">
+                            <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                            <div className="absolute inset-0 w-2 h-2 rounded-full bg-emerald-500 animate-ping opacity-75" />
+                        </div>
+                        <span className="text-[10px] font-extrabold text-emerald-600 dark:text-emerald-400 uppercase tracking-[0.1em]">Connected to Marketplace</span>
+                    </div>
+                    {cmsStatus?.tenantId && (
+                        <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl">
+                            Tenant ID: {cmsStatus.tenantId.slice(0, 8)}...
+                        </span>
+                    )}
+                </div>
+                <div className="flex items-center gap-2">
+                     <div className="text-right">
+                         <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Store Slug</p>
+                         <p className="text-[11px] font-extrabold text-foreground truncate max-w-[150px]">{business?.cms_org_slug || 'active-store'}</p>
+                     </div>
+                </div>
+            </div>
+
             {/* Stats Row */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[

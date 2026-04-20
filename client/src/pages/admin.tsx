@@ -9,7 +9,7 @@ import {
     AlertTriangle, Loader2, FileText, MessageSquare, Send,
     Plus, Pencil, Clock, CheckCircle2, XCircle, Smartphone,
     AtSign, UserPlus, FileEdit, Upload,
-    User,
+    User, Store,
     CreditCard
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -34,7 +34,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SEOHead } from "@/components/seo/seo-head";
 import { useAuth } from "@/services/auth-context";
-import { adminService, DashboardStats, MemberDoc, PaginatedMembers } from "@/services/admin-service";
+import { adminService, DashboardStats, MemberDoc, PaginatedMembers, SellerDoc, PaginatedSellers } from "@/services/admin-service";
 import { messagingService, MessageTemplate, MessageLogEntry, MessageChannel, MessagingStats, PaginatedLogs, MessagingSettings } from "@/services/messaging-service";
 import { useToast } from "@/hooks/use-toast";
 
@@ -122,6 +122,18 @@ export default function AdminDashboard() {
     // Active sidebar item
     const [activeTab, setActiveTab] = useState("overview");
 
+    // ─── Sellers State ─────────────────────────────────────────────
+    const [sellers, setSellers] = useState<PaginatedSellers | null>(null);
+    const [loadingSellers, setLoadingSellers] = useState(false);
+    const [sellerSearch, setSellerSearch] = useState("");
+    const [sellerStatusFilter, setSellerStatusFilter] = useState("all");
+    const [sellerPage, setSellerPage] = useState(1);
+    
+    // Seller Modals
+    const [selectedSeller, setSelectedSeller] = useState<SellerDoc | null>(null);
+    const [sellerDetailOpen, setSellerDetailOpen] = useState(false);
+    const [sellerRejectionReason, setSellerRejectionReason] = useState("");
+
     // ─── Messaging state ────────────────────────────────────────────
     const [msgSubTab, setMsgSubTab] = useState<"compose" | "templates" | "logs" | "settings">("compose");
     const [msgSettings, setMsgSettings] = useState<MessagingSettings | null>(null);
@@ -207,6 +219,28 @@ export default function AdminDashboard() {
     }, [toast]);
 
     useEffect(() => { fetchApplications(); }, [fetchApplications]);
+
+    // ─── Fetch sellers ────────────────────────────────────────────────
+    const fetchSellers = useCallback(async () => {
+        try {
+            setLoadingSellers(true);
+            const params: any = { page: sellerPage, limit: pageLimit };
+            if (sellerSearch) params.search = sellerSearch;
+            if (sellerStatusFilter !== "all") params.status = sellerStatusFilter;
+            const res = await adminService.getSellers(params);
+            if (res.success) setSellers(res.data);
+        } catch (err: any) {
+            toast({ title: "Error", description: err.response?.data?.message || "Failed to load sellers", variant: "destructive" });
+        } finally {
+            setLoadingSellers(false);
+        }
+    }, [sellerPage, sellerSearch, sellerStatusFilter, toast]);
+
+    useEffect(() => {
+        if (activeTab === "sellers") {
+            fetchSellers();
+        }
+    }, [fetchSellers, activeTab]);
 
     // ─── Messaging data fetchers ────────────────────────────────────
     const fetchMsgTemplates = useCallback(async () => {
@@ -514,6 +548,52 @@ export default function AdminDashboard() {
         }
     };
 
+    const handleSellerStatusUpdate = async (id: string, status: 'approved' | 'rejected' | 'deactivated') => {
+        setActionLoading(true);
+        try {
+            const res = await adminService.updateSellerStatus(id, status, status === 'rejected' ? sellerRejectionReason : undefined);
+            if (res.success) {
+                toast({ title: "Status Updated", description: `Seller account has been ${status}.` });
+                fetchSellers();
+                fetchStats();
+                if (status === 'rejected') setSellerRejectionReason("");
+            }
+        } catch (err: any) {
+            toast({ title: "Error", description: err.response?.data?.message || `Failed to ${status} seller`, variant: "destructive" });
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const handleDeleteSeller = async (id: string) => {
+        setActionLoading(true);
+        try {
+            const res = await adminService.deleteSeller(id);
+            if (res.success) {
+                toast({ title: "Seller Deleted", description: "Seller account has been removed." });
+                fetchSellers();
+                fetchStats();
+            }
+        } catch (err: any) {
+            toast({ title: "Error", description: err.response?.data?.message || "Failed to delete seller", variant: "destructive" });
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const openSellerDetail = async (seller: SellerDoc) => {
+        try {
+            const res = await adminService.getSeller(seller._id);
+            if (res.success) {
+                setSelectedSeller(res.data);
+                setSellerDetailOpen(true);
+            }
+        } catch {
+            setSelectedSeller(seller);
+            setSellerDetailOpen(true);
+        }
+    };
+
     const openDetail = async (member: MemberDoc) => {
         setIsEditing(false);
         try {
@@ -553,6 +633,9 @@ export default function AdminDashboard() {
     const silverCount = stats?.plans?.Silver ?? 0;
     const bronzeCount = stats?.plans?.Bronze ?? 0;
 
+    const totalSellers = stats?.totalSellers ?? 0;
+    const pendingSellers = stats?.pendingSellers ?? 0;
+
     // ─── Stat cards ────────────────────────────────────────────────────
     const statCards = [
         {
@@ -561,6 +644,20 @@ export default function AdminDashboard() {
             icon: <Users className="w-5 h-5" />,
             gradient: "from-blue-500 to-indigo-600",
             bgGlow: "bg-blue-500/10",
+        },
+        {
+            title: "Marketplace Sellers",
+            value: totalSellers,
+            icon: <Store className="w-5 h-5" />,
+            gradient: "from-emerald-500 to-teal-500",
+            bgGlow: "bg-emerald-500/10",
+        },
+        {
+            title: "Pending Approval",
+            value: pendingSellers,
+            icon: <AlertTriangle className="w-5 h-5" />,
+            gradient: "from-amber-500 to-yellow-500",
+            bgGlow: "bg-amber-500/10",
         },
         {
             title: "Gold Plan",
@@ -612,6 +709,7 @@ export default function AdminDashboard() {
                             { key: "overview", label: "Dashboard", icon: <LayoutDashboard className="w-4 h-4" /> },
                             { key: "members", label: "Members", icon: <Users className="w-4 h-4" /> },
                             { key: "applications", label: "Applications", icon: <FileText className="w-4 h-4" /> },
+                            { key: "sellers", label: "Sellers", icon: <Store className="w-4 h-4" /> },
                             { key: "messaging", label: "Messaging", icon: <MessageSquare className="w-4 h-4" /> },
                         ].map((item) => (
                             <button
@@ -1135,6 +1233,179 @@ export default function AdminDashboard() {
                                         </TableBody>
                                     </Table>
                                 </div>
+                            </Card>
+                        </motion.div>
+                    )}
+
+                    {/* ═══ SELLERS TAB ════════════════════════════════════ */}
+                    {activeTab === "sellers" && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.3 }}
+                            className="space-y-6"
+                        >
+                            <Card className="border-border/40">
+                                <CardContent className="p-4">
+                                    <div className="flex flex-col sm:flex-row gap-3">
+                                        <div className="relative flex-1">
+                                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                            <Input
+                                                placeholder="Search by name, email, or business..."
+                                                value={sellerSearch}
+                                                onChange={(e) => setSellerSearch(e.target.value)}
+                                                className="pl-10 h-11 rounded-xl border-border/50"
+                                            />
+                                        </div>
+                                        <Select value={sellerStatusFilter} onValueChange={(v) => { setSellerStatusFilter(v); setSellerPage(1); }}>
+                                            <SelectTrigger className="w-full sm:w-40 h-11 rounded-xl border-border/50">
+                                                <SelectValue placeholder="Status" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">All Statuses</SelectItem>
+                                                <SelectItem value="pending">Pending</SelectItem>
+                                                <SelectItem value="approved">Approved</SelectItem>
+                                                <SelectItem value="rejected">Rejected</SelectItem>
+                                                <SelectItem value="deactivated">Deactivated</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            <Card className="border-border/40 overflow-hidden shadow-sm shadow-slate-200/50 dark:shadow-none">
+                                <div className="overflow-x-auto">
+                                    <Table>
+                                        <TableHeader className="bg-slate-50/80 dark:bg-slate-900/50">
+                                            <TableRow className="border-border/40 hover:bg-transparent">
+                                                <TableHead className="font-extrabold text-xs uppercase tracking-wider text-slate-500">Seller</TableHead>
+                                                <TableHead className="font-extrabold text-xs uppercase tracking-wider text-slate-500">Business</TableHead>
+                                                <TableHead className="font-extrabold text-xs uppercase tracking-wider text-slate-500">Category</TableHead>
+                                                <TableHead className="font-extrabold text-xs uppercase tracking-wider text-slate-500">Status</TableHead>
+                                                <TableHead className="text-right font-extrabold text-xs uppercase tracking-wider text-slate-500">Actions</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {loadingSellers ? (
+                                                <TableRow>
+                                                    <TableCell colSpan={5} className="h-40 text-center">
+                                                        <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto" />
+                                                        <p className="text-sm text-muted-foreground mt-2">Loading sellers...</p>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ) : sellers?.sellers.length === 0 ? (
+                                                <TableRow>
+                                                    <TableCell colSpan={5} className="h-40 text-center">
+                                                        <Store className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                                                        <p className="text-sm font-bold text-muted-foreground">No sellers found</p>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ) : (
+                                                sellers?.sellers.map((seller, i) => (
+                                                    <motion.tr
+                                                        key={seller._id}
+                                                        initial={{ opacity: 0, x: -10 }}
+                                                        animate={{ opacity: 1, x: 0 }}
+                                                        transition={{ delay: i * 0.03 }}
+                                                        className="border-b border-border/30 hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors group"
+                                                    >
+                                                        <TableCell>
+                                                            <div>
+                                                                <p className="text-sm font-bold">{seller.firstName} {seller.lastName}</p>
+                                                                <p className="text-[11px] text-muted-foreground">{seller.email}</p>
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <p className="text-sm font-medium">{seller.businessName}</p>
+                                                            <p className="text-[11px] text-muted-foreground truncate max-w-[150px]">{seller.businessLocation || 'No location'}</p>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <p className="text-xs">{seller.businessCategory}</p>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <Badge variant={seller.status === 'pending' ? 'outline' : seller.status === 'approved' ? 'default' : 'destructive'}>
+                                                                {seller.status}
+                                                            </Badge>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <div className="flex items-center justify-end gap-1">
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="text-blue-500 hover:text-blue-600 hover:bg-blue-50"
+                                                                    onClick={() => openSellerDetail(seller)}
+                                                                    title="View Details"
+                                                                >
+                                                                    <Eye className="w-4 h-4" />
+                                                                </Button>
+                                                                {seller.status === 'pending' && (
+                                                                    <>
+                                                                        <Button
+                                                                            variant="ghost"
+                                                                            size="sm"
+                                                                            className="text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50"
+                                                                            onClick={() => handleSellerStatusUpdate(seller._id, 'approved')}
+                                                                            disabled={actionLoading}
+                                                                        >
+                                                                            Approve
+                                                                        </Button>
+                                                                    </>
+                                                                )}
+                                                                {(seller.status === 'approved' || seller.status === 'rejected') && (
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="sm"
+                                                                        className="text-orange-500 hover:text-orange-600 hover:bg-orange-50"
+                                                                        onClick={() => handleSellerStatusUpdate(seller._id, 'deactivated')}
+                                                                        disabled={actionLoading}
+                                                                    >
+                                                                        Deactivate
+                                                                    </Button>
+                                                                )}
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                                                                    onClick={() => handleDeleteSeller(seller._id)}
+                                                                    disabled={actionLoading}
+                                                                >
+                                                                    <Trash2 className="w-4 h-4" />
+                                                                </Button>
+                                                            </div>
+                                                        </TableCell>
+                                                    </motion.tr>
+                                                ))
+                                            )}
+                                        </TableBody>
+                                    </Table>
+                                </div>
+                                {sellers && sellers.pagination.totalPages > 1 && (
+                                    <div className="p-4 border-t border-border/40 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/30">
+                                        <p className="text-xs font-bold text-muted-foreground">
+                                            Page {sellers.pagination.page} of {sellers.pagination.totalPages}
+                                        </p>
+                                        <div className="flex gap-2">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="h-8 rounded-lg"
+                                                disabled={sellers.pagination.page === 1}
+                                                onClick={() => setSellerPage(p => p - 1)}
+                                            >
+                                                <ChevronLeft className="w-4 h-4" />
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="h-8 rounded-lg"
+                                                disabled={sellers.pagination.page === sellers.pagination.totalPages}
+                                                onClick={() => setSellerPage(p => p + 1)}
+                                            >
+                                                <ChevronRight className="w-4 h-4" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                )}
                             </Card>
                         </motion.div>
                     )}
@@ -2254,6 +2525,116 @@ export default function AdminDashboard() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+            {/* ─── Seller Detail Modal ───────────────────────────────────────  */}
+            <Dialog open={sellerDetailOpen} onOpenChange={setSellerDetailOpen}>
+                <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto rounded-2xl">
+                    <DialogHeader>
+                        <DialogTitle className="font-extrabold flex items-center gap-2">
+                            <Store className="w-5 h-5 text-primary" /> Seller Details
+                        </DialogTitle>
+                        <DialogDescription>
+                            Review marketplace seller account information.
+                        </DialogDescription>
+                    </DialogHeader>
+                    {selectedSeller && (
+                        <div className="space-y-6 mt-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1">
+                                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Owner Name</p>
+                                    <p className="font-medium">{selectedSeller.firstName} {selectedSeller.lastName}</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Email</p>
+                                    <p className="font-medium">{selectedSeller.email}</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Phone</p>
+                                    <p className="font-medium">{selectedSeller.phone || 'N/A'}</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Status</p>
+                                    <Badge variant={selectedSeller.status === 'pending' ? 'outline' : selectedSeller.status === 'approved' ? 'default' : 'destructive'}>
+                                        {selectedSeller.status}
+                                    </Badge>
+                                </div>
+                            </div>
+                            
+                            <div className="border-t border-border/40 pt-4">
+                                <h4 className="font-bold mb-3 flex items-center gap-2"><Building2 className="w-4 h-4 text-primary" /> Business Details</h4>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-1">
+                                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Business Name</p>
+                                        <p className="font-medium">{selectedSeller.businessName}</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Category</p>
+                                        <p className="font-medium">{selectedSeller.businessCategory}</p>
+                                    </div>
+                                    <div className="col-span-2 space-y-1">
+                                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Description</p>
+                                        <p className="text-sm">{selectedSeller.businessDescription || 'N/A'}</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Location</p>
+                                        <p className="text-sm">{selectedSeller.businessLocation || 'N/A'}</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Website</p>
+                                        <p className="text-sm">{selectedSeller.businessWebsite || 'N/A'}</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">KRA PIN</p>
+                                        <p className="font-medium">{selectedSeller.kraPin || 'N/A'}</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Reg No.</p>
+                                        <p className="font-medium">{selectedSeller.businessRegistrationNo || 'N/A'}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {selectedSeller.status === 'pending' && (
+                                <div className="border-t border-border/40 pt-4 space-y-3">
+                                    <h4 className="font-bold flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-amber-500" /> Admin Actions</h4>
+                                    <div className="flex gap-2">
+                                        <Button
+                                            className="bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl flex-1"
+                                            onClick={() => {
+                                                setSellerDetailOpen(false);
+                                                handleSellerStatusUpdate(selectedSeller._id, 'approved');
+                                            }}
+                                            disabled={actionLoading}
+                                        >
+                                            <CheckCircle2 className="w-4 h-4 mr-2" /> Approve Seller
+                                        </Button>
+                                    </div>
+                                    <div className="space-y-2 mt-4 p-4 bg-red-50 dark:bg-red-950/20 rounded-xl border border-red-100 dark:border-red-900/30">
+                                        <label className="text-xs font-bold text-red-800 dark:text-red-400">Reject Application</label>
+                                        <Textarea 
+                                            placeholder="Reason for rejection (optional)..." 
+                                            value={sellerRejectionReason}
+                                            onChange={(e) => setSellerRejectionReason(e.target.value)}
+                                            className="min-h-[80px] bg-white dark:bg-slate-900 rounded-xl text-sm"
+                                        />
+                                        <Button
+                                            variant="outline"
+                                            className="w-full border-red-200 text-red-600 hover:bg-red-100 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/40 rounded-xl"
+                                            onClick={() => {
+                                                setSellerDetailOpen(false);
+                                                handleSellerStatusUpdate(selectedSeller._id, 'rejected');
+                                            }}
+                                            disabled={actionLoading}
+                                        >
+                                            <XCircle className="w-4 h-4 mr-2" /> Reject Seller
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
+
         </div >
     );
 }

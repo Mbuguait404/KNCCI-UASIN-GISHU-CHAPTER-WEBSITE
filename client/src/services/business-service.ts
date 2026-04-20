@@ -20,7 +20,9 @@ export interface BusinessData {
     logoUrl?: string;
     // CMS Marketplace
     cms_tenant_id?: string;
+    cms_org_slug?: string;
     cms_connected_at?: string;
+    isSeller?: boolean;
 }
 
 
