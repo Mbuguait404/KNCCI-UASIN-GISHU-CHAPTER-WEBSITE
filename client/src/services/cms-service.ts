@@ -72,6 +72,8 @@ export interface CmsDashboard {
     orderStats: {
         totalOrders: number;
         totalRevenue: number;
+        escrowBalance: number;
+        availableBalance: number;
     };
 }
 
