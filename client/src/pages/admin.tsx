@@ -34,9 +34,11 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SEOHead } from "@/components/seo/seo-head";
 import { useAuth } from "@/services/auth-context";
-import { adminService, DashboardStats, MemberDoc, PaginatedMembers, SellerDoc, PaginatedSellers } from "@/services/admin-service";
+import { adminService, DashboardStats, MemberDoc, PaginatedMembers, SellerDoc, PaginatedSellers, OrderStats, SubscriptionPlan, SubscriptionStats, PaginatedOrders, PaginatedSubscribers } from "@/services/admin-service";
 import { messagingService, MessageTemplate, MessageLogEntry, MessageChannel, MessagingStats, PaginatedLogs, MessagingSettings } from "@/services/messaging-service";
 import { useToast } from "@/hooks/use-toast";
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 
 
 // ── Plan badge styling ──────────────────────────────────────────────────────
@@ -165,6 +167,26 @@ export default function AdminDashboard() {
     const [msgLogsChannelFilter, setMsgLogsChannelFilter] = useState<string>("all");
     const [msgLogsStatusFilter, setMsgLogsStatusFilter] = useState<string>("all");
 
+    // ─── Orders State ─────────────────────────────────────────────
+    const [orders, setOrders] = useState<PaginatedOrders | null>(null);
+    const [loadingOrders, setLoadingOrders] = useState(false);
+    const [orderSearch, setOrderSearch] = useState("");
+    const [orderStatusFilter, setOrderStatusFilter] = useState("all");
+    const [orderPage, setOrderPage] = useState(1);
+    const [orderStats, setOrderStats] = useState<OrderStats | null>(null);
+
+    // ─── Subscriptions State ──────────────────────────────────────
+    const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
+    const [loadingPlans, setLoadingPlans] = useState(false);
+    const [planEditOpen, setPlanEditOpen] = useState(false);
+    const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
+    const [planForm, setPlanForm] = useState<Partial<SubscriptionPlan>>({ name: "", price: 0, features: [], isActive: true, description: "" });
+    const [subscriptionStats, setSubscriptionStats] = useState<SubscriptionStats | null>(null);
+    const [subscribers, setSubscribers] = useState<PaginatedSubscribers | null>(null);
+    const [loadingSubscribers, setLoadingSubscribers] = useState(false);
+    const [subPage, setSubPage] = useState(1);
+    const [subSearch, setSubSearch] = useState("");
+
     // ─── Auth guard ────────────────────────────────────────────────────
     useEffect(() => {
         if (!authLoading && (!isAuthenticated || user?.role !== "admin")) {
@@ -218,6 +240,67 @@ export default function AdminDashboard() {
         }
     }, [toast]);
 
+    // ─── Fetch Orders ──────────────────────────────────────────────────
+    const fetchOrders = useCallback(async () => {
+        try {
+            setLoadingOrders(true);
+            const params: any = { page: orderPage, limit: 10 };
+            if (orderSearch) params.search = orderSearch;
+            if (orderStatusFilter !== "all") params.status = orderStatusFilter;
+            const res = await adminService.getOrders(params);
+            if (res.success) setOrders(res.data);
+        } catch (err: any) {
+            toast({ title: "Error", description: "Failed to load orders", variant: "destructive" });
+        } finally {
+            setLoadingOrders(false);
+        }
+    }, [orderPage, orderSearch, orderStatusFilter, toast]);
+
+    const fetchOrderStats = useCallback(async () => {
+        try {
+            const res = await adminService.getOrderStats();
+            if (res.success) setOrderStats(res.data);
+        } catch (err: any) {
+            console.error("Failed to load order stats", err);
+        }
+    }, []);
+
+    // ─── Fetch Plans ───────────────────────────────────────────────────
+    const fetchPlans = useCallback(async () => {
+        try {
+            setLoadingPlans(true);
+            const res = await adminService.getPlans(true);
+            if (res.success) setPlans(res.data);
+        } catch (err: any) {
+            toast({ title: "Error", description: "Failed to load subscription plans", variant: "destructive" });
+        } finally {
+            setLoadingPlans(false);
+        }
+    }, [toast]);
+
+    const fetchSubscriptionStats = useCallback(async () => {
+        try {
+            const res = await adminService.getSubscriptionStats();
+            if (res.success) setSubscriptionStats(res.data);
+        } catch (err: any) {
+            console.error("Failed to load subscription stats", err);
+        }
+    }, []);
+
+    const fetchSubscribers = useCallback(async () => {
+        try {
+            setLoadingSubscribers(true);
+            const params: any = { page: subPage, limit: 10 };
+            if (subSearch) params.search = subSearch;
+            const res = await adminService.getSubscribers(params);
+            if (res.success) setSubscribers(res.data);
+        } catch (err: any) {
+            toast({ title: "Error", description: "Failed to load subscribers", variant: "destructive" });
+        } finally {
+            setLoadingSubscribers(false);
+        }
+    }, [subPage, subSearch, toast]);
+
     useEffect(() => { fetchApplications(); }, [fetchApplications]);
 
     // ─── Fetch sellers ────────────────────────────────────────────────
@@ -237,10 +320,11 @@ export default function AdminDashboard() {
     }, [sellerPage, sellerSearch, sellerStatusFilter, toast]);
 
     useEffect(() => {
-        if (activeTab === "sellers") {
-            fetchSellers();
-        }
-    }, [fetchSellers, activeTab]);
+        if (activeTab === "overview") { fetchOrderStats(); fetchSubscriptionStats(); }
+        if (activeTab === "sellers") fetchSellers();
+        if (activeTab === "orders") { fetchOrders(); fetchOrderStats(); }
+        if (activeTab === "subscriptions") { fetchPlans(); fetchSubscriptionStats(); fetchSubscribers(); }
+    }, [fetchSellers, fetchOrders, fetchOrderStats, fetchPlans, fetchSubscriptionStats, fetchSubscribers, activeTab]);
 
     // ─── Messaging data fetchers ────────────────────────────────────
     const fetchMsgTemplates = useCallback(async () => {
@@ -619,6 +703,62 @@ export default function AdminDashboard() {
         }
     };
 
+    // ─── Order Actions ────────────────────────────────────────────────
+    const handleReleaseEscrow = async (orderId: string) => {
+        try {
+            setActionLoading(true);
+            const res = await adminService.releaseEscrow(orderId);
+            if (res.success) {
+                toast({ title: "Success", description: "Funds released from escrow" });
+                fetchOrders();
+            }
+        } catch (err: any) {
+            toast({ title: "Error", description: err.response?.data?.message || "Failed to release funds", variant: "destructive" });
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    // ─── Subscription Actions ──────────────────────────────────────────
+    const handleSavePlan = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (loadingPlans) return; // Prevent double submission
+        try {
+            setLoadingPlans(true);
+            let res;
+            if (selectedPlan) {
+                res = await adminService.updateSubscriptionPlan(selectedPlan._id, planForm);
+            } else {
+                res = await adminService.createPlan(planForm as any);
+            }
+            if (res.success) {
+                toast({ title: "Success", description: `Plan ${selectedPlan ? 'updated' : 'created'} successfully` });
+                setPlanEditOpen(false);
+                fetchPlans();
+            }
+        } catch (err: any) {
+            toast({ title: "Error", description: "Failed to save plan", variant: "destructive" });
+        } finally {
+            setLoadingPlans(false);
+        }
+    };
+
+    const handleDeletePlan = async (id: string) => {
+        if (!confirm("Are you sure you want to delete this plan?")) return;
+        try {
+            setLoadingPlans(true);
+            const res = await adminService.deletePlan(id);
+            if (res.success) {
+                toast({ title: "Success", description: "Plan deleted" });
+                fetchPlans();
+            }
+        } catch (err: any) {
+            toast({ title: "Error", description: "Failed to delete plan", variant: "destructive" });
+        } finally {
+            setLoadingPlans(false);
+        }
+    };
+
     // ─── Render helpers ────────────────────────────────────────────────
     if (authLoading) {
         return (
@@ -710,6 +850,8 @@ export default function AdminDashboard() {
                             { key: "members", label: "Members", icon: <Users className="w-4 h-4" /> },
                             { key: "applications", label: "Applications", icon: <FileText className="w-4 h-4" /> },
                             { key: "sellers", label: "Sellers", icon: <Store className="w-4 h-4" /> },
+                            { key: "orders", label: "Orders", icon: <CreditCard className="w-4 h-4" /> },
+                            { key: "subscriptions", label: "Subscriptions", icon: <Crown className="w-4 h-4" /> },
                             { key: "messaging", label: "Messaging", icon: <MessageSquare className="w-4 h-4" /> },
                         ].map((item) => (
                             <button
@@ -775,6 +917,7 @@ export default function AdminDashboard() {
                                 <TabsTrigger value="overview" className="text-xs px-3 h-7"><BarChart3 className="w-3.5 h-3.5" /></TabsTrigger>
                                 <TabsTrigger value="members" className="text-xs px-3 h-7"><Users className="w-3.5 h-3.5" /></TabsTrigger>
                                 <TabsTrigger value="applications" className="text-xs px-3 h-7"><FileText className="w-3.5 h-3.5" /></TabsTrigger>
+                                <TabsTrigger value="orders" className="text-xs px-3 h-7"><CreditCard className="w-3.5 h-3.5" /></TabsTrigger>
                                 <TabsTrigger value="messaging" className="text-xs px-3 h-7"><MessageSquare className="w-3.5 h-3.5" /></TabsTrigger>
                             </TabsList>
                         </Tabs>
@@ -798,7 +941,13 @@ export default function AdminDashboard() {
                             {new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
                         </p>
                         <h1 className="text-3xl lg:text-4xl font-extrabold tracking-tight">
-                            {activeTab === "overview" ? "Dashboard Overview" : activeTab === "members" ? "Member Management" : activeTab === "applications" ? "Application Management" : "Messaging Center"}
+                            {activeTab === "overview" ? "Dashboard Overview" : 
+                             activeTab === "members" ? "Member Management" : 
+                             activeTab === "applications" ? "Application Management" : 
+                             activeTab === "sellers" ? "Seller Marketplace" :
+                             activeTab === "orders" ? "System Orders" :
+                             activeTab === "subscriptions" ? "Subscription Plans" :
+                             "Messaging Center"}
                         </h1>
                     </motion.div>
 
@@ -917,6 +1066,109 @@ export default function AdminDashboard() {
                                     </div>
                                 </CardContent>
                             </Card>
+
+                            {/* Marketplace Analytics */}
+                            {orderStats && (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+                                    <Card className="border-border/40">
+                                        <CardHeader>
+                                            <CardTitle className="text-base font-extrabold flex items-center gap-2">
+                                                <Activity className="w-4 h-4 text-primary" /> Order Volume
+                                            </CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="space-y-4">
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+                                                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Total Orders</p>
+                                                    <p className="text-2xl font-black">{orderStats.totalOrders}</p>
+                                                </div>
+                                                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border-emerald-500/10">
+                                                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Total Revenue</p>
+                                                    <p className="text-2xl font-black text-emerald-600">KES {orderStats.totalRevenue.toLocaleString()}</p>
+                                                </div>
+                                                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border-amber-500/10 col-span-2">
+                                                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Escrow Balance</p>
+                                                    <p className="text-2xl font-black text-amber-600">KES {orderStats.escrowBalance?.toLocaleString() || '0'}</p>
+                                                </div>
+                                            </div>
+                                            <div className="space-y-3 pt-2">
+                                                {orderStats.statusCounts.map((stat: any) => (
+                                                    <div key={stat.status} className="flex items-center justify-between">
+                                                        <span className="text-sm font-medium capitalize">{stat.status}</span>
+                                                        <div className="flex items-center gap-3 flex-1 max-w-[200px] ml-4">
+                                                            <div className="h-2 flex-1 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                                                <div 
+                                                                    className="h-full bg-primary" 
+                                                                    style={{ width: `${(stat.count / orderStats.totalOrders) * 100}%` }}
+                                                                />
+                                                            </div>
+                                                            <span className="text-xs font-bold w-8 text-right">{stat.count}</span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+
+                                    <Card className="border-border/40">
+                                        <CardHeader>
+                                            <CardTitle className="text-base font-extrabold flex items-center gap-2">
+                                                <Store className="w-4 h-4 text-primary" /> Top Vendors
+                                            </CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <div className="space-y-4">
+                                                {orderStats.topVendors.map((vendor: any, i: number) => (
+                                                    <div key={i} className="flex items-center gap-3">
+                                                        <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xs font-bold">
+                                                            {i + 1}
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="text-sm font-bold truncate">{vendor.name || 'Unknown Vendor'}</p>
+                                                            <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight">{vendor.count} Orders</p>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <p className="text-sm font-black">KES {vendor.totalSales.toLocaleString()}</p>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                                {orderStats.topVendors.length === 0 && (
+                                                    <div className="h-40 flex flex-col items-center justify-center text-muted-foreground">
+                                                        <Store className="w-8 h-8 mb-2 opacity-20" />
+                                                        <p className="text-xs font-bold">No vendor data yet</p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+
+                                    {subscriptionStats && (
+                                        <Card className="border-border/40 md:col-span-2">
+                                            <CardHeader>
+                                                <CardTitle className="text-base font-extrabold flex items-center gap-2">
+                                                    <Crown className="w-4 h-4 text-primary" /> Subscription Performance
+                                                </CardTitle>
+                                            </CardHeader>
+                                            <CardContent>
+                                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                                    <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+                                                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Total Subscribers</p>
+                                                        <p className="text-2xl font-black">{subscriptionStats.totalSubscribers}</p>
+                                                    </div>
+                                                    <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border-primary/10">
+                                                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Annual Projections</p>
+                                                        <p className="text-2xl font-black text-primary">KES {subscriptionStats.estimatedAnnualRevenue.toLocaleString()}</p>
+                                                    </div>
+                                                    <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border-amber-500/10">
+                                                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Top Plan</p>
+                                                        <p className="text-2xl font-black text-amber-600">{subscriptionStats.topPlan}</p>
+                                                    </div>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    )}
+                                </div>
+                            )}
                         </motion.div>
                     )}
 
@@ -1407,6 +1659,399 @@ export default function AdminDashboard() {
                                     </div>
                                 )}
                             </Card>
+                        </motion.div>
+                    )}
+
+                    {/* ═══ ORDERS TAB ══════════════════════════════════════ */}
+                    {activeTab === "orders" && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.3 }}
+                            className="space-y-6"
+                        >
+                            {/* Order Stats Row */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                <Card className="border-border/40 bg-gradient-to-br from-indigo-500/5 to-transparent">
+                                    <CardContent className="p-4 flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-600">
+                                            <TrendingUp className="w-5 h-5" />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Total Revenue</p>
+                                            <p className="text-xl font-black">KES {orderStats?.revenueLast30Days?.toLocaleString() || 0}</p>
+                                            <p className="text-[10px] text-indigo-600 font-bold">LAST 30 DAYS</p>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                                <Card className="border-border/40 bg-gradient-to-br from-emerald-500/5 to-transparent">
+                                    <CardContent className="p-4 flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600">
+                                            <Shield className="w-5 h-5" />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Escrow Balance</p>
+                                            <p className="text-xl font-black">KES {orderStats?.escrowBalance?.toLocaleString() || 0}</p>
+                                            <p className="text-[10px] text-emerald-600 font-bold">HELD FUNDS</p>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                                <Card className="border-border/40">
+                                    <CardContent className="p-4 flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-600">
+                                            <Activity className="w-5 h-5" />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Total Orders</p>
+                                            <p className="text-xl font-black">{orders?.pagination.total || 0}</p>
+                                            <p className="text-[10px] text-blue-600 font-bold">ALL TIME</p>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                                <Card className="border-border/40">
+                                    <CardContent className="p-4 flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-600">
+                                            <Clock className="w-5 h-5" />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold text-muted-foreground uppercase tracking-wider">In Escrow</p>
+                                            <p className="text-xl font-black">{orderStats?.byStatus.find((s: any) => s._id === 'PAID_ESCROW')?.count || 0}</p>
+                                            <p className="text-[10px] text-amber-600 font-bold">PENDING RELEASE</p>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                            <Card className="border-border/40">
+                                <CardContent className="p-4">
+                                    <div className="flex flex-col sm:flex-row gap-3">
+                                        <div className="relative flex-1">
+                                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                            <Input
+                                                placeholder="Search by order ID or customer..."
+                                                value={orderSearch}
+                                                onChange={(e) => setOrderSearch(e.target.value)}
+                                                className="pl-10 h-11 rounded-xl border-border/50"
+                                            />
+                                        </div>
+                                        <Select value={orderStatusFilter} onValueChange={(v) => { setOrderStatusFilter(v); setOrderPage(1); }}>
+                                            <SelectTrigger className="w-full sm:w-40 h-11 rounded-xl border-border/50">
+                                                <SelectValue placeholder="Status" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">All Orders</SelectItem>
+                                                <SelectItem value="PENDING">Pending</SelectItem>
+                                                <SelectItem value="PAID_ESCROW">Paid (Escrow)</SelectItem>
+                                                <SelectItem value="COMPLETED">Completed</SelectItem>
+                                                <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                                                <SelectItem value="REFUNDED">Refunded</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            <Card className="border-border/40 overflow-hidden shadow-sm">
+                                <div className="overflow-x-auto">
+                                    <Table>
+                                        <TableHeader className="bg-slate-50/80 dark:bg-slate-900/50">
+                                            <TableRow className="border-border/40">
+                                                <TableHead className="font-extrabold text-xs uppercase tracking-wider">Order ID</TableHead>
+                                                <TableHead className="font-extrabold text-xs uppercase tracking-wider">Customer</TableHead>
+                                                <TableHead className="font-extrabold text-xs uppercase tracking-wider">Vendor</TableHead>
+                                                <TableHead className="font-extrabold text-xs uppercase tracking-wider">Total</TableHead>
+                                                <TableHead className="font-extrabold text-xs uppercase tracking-wider">Status</TableHead>
+                                                <TableHead className="font-extrabold text-xs uppercase tracking-wider text-right">Actions</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {loadingOrders ? (
+                                                <TableRow>
+                                                    <TableCell colSpan={6} className="h-40 text-center">
+                                                        <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto" />
+                                                        <p className="text-sm text-muted-foreground mt-2">Loading system orders...</p>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ) : (orders?.orders.length ?? 0) === 0 ? (
+                                                <TableRow>
+                                                    <TableCell colSpan={6} className="h-40 text-center">
+                                                        <CreditCard className="w-8 h-8 text-muted-foreground mx-auto mb-2 opacity-20" />
+                                                        <p className="text-sm font-bold text-muted-foreground">No orders found</p>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ) : (
+                                                orders?.orders.map((order, i) => (
+                                                    <motion.tr
+                                                        key={order._id}
+                                                        initial={{ opacity: 0, x: -10 }}
+                                                        animate={{ opacity: 1, x: 0 }}
+                                                        transition={{ delay: i * 0.03 }}
+                                                        className="border-b border-border/30 hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors"
+                                                    >
+                                                        <TableCell className="font-mono text-xs font-bold text-primary">
+                                                            {order._id.substring(0, 8).toUpperCase()}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <p className="text-sm font-bold">{order.buyerId?.name || 'Guest'}</p>
+                                                            <p className="text-[10px] text-muted-foreground">{order.buyerId?.email || 'No email'}</p>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <p className="text-sm font-medium">{order.vendorId?.name || 'Unknown'}</p>
+                                                        </TableCell>
+                                                        <TableCell className="font-black">
+                                                            KES {order.amount.toLocaleString()}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <Badge variant={
+                                                                order.status === 'COMPLETED' ? 'default' : 
+                                                                order.status === 'PAID_ESCROW' ? 'outline' : 
+                                                                order.status === 'CANCELLED' ? 'destructive' : 'secondary'
+                                                            }>
+                                                                {order.status.replace('_', ' ')}
+                                                            </Badge>
+                                                        </TableCell>
+                                                        <TableCell className="text-right">
+                                                            <div className="flex items-center justify-end gap-2">
+                                                                {order.status === 'PAID_ESCROW' && (
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        size="sm"
+                                                                        className="h-8 rounded-lg bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                                                                        onClick={() => handleReleaseEscrow(order._id)}
+                                                                        disabled={actionLoading}
+                                                                    >
+                                                                        <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" /> Release Escrow
+                                                                    </Button>
+                                                                )}
+                                                            </div>
+                                                        </TableCell>
+                                                    </motion.tr>
+                                                ))
+                                            )}
+                                        </TableBody>
+                                    </Table>
+                                </div>
+                                {orders && orders.pagination.totalPages > 1 && (
+                                    <div className="p-4 border-t border-border/40 flex items-center justify-between bg-slate-50/50">
+                                        <p className="text-xs font-bold text-muted-foreground">
+                                            Page {orders.pagination.page} of {orders.pagination.totalPages}
+                                        </p>
+                                        <div className="flex gap-2">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                disabled={orders.pagination.page === 1}
+                                                onClick={() => setOrderPage(p => p - 1)}
+                                            >
+                                                <ChevronLeft className="w-4 h-4" />
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                disabled={orders.pagination.page === orders.pagination.totalPages}
+                                                onClick={() => setOrderPage(p => p + 1)}
+                                            >
+                                                <ChevronRight className="w-4 h-4" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                )}
+                            </Card>
+                        </motion.div>
+                    )}
+
+                    {/* ═══ SUBSCRIPTIONS TAB ═══════════════════════════════ */}
+                    {activeTab === "subscriptions" && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.3 }}
+                            className="space-y-6"
+                        >
+                            {/* Subscription Stats Row */}
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <Card className="border-border/40 bg-gradient-to-br from-primary/5 to-transparent">
+                                    <CardContent className="p-4 flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                                            <Users className="w-5 h-5" />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Total Subscribers</p>
+                                            <p className="text-xl font-black">{subscriptionStats?.totalSubscribers || 0}</p>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                                <Card className="border-border/40 bg-gradient-to-br from-emerald-500/5 to-transparent">
+                                    <CardContent className="p-4 flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600">
+                                            <BarChart3 className="w-5 h-5" />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Est. Annual Revenue</p>
+                                            <p className="text-xl font-black">KES {subscriptionStats?.estimatedAnnualRevenue?.toLocaleString() || 0}</p>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                                <Card className="border-border/40 bg-gradient-to-br from-amber-500/5 to-transparent">
+                                    <CardContent className="p-4 flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-600">
+                                            <Crown className="w-5 h-5" />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Top Plan</p>
+                                            <p className="text-xl font-black">{subscriptionStats?.activeSubscribersByPlan[0]?._id || "None"}</p>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+
+                            <Tabs defaultValue="plans" className="w-full">
+                                <TabsList className="grid w-full grid-cols-2 mb-6">
+                                    <TabsTrigger value="plans">Membership Plans</TabsTrigger>
+                                    <TabsTrigger value="subscribers">Active Subscribers</TabsTrigger>
+                                </TabsList>
+
+                                <TabsContent value="plans" className="space-y-6">
+                                    <div className="flex items-center justify-between">
+                                        <h3 className="text-xl font-black tracking-tight">Manage Plans</h3>
+                                        <Button onClick={() => { setSelectedPlan(null); setPlanForm({ name: "", price: 0, features: [], isActive: true }); setPlanEditOpen(true); }} className="rounded-xl shadow-lg shadow-primary/20">
+                                            <Plus className="w-4 h-4 mr-2" /> Create New Plan
+                                        </Button>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        {loadingPlans ? (
+                                            <div className="col-span-full h-60 flex items-center justify-center">
+                                                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                                            </div>
+                                        ) : plans.map((plan) => (
+                                            <Card key={plan._id} className="border-border/40 overflow-hidden group hover:shadow-xl transition-all duration-300">
+                                                <div className={`h-2 w-full bg-primary ${!plan.isActive ? 'grayscale' : ''}`} />
+                                                <CardHeader>
+                                                    <div className="flex items-center justify-between">
+                                                        <CardTitle className="font-black text-2xl">{plan.name}</CardTitle>
+                                                        <Badge variant={plan.isActive ? 'default' : 'secondary'}>
+                                                            {plan.isActive ? 'Active' : 'Disabled'}
+                                                        </Badge>
+                                                    </div>
+                                                    <div className="mt-2">
+                                                        <span className="text-3xl font-black">KES {plan.price.toLocaleString()}</span>
+                                                        <span className="text-muted-foreground text-xs font-bold ml-1 uppercase">/ Year</span>
+                                                    </div>
+                                                </CardHeader>
+                                                <CardContent>
+                                                    <div className="space-y-3 min-h-[150px]">
+                                                        {plan.features.map((feature, idx) => (
+                                                            <div key={idx} className="flex items-start gap-2">
+                                                                <CheckCircle2 className="w-4 h-4 text-emerald-500 mt-0.5" />
+                                                                <span className="text-sm font-medium">{feature}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                    <div className="flex gap-2 mt-6">
+                                                        <Button 
+                                                            variant="outline" 
+                                                            className="flex-1 rounded-xl"
+                                                            onClick={() => { setSelectedPlan(plan); setPlanForm(plan); setPlanEditOpen(true); }}
+                                                        >
+                                                            <Pencil className="w-4 h-4 mr-2" /> Edit Plan
+                                                        </Button>
+                                                        <Button 
+                                                            variant="ghost" 
+                                                            className="w-10 h-10 p-0 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl"
+                                                            onClick={() => handleDeletePlan(plan._id)}
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </Button>
+                                                    </div>
+                                                </CardContent>
+                                            </Card>
+                                        ))}
+                                    </div>
+                                </TabsContent>
+
+                                <TabsContent value="subscribers" className="space-y-6">
+                                    <Card className="border-border/40">
+                                        <CardContent className="p-4">
+                                            <div className="relative">
+                                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                                <Input
+                                                    placeholder="Search subscribers by business name..."
+                                                    value={subSearch}
+                                                    onChange={(e) => setSubSearch(e.target.value)}
+                                                    className="pl-10 h-11 rounded-xl border-border/50"
+                                                />
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+
+                                    <Card className="border-border/40 overflow-hidden">
+                                        <Table>
+                                            <TableHeader className="bg-slate-50/80 dark:bg-slate-900/50">
+                                                <TableRow>
+                                                    <TableHead className="font-extrabold text-xs uppercase tracking-wider">Business</TableHead>
+                                                    <TableHead className="font-extrabold text-xs uppercase tracking-wider">Owner</TableHead>
+                                                    <TableHead className="font-extrabold text-xs uppercase tracking-wider">Plan</TableHead>
+                                                    <TableHead className="font-extrabold text-xs uppercase tracking-wider">Status</TableHead>
+                                                    <TableHead className="font-extrabold text-xs uppercase tracking-wider">Joined</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {loadingSubscribers ? (
+                                                    <TableRow>
+                                                        <TableCell colSpan={5} className="h-40 text-center">
+                                                            <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto" />
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ) : subscribers?.subscribers.length === 0 ? (
+                                                    <TableRow>
+                                                        <TableCell colSpan={5} className="h-40 text-center text-muted-foreground">
+                                                            No active subscribers found
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ) : (
+                                                    subscribers?.subscribers.map((sub: any) => (
+                                                        <TableRow key={sub._id}>
+                                                            <TableCell className="font-bold">{sub.name}</TableCell>
+                                                            <TableCell>
+                                                                <p className="text-sm font-medium">{sub.userId?.name}</p>
+                                                                <p className="text-xs text-muted-foreground">{sub.userId?.email}</p>
+                                                            </TableCell>
+                                                            <TableCell>
+                                                                <Badge variant="outline" className="bg-primary/5">
+                                                                    {sub.subscriptionPlanId?.name}
+                                                                </Badge>
+                                                            </TableCell>
+                                                            <TableCell>
+                                                                <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20">
+                                                                    Active
+                                                                </Badge>
+                                                            </TableCell>
+                                                            <TableCell className="text-sm text-muted-foreground">
+                                                                {new Date(sub.createdAt).toLocaleDateString()}
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    ))
+                                                )}
+                                            </TableBody>
+                                        </Table>
+                                        {subscribers && subscribers.pagination.totalPages > 1 && (
+                                            <div className="p-4 border-t border-border/40 flex items-center justify-between">
+                                                <p className="text-xs font-bold text-muted-foreground">
+                                                    Page {subPage} of {subscribers.pagination.totalPages}
+                                                </p>
+                                                <div className="flex gap-2">
+                                                    <Button variant="outline" size="sm" disabled={subPage === 1} onClick={() => setSubPage(p => p - 1)}>
+                                                        <ChevronLeft className="w-4 h-4" />
+                                                    </Button>
+                                                    <Button variant="outline" size="sm" disabled={subPage === subscribers.pagination.totalPages} onClick={() => setSubPage(p => p + 1)}>
+                                                        <ChevronRight className="w-4 h-4" />
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </Card>
+                                </TabsContent>
+                            </Tabs>
                         </motion.div>
                     )}
 
@@ -2525,6 +3170,80 @@ export default function AdminDashboard() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+            {/* ─── Plan Management Dialog ────────────────────────────────  */}
+            <Dialog open={planEditOpen} onOpenChange={setPlanEditOpen}>
+                <DialogContent className="max-w-md rounded-2xl">
+                    <DialogHeader>
+                        <DialogTitle className="font-extrabold flex items-center gap-2">
+                            <Plus className="w-5 h-5 text-primary" /> {selectedPlan ? "Edit Membership Plan" : "Create New Plan"}
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 mt-2">
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Plan Name</label>
+                            <Input 
+                                placeholder="e.g. Gold Membership" 
+                                value={planForm.name} 
+                                onChange={e => setPlanForm({ ...planForm, name: e.target.value })} 
+                                className="h-11 rounded-xl" 
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Price (KES/Year)</label>
+                            <Input 
+                                type="number"
+                                placeholder="e.g. 5000" 
+                                value={planForm.price} 
+                                onChange={e => setPlanForm({ ...planForm, price: parseInt(e.target.value) || 0 })} 
+                                className="h-11 rounded-xl" 
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Features (One per line)</label>
+                                <Textarea 
+                                    placeholder="Feature 1\nFeature 2..." 
+                                    value={(planForm.features || []).join("\n")} 
+                                    onChange={e => setPlanForm({ ...planForm, features: e.target.value.split("\n").filter(f => f.trim()) })} 
+                                    className="min-h-[80px] rounded-xl" 
+                                />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Plan Description (Rich Text)</label>
+                            <div className="rounded-xl border border-border/50 overflow-hidden bg-white dark:bg-slate-950">
+                                <ReactQuill 
+                                    theme="snow" 
+                                    value={planForm.description || ""} 
+                                    onChange={(val) => setPlanForm({ ...planForm, description: val })}
+                                    placeholder="Detailed description of the plan benefits..."
+                                    className="h-40 mb-10"
+                                />
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2 pt-2">
+                            <input 
+                                type="checkbox" 
+                                id="planActive" 
+                                checked={planForm.isActive} 
+                                onChange={e => setPlanForm({ ...planForm, isActive: e.target.checked })}
+                                className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                            />
+                            <label htmlFor="planActive" className="text-sm font-bold">This plan is active and visible</label>
+                        </div>
+                    </div>
+                    <DialogFooter className="mt-6">
+                        <Button variant="ghost" onClick={() => setPlanEditOpen(false)}>Cancel</Button>
+                        <Button 
+                            onClick={handleSavePlan} 
+                            disabled={loadingPlans || !(planForm.name || "").trim()} 
+                            className="rounded-xl shadow-lg shadow-primary/20"
+                        >
+                            {loadingPlans ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                            {selectedPlan ? "Update Plan" : "Create Plan"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
             {/* ─── Seller Detail Modal ───────────────────────────────────────  */}
             <Dialog open={sellerDetailOpen} onOpenChange={setSellerDetailOpen}>
                 <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto rounded-2xl">

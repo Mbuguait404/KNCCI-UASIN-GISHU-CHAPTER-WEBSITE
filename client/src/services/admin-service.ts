@@ -115,6 +115,72 @@ export interface SellerListParams {
     status?: SellerStatus;
 }
 
+// ── Order & Plan Types ──────────────────────────────────────────────────────
+
+export interface OrderDoc {
+    _id: string;
+    buyerId: { _id: string; name: string; email: string };
+    vendorId: { _id: string; name: string; email: string };
+    amount: number;
+    currency: string;
+    status: string;
+    escrowWalletId: string;
+    paymentCheckoutId?: string;
+    paymentStatus?: string;
+    completedAt?: string;
+    createdAt: string;
+    metadata?: Record<string, any>;
+}
+
+export interface PaginatedOrders {
+    orders: OrderDoc[];
+    pagination: {
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+    };
+}
+
+export interface SubscriptionPlan {
+    _id: string;
+    name: string;
+    price: number;
+    features: string[];
+    isActive: boolean;
+    description?: string;
+    createdAt?: string;
+}
+
+export interface OrderStats {
+    byStatus: { _id: string; count: number; totalAmount: number }[];
+    statusCounts: { _id: string; count: number; totalAmount: number }[];
+    revenueLast30Days: number;
+    escrowBalance: number;
+    monthlyRevenue: { _id: { month: number; year: number }; total: number }[];
+    topVendors: { name: string; totalSales: number; count: number }[];
+    totalOrders: number;
+    totalRevenue: number;
+}
+
+export interface SubscriptionStats {
+    activeSubscribersByPlan: { _id: string; count: number; totalRevenue: number }[];
+    estimatedAnnualRevenue: number;
+    planPopularity: { _id: string; count: number }[];
+    totalSubscribers: number;
+    topPlan: string;
+}
+
+export interface PaginatedSubscribers {
+    subscribers: any[];
+    pagination: {
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+    };
+}
+
 export const adminService = {
     /** GET /admin/stats */
     async getStats(): Promise<{ success: boolean; data: DashboardStats; message: string }> {
@@ -238,6 +304,64 @@ export const adminService = {
     /** DELETE /admin/sellers/:id */
     async deleteSeller(id: string): Promise<{ success: boolean; message: string }> {
         const response = await api.delete(`/admin/sellers/${id}`);
+        return response.data;
+    },
+
+    // ── SUBSCRIPTION PLAN MANAGEMENT ──────────────────────────────────────────
+
+    /** GET /admin/plans */
+    async getPlans(all = false): Promise<{ success: boolean; data: SubscriptionPlan[]; message: string }> {
+        const response = await api.get('/admin/plans', { params: { all } });
+        return response.data;
+    },
+
+    /** POST /admin/plans */
+    async createPlan(data: Partial<SubscriptionPlan>): Promise<{ success: boolean; data: SubscriptionPlan; message: string }> {
+        const response = await api.post('/admin/plans', data);
+        return response.data;
+    },
+
+    /** PATCH /admin/plans/:id */
+    async updateSubscriptionPlan(id: string, data: Partial<SubscriptionPlan>): Promise<{ success: boolean; data: SubscriptionPlan; message: string }> {
+        const response = await api.patch(`/admin/plans/${id}`, data);
+        return response.data;
+    },
+
+    /** DELETE /admin/plans/:id */
+    async deletePlan(id: string): Promise<{ success: boolean; message: string }> {
+        const response = await api.delete(`/admin/plans/${id}`);
+        return response.data;
+    },
+
+    // ── ORDER MANAGEMENT ────────────────────────────────────────────────────
+
+    /** GET /admin/orders */
+    async getOrders(params?: any): Promise<{ success: boolean; data: PaginatedOrders; message: string }> {
+        const response = await api.get('/admin/orders', { params });
+        return response.data;
+    },
+
+    /** GET /admin/orders/stats */
+    async getOrderStats(): Promise<{ success: boolean; data: OrderStats; message: string }> {
+        const response = await api.get('/admin/orders/stats');
+        return response.data;
+    },
+
+    /** POST /admin/orders/:id/release */
+    async releaseEscrow(id: string): Promise<{ success: boolean; message: string }> {
+        const response = await api.post(`/admin/orders/${id}/release`);
+        return response.data;
+    },
+    
+    /** GET /admin/subscriptions/stats */
+    async getSubscriptionStats(): Promise<{ success: boolean; data: SubscriptionStats; message: string }> {
+        const response = await api.get('/admin/subscriptions/stats');
+        return response.data;
+    },
+
+    /** GET /admin/subscriptions/subscribers */
+    async getSubscribers(params?: any): Promise<{ success: boolean; data: PaginatedSubscribers; message: string }> {
+        const response = await api.get('/admin/subscriptions/subscribers', { params });
         return response.data;
     },
 };
