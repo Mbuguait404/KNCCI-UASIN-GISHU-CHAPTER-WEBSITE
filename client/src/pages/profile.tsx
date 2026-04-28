@@ -41,7 +41,9 @@ import {
     DollarSign,
     Loader2,
     Trash2,
-    AlertCircle
+    AlertCircle,
+    ShieldCheck,
+    Wallet
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -1769,12 +1771,13 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
             </div>
 
             {/* Stats Row */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                 {[
                     { label: "Products", value: totalProducts, icon: <Package className="w-5 h-5" />, color: "from-secondary to-secondary/70", bg: "bg-secondary/10" },
                     { label: "Orders", value: totalOrders, icon: <ShoppingCart className="w-5 h-5" />, color: "from-blue-500 to-indigo-600", bg: "bg-blue-500/10" },
                     { label: "Revenue", value: `KES ${totalRevenue.toLocaleString()}`, icon: <DollarSign className="w-5 h-5" />, color: "from-emerald-500 to-teal-600", bg: "bg-emerald-500/10" },
-                    { label: "Status", value: "Active", icon: <CheckCircle2 className="w-5 h-5" />, color: "from-primary to-primary/70", bg: "bg-primary/10" },
+                    { label: "Escrow", value: `KES ${dashboard?.orderStats?.escrowBalance?.toLocaleString() || 0}`, icon: <ShieldCheck className="w-5 h-5" />, color: "from-amber-500 to-orange-600", bg: "bg-amber-500/10" },
+                    { label: "Available", value: `KES ${dashboard?.orderStats?.availableBalance?.toLocaleString() || 0}`, icon: <Wallet className="w-5 h-5" />, color: "from-primary to-primary/70", bg: "bg-primary/10" },
                 ].map((stat, i) => (
                     <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}>
                         <Card className="rounded-3xl border-none shadow-xl shadow-primary/5 overflow-hidden relative group hover:shadow-primary/10 transition-all">
@@ -1783,7 +1786,7 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
                                 <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${stat.color} flex items-center justify-center text-white mb-4 shadow-lg group-hover:scale-110 transition-transform`}>
                                     {stat.icon}
                                 </div>
-                                <p className="text-2xl font-extrabold tracking-tight">{stat.value}</p>
+                                <p className="text-xl font-extrabold tracking-tight">{stat.value}</p>
                                 <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-1 opacity-70">{stat.label}</p>
                             </CardContent>
                         </Card>
@@ -2155,7 +2158,8 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
                                                         </SelectTrigger>
                                                         <SelectContent className="rounded-xl">
                                                             <SelectItem value="pending">Pending</SelectItem>
-                                                            <SelectItem value="paid">Paid</SelectItem>
+                                                            <SelectItem value="paid_escrow">Locked in Escrow</SelectItem>
+                                                            <SelectItem value="paid">Paid (Direct)</SelectItem>
                                                             <SelectItem value="processing">Processing</SelectItem>
                                                             <SelectItem value="shipped">Shipped</SelectItem>
                                                             <SelectItem value="completed">Completed</SelectItem>
