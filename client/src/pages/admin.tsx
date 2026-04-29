@@ -704,9 +704,10 @@ export default function AdminDashboard() {
     };
 
     // ─── Order Actions ────────────────────────────────────────────────
+    const [releasingOrders, setReleasingOrders] = useState<Set<string>>(new Set());
     const handleReleaseEscrow = async (orderId: string) => {
+        setReleasingOrders(prev => new Set(prev).add(orderId));
         try {
-            setActionLoading(true);
             const res = await adminService.releaseEscrow(orderId);
             if (res.success) {
                 toast({ title: "Success", description: "Funds released from escrow" });
@@ -715,7 +716,7 @@ export default function AdminDashboard() {
         } catch (err: any) {
             toast({ title: "Error", description: err.response?.data?.message || "Failed to release funds", variant: "destructive" });
         } finally {
-            setActionLoading(false);
+            setReleasingOrders(prev => { const next = new Set(prev); next.delete(orderId); return next; });
         }
     };
 
@@ -1817,7 +1818,7 @@ export default function AdminDashboard() {
                                                                         size="sm"
                                                                         className="h-8 rounded-lg bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
                                                                         onClick={() => handleReleaseEscrow(order._id)}
-                                                                        disabled={actionLoading}
+                                                                        disabled={releasingOrders.has(order._id)}
                                                                     >
                                                                         <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" /> Release Escrow
                                                                     </Button>
