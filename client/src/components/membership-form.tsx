@@ -61,6 +61,8 @@ const subscriptionFees = [
     { label: "Patron Members (Kshs. 100,000)", value: "Patron Members (Kshs. 100,000)" },
 ];
 
+import { adminService } from "@/services/admin-service";
+
 export function MembershipForm() {
     const { toast } = useToast();
     const [isSubmitted, setIsSubmitted] = useState(false);
@@ -81,7 +83,24 @@ export function MembershipForm() {
 
     const mutation = useMutation({
         mutationFn: async (data: InsertMembershipApplication) => {
-            await api.post("/membership-applications", data);
+            const response = await api.post("/membership-applications", data);
+            const application = response.data.data;
+            
+            if (application?._id) {
+                try {
+                    await adminService.sendConfirmationEmail(application._id);
+                    toast({ title: "Registration Successful", description: "A confirmation email has been sent to your address." });
+                } catch (emailError) {
+                    console.error("Failed to send confirmation email:", emailError);
+                    toast({ 
+                        title: "Registration Successful", 
+                        description: "Your application was received, but we couldn't send the confirmation email. Our team will contact you soon.",
+                        variant: "destructive"
+                    });
+                }
+            }
+            
+            return application;
         },
         onSuccess: () => {
             setIsSubmitted(true);
