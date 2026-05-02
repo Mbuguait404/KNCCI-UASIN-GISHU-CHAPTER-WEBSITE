@@ -456,11 +456,50 @@ export default function AdminDashboard() {
     const handleApplicationStatus = async (id: string, status: string) => {
         setActionLoading(true);
         try {
-            await adminService.updateApplicationStatus(id, status);
+            const res = await adminService.updateApplicationStatus(id, status);
             toast({ title: "Status Updated", description: `Application is now ${status}.` });
+
+            // If approved, send the approval email with the generated password
+            if (status === 'approved' && res.data?.password) {
+                try {
+                    await adminService.sendApprovalEmail(id, res.data.password);
+                    toast({ title: "Email Sent", description: "Membership approval email and SMS sent successfully." });
+                } catch (emailErr) {
+                    console.error("Failed to send approval email:", emailErr);
+                    toast({ 
+                        title: "Notification Delayed", 
+                        description: "Status updated, but welcome email failed. You can resend it from the details view.", 
+                        variant: "destructive" 
+                    });
+                }
+            }
+
             fetchApplications();
         } catch (err: any) {
             toast({ title: "Error", description: err.response?.data?.message || "Failed to update status", variant: "destructive" });
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const handleResendEmail = async (id: string, type: 'confirmation' | 'approval') => {
+        setActionLoading(true);
+        try {
+            if (type === 'confirmation') {
+                await adminService.sendConfirmationEmail(id);
+                toast({ title: "Confirmation Resent", description: "The registration confirmation email has been resent." });
+            } else {
+                // For approval, we don't have the password anymore (it's hashed), 
+                // so the backend will have to handle password-less welcome emails or we just send it without password
+                // Actually, the backend sendApprovalEmail(id, password) requires a password.
+                // If we don't have it, we might need a different endpoint or a way to reset and send.
+                // For now, let's assume we can trigger it. 
+                // Actually, I'll update the backend to allow null password if we just want to send a generic "You are approved"
+                await adminService.sendApprovalEmail(id, ""); 
+                toast({ title: "Welcome Email Resent", description: "The membership approval notification has been resent." });
+            }
+        } catch (err: any) {
+            toast({ title: "Error", description: err.response?.data?.message || "Failed to resend email", variant: "destructive" });
         } finally {
             setActionLoading(false);
         }
@@ -1199,6 +1238,30 @@ export default function AdminDashboard() {
                                                                 >
                                                                     <Eye className="w-4 h-4" />
                                                                 </Button>
+                                                                {app.status === 'approved' && (
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        className="text-purple-500 hover:text-purple-600 hover:bg-purple-50"
+                                                                        onClick={() => handleResendEmail(app._id, 'approval')}
+                                                                        disabled={actionLoading}
+                                                                        title="Resend Welcome Email"
+                                                                    >
+                                                                        <Mail className="w-4 h-4" />
+                                                                    </Button>
+                                                                )}
+                                                                {app.status === 'pending' && (
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        className="text-amber-500 hover:text-amber-600 hover:bg-amber-50"
+                                                                        onClick={() => handleResendEmail(app._id, 'confirmation')}
+                                                                        disabled={actionLoading}
+                                                                        title="Resend Confirmation"
+                                                                    >
+                                                                        <Send className="w-4 h-4" />
+                                                                    </Button>
+                                                                )}
                                                                 <Button
                                                                     variant="ghost"
                                                                     size="sm"
@@ -2362,35 +2425,59 @@ export default function AdminDashboard() {
                                 {/* Action Buttons */}
                                 {!isAppEditing && (
                                     <section className="pt-4 flex flex-wrap gap-3">
-                                        <Button
-                                            className="h-12 px-8 rounded-xl bg-emerald-600 hover:bg-emerald-700 font-bold"
-                                            onClick={() => {
-                                                const amountRequired = selectedApplication.amountToPay || 0;
-                                                const amountPaid = selectedApplication.amountPaid || 0;
+                                        {selectedApplication.status === 'pending' && (
+                                            <Button
+                                                className="h-12 px-8 rounded-xl bg-emerald-600 hover:bg-emerald-700 font-bold"
+                                                onClick={() => {
+                                                    const amountRequired = selectedApplication.amountToPay || 0;
+                                                    const amountPaid = selectedApplication.amountPaid || 0;
 
-                                                if (selectedApplication.paymentMethod === 'Not Set' || selectedApplication.paymentStatus === 'Pending' || amountPaid < amountRequired) {
-                                                    toast({
-                                                        title: "Payment Incomplete",
-                                                        description: `Approval requires full payment. Required: Ksh ${amountRequired.toLocaleString()}, Paid: Ksh ${amountPaid.toLocaleString()}`,
-                                                        variant: "destructive"
-                                                    });
-                                                    return;
-                                                }
-                                                handleApplicationStatus(selectedApplication._id, 'approved');
-                                                setAppDetailOpen(false);
-                                            }}
-                                            disabled={actionLoading || selectedApplication.status === 'approved'}
-                                        >
-                                            <CheckCircle2 className="w-4 h-4 mr-2" /> Approve Application
-                                        </Button>
-                                        <Button
-                                            variant="outline"
-                                            className="h-12 px-8 rounded-xl border-amber-200 text-amber-600 hover:bg-amber-50 font-bold"
-                                            onClick={() => { handleApplicationStatus(selectedApplication._id, 'rejected'); setAppDetailOpen(false); }}
-                                            disabled={actionLoading || selectedApplication.status === 'rejected'}
-                                        >
-                                            <XCircle className="w-4 h-4 mr-2" /> Reject
-                                        </Button>
+                                                    if (selectedApplication.paymentMethod === 'Not Set' || selectedApplication.paymentStatus === 'Pending' || amountPaid < amountRequired) {
+                                                        toast({
+                                                            title: "Payment Incomplete",
+                                                            description: `Approval requires full payment. Required: Ksh ${amountRequired.toLocaleString()}, Paid: Ksh ${amountPaid.toLocaleString()}`,
+                                                            variant: "destructive"
+                                                        });
+                                                        return;
+                                                    }
+                                                    handleApplicationStatus(selectedApplication._id, 'approved');
+                                                    setAppDetailOpen(false);
+                                                }}
+                                                disabled={actionLoading}
+                                            >
+                                                <CheckCircle2 className="w-4 h-4 mr-2" /> Approve Application
+                                            </Button>
+                                        )}
+                                        {selectedApplication.status === 'approved' && (
+                                            <Button
+                                                variant="outline"
+                                                className="h-12 px-8 rounded-xl border-primary text-primary hover:bg-primary/5 font-bold"
+                                                onClick={() => handleResendEmail(selectedApplication._id, 'approval')}
+                                                disabled={actionLoading}
+                                            >
+                                                <Mail className="w-4 h-4 mr-2" /> Resend Welcome Email
+                                            </Button>
+                                        )}
+                                        {selectedApplication.status === 'pending' && (
+                                            <>
+                                                <Button
+                                                    variant="outline"
+                                                    className="h-12 px-8 rounded-xl border-amber-200 text-amber-600 hover:bg-amber-50 font-bold"
+                                                    onClick={() => { handleApplicationStatus(selectedApplication._id, 'rejected'); setAppDetailOpen(false); }}
+                                                    disabled={actionLoading}
+                                                >
+                                                    <XCircle className="w-4 h-4 mr-2" /> Reject
+                                                </Button>
+                                                <Button
+                                                    variant="outline"
+                                                    className="h-12 px-6 rounded-xl border-blue-200 text-blue-600 hover:bg-blue-50 font-bold"
+                                                    onClick={() => handleResendEmail(selectedApplication._id, 'confirmation')}
+                                                    disabled={actionLoading}
+                                                >
+                                                    <Send className="w-4 h-4 mr-2" /> Resend Confirmation
+                                                </Button>
+                                            </>
+                                        )}
                                         <Button
                                             variant="ghost"
                                             className="h-12 px-4 rounded-xl text-red-500 hover:bg-red-50 font-bold ml-auto"

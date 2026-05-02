@@ -165,8 +165,20 @@ export const adminService = {
     },
 
     /** PATCH /membership-applications/admin/:id/status */
-    async updateApplicationStatus(id: string, status: string): Promise<{ success: boolean; message: string }> {
+    async updateApplicationStatus(id: string, status: string): Promise<{ success: boolean; data: { application: any; password?: string }; message: string }> {
         const response = await api.patch(`/membership-applications/admin/${id}/status`, { status });
+        return response.data;
+    },
+
+    /** POST /membership-applications/admin/:id/send-approval */
+    async sendApprovalEmail(id: string, password?: string): Promise<{ success: boolean; message: string }> {
+        const response = await api.post(`/membership-applications/admin/${id}/send-approval`, { password });
+        return response.data;
+    },
+
+    /** POST /membership-applications/:id/send-confirmation */
+    async sendConfirmationEmail(id: string): Promise<{ success: boolean; message: string }> {
+        const response = await api.post(`/membership-applications/${id}/send-confirmation`);
         return response.data;
     },
     
