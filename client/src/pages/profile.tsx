@@ -43,7 +43,8 @@ import {
     Trash2,
     AlertCircle,
     ShieldCheck,
-    Wallet
+    Wallet,
+    Receipt
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -88,6 +89,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { MembershipCertificate } from "@/components/membership-certificate";
+import { upcomingEvents } from "@/data/events-data";
 
 export default function ProfilePage() {
     const [, setLocation] = useLocation();
@@ -103,6 +105,10 @@ export default function ProfilePage() {
     const [isSubmittingPassword, setIsSubmittingPassword] = useState(false);
     const [showPasswords, setShowPasswords] = useState({ current: false, new: false, confirm: false });
     const [activeTab, setActiveTab] = useState("overview");
+    const [marketplaceDashboard, setMarketplaceDashboard] = useState<CmsDashboard | null>(null);
+    const [loadingDashboard, setLoadingDashboard] = useState(false);
+    const [eventsCount, setEventsCount] = useState(0);
+    const [displayEvents, setDisplayEvents] = useState(upcomingEvents);
 
     const businessSchema = z.object({
         name: z.string().min(2, "Business name must be at least 2 characters"),
@@ -189,6 +195,35 @@ export default function ProfilePage() {
             if (user.requirePasswordChange) {
                 setIsPasswordOpen(true);
             }
+
+            // Fetch marketplace dashboard for stats
+            const fetchDashboard = async () => {
+                try {
+                    setLoadingDashboard(true);
+                    const res = await cmsService.getDashboard();
+                    if (res.success) {
+                        setMarketplaceDashboard(res.data);
+                    }
+                } catch (err) {
+                    console.error("Dashboard load failed:", err);
+                } finally {
+                    setLoadingDashboard(false);
+                }
+            };
+            fetchDashboard();
+
+            // Fetch events count
+            const fetchEvents = async () => {
+                try {
+                    // Using the source of truth from events-data.ts as requested
+                    const count = upcomingEvents.length;
+                    setEventsCount(count);
+                    setDisplayEvents(upcomingEvents);
+                } catch (err) {
+                    console.error("Events load failed:", err);
+                }
+            };
+            fetchEvents();
         }
     }, [user, authLoading, setLocation, form, personalForm]);
 
@@ -367,9 +402,15 @@ export default function ProfilePage() {
 
     const stats = [
         { title: "Membership Status", value: business?.plan || "Full", icon: <Shield className="w-5 h-5" />, color: "from-blue-500 to-indigo-600", bg: "bg-blue-500/10" },
-        { title: "Registered Events", value: "2", icon: <Calendar className="w-5 h-5" />, color: "from-primary to-primary/70", bg: "bg-primary/10" },
-        { title: "Trade Leads", value: "12", icon: <TrendingUp className="w-5 h-5" />, color: "from-emerald-500 to-teal-600", bg: "bg-emerald-500/10" },
-        { title: "Total Points", value: "450", icon: <Award className="w-5 h-5" />, color: "from-amber-500 to-orange-600", bg: "bg-amber-500/10" },
+        { title: "Upcoming Events", value: upcomingEvents.length.toString(), icon: <Calendar className="w-5 h-5" />, color: "from-primary to-primary/70", bg: "bg-primary/10" },
+        { title: "Marketplace Products", value: (marketplaceDashboard?.products?.total || 0).toString(), icon: <Package className="w-5 h-5" />, color: "from-emerald-500 to-teal-600", bg: "bg-emerald-500/10" },
+        { title: "Total Orders", value: (marketplaceDashboard?.orderStats?.totalOrders || 0).toString(), icon: <ShoppingCart className="w-5 h-5" />, color: "from-amber-500 to-orange-600", bg: "bg-amber-500/10" },
+    ];
+
+    const activities = [
+        { title: "Profile Verified", desc: `Your business "${business?.name || user.name}" is now visible in the verified member directory.`, time: "Recent", icon: BadgeCheck, color: "text-blue-500", bg: "bg-blue-500/10" },
+        { title: "Marketplace Status", desc: marketplaceDashboard ? "Your storefront is active and receiving traffic." : "Activate your marketplace store to start selling.", time: marketplaceDashboard ? "Active" : "Pending", icon: Store, color: "text-emerald-500", bg: "bg-emerald-500/10" },
+        { title: "Account Created", desc: "You have been a member of the KNCCI UG Chapter since joining the portal.", time: "Joined", icon: Award, color: "text-amber-500", bg: "bg-amber-500/10" },
     ];
 
     return (
@@ -630,11 +671,7 @@ export default function ProfilePage() {
                                             </CardHeader>
                                             <CardContent className="p-0">
                                                 <div className="divide-y divide-border/20">
-                                                    {[
-                                                        { title: "Renewal Success", desc: "Your membership for 2026/27 has been officially confirmed.", time: "2h ago", icon: Award, color: "text-amber-500", bg: "bg-amber-500/10" },
-                                                        { title: "Marketplace Match", desc: "A new lead in 'Construction Materials' matches your profile.", time: "1d ago", icon: TrendingUp, color: "text-emerald-500", bg: "bg-emerald-500/10" },
-                                                        { title: "Directory Profile", desc: "Your business is now visible in the verified member directory.", time: "3d ago", icon: User, color: "text-blue-500", bg: "bg-blue-500/10" },
-                                                    ].map((item, i) => (
+                                                    {activities.map((item, i) => (
                                                         <div key={i} className="p-6 flex gap-6 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all cursor-pointer group">
                                                             <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${item.bg} ${item.color} shadow-sm group-hover:rotate-6 transition-transform`}>
                                                                 <item.icon className="w-7 h-7" />
@@ -743,15 +780,15 @@ export default function ProfilePage() {
                                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                                                     <div className="p-8 rounded-[2rem] bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/60 transition-all hover:bg-white dark:hover:bg-slate-800 hover:shadow-xl hover:shadow-primary/5 group cursor-default">
                                                         <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-3 group-hover:text-primary transition-colors">KRA PIN Status</p>
-                                                        <p className="font-extrabold font-mono text-foreground text-sm tracking-wider uppercase">{business?.kra_pin || "---"}</p>
+                                                        <p className="font-extrabold font-mono text-foreground text-sm tracking-wider uppercase">{business?.kra_pin || "NOT LINKED"}</p>
                                                     </div>
                                                     <div className="p-8 rounded-[2rem] bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/60 transition-all hover:bg-white dark:hover:bg-slate-800 hover:shadow-xl hover:shadow-primary/5 group cursor-default">
                                                         <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-3 group-hover:text-primary transition-colors">Company Registry</p>
-                                                        <p className="font-extrabold font-mono text-foreground text-sm tracking-wider uppercase">{business?.company_reg_no || "---"}</p>
+                                                        <p className="font-extrabold font-mono text-foreground text-sm tracking-wider uppercase">{business?.company_reg_no || "NOT LINKED"}</p>
                                                     </div>
                                                     <div className="p-8 rounded-[2rem] bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/60 transition-all hover:bg-white dark:hover:bg-slate-800 hover:shadow-xl hover:shadow-primary/5 group cursor-default">
                                                         <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-3 group-hover:text-primary transition-colors">Operating Permit</p>
-                                                        <p className="font-extrabold font-mono text-foreground text-sm tracking-wider uppercase">{business?.business_permit || "---"}</p>
+                                                        <p className="font-extrabold font-mono text-foreground text-sm tracking-wider uppercase">{business?.business_permit || "NOT LINKED"}</p>
                                                     </div>
                                                 </div>
                                             </div>
@@ -767,23 +804,70 @@ export default function ProfilePage() {
                                         exit={{ opacity: 0, y: -10 }}
                                         className="space-y-6"
                                     >
-                                        <Card className="rounded-[2.5rem] border-none shadow-2xl shadow-primary/5 p-12 bg-white dark:bg-slate-900 border border-border/40 min-h-[500px] flex flex-col items-center justify-center text-center">
-                                            <div className="w-24 h-24 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center mb-8 shadow-inner">
-                                                <PaymentIcon className="w-10 h-10 text-muted-foreground/30" />
-                                            </div>
-                                            <h3 className="text-3xl font-extrabold mb-4 tracking-tight">Finances & Billing</h3>
-                                            <p className="text-muted-foreground max-w-sm font-medium leading-[1.8]">
-                                                Track your investment in the chamber. View past receipts, upcoming renewals, and download tax-ready invoices. This feature is currently in final verification.
-                                            </p>
-                                            <div className="mt-10 flex gap-4">
-                                                <Button variant="ghost" className="font-bold opacity-50 cursor-not-allowed">H1 Stat</Button>
-                                                <div className="w-px h-10 bg-border/40" />
-                                                <Button variant="ghost" className="font-bold opacity-50 cursor-not-allowed">H2 Stat</Button>
-                                            </div>
-                                            <Button variant="outline" className="mt-12 rounded-2xl h-12 px-10 font-extrabold uppercase tracking-widest text-[10px]" disabled>
-                                                System locked
-                                            </Button>
-                                        </Card>
+                                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                            <Card className="lg:col-span-2 rounded-[2.5rem] border-none shadow-2xl shadow-primary/5 p-12 bg-white dark:bg-slate-900 border border-border/40">
+                                                <div className="flex items-center justify-between mb-10">
+                                                    <div>
+                                                        <h3 className="text-3xl font-extrabold tracking-tight">Current Subscription</h3>
+                                                        <p className="text-muted-foreground font-medium mt-1">Details of your KNCCI membership investment.</p>
+                                                    </div>
+                                                    <Badge className="rounded-xl px-4 py-2 bg-primary text-white font-extrabold text-[10px] uppercase tracking-widest">Active</Badge>
+                                                </div>
+
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                                                    <div className="p-8 rounded-[2rem] bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/60">
+                                                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary mb-3">Membership Tier</p>
+                                                        <p className="text-2xl font-extrabold">{business?.plan || "Bronze"} Member</p>
+                                                        <p className="text-xs text-muted-foreground font-medium mt-2">Verified KNCCI Uasin Gishu Chapter</p>
+                                                    </div>
+                                                    <div className="p-8 rounded-[2rem] bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/60">
+                                                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary mb-3">Renewal Date</p>
+                                                        <p className="text-2xl font-extrabold">Jan 12, 2027</p>
+                                                        <p className="text-xs text-muted-foreground font-medium mt-2">Annual billing cycle</p>
+                                                    </div>
+                                                </div>
+
+                                                <div className="mt-10 p-8 rounded-[2rem] border border-dashed border-border/60 bg-slate-50/50 dark:bg-slate-800/20">
+                                                    <div className="flex items-center gap-4 text-muted-foreground">
+                                                        <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-900 flex items-center justify-center shadow-sm">
+                                                            <Receipt className="w-5 h-5" />
+                                                        </div>
+                                                        <div className="flex-1">
+                                                            <h4 className="font-bold text-sm text-foreground">Recent Invoices</h4>
+                                                            <p className="text-xs font-medium">No recent invoices found in your digital record.</p>
+                                                        </div>
+                                                        <Button variant="ghost" className="text-xs font-bold uppercase tracking-widest opacity-30 cursor-not-allowed">Download</Button>
+                                                    </div>
+                                                </div>
+                                            </Card>
+
+                                            <Card className="rounded-[2.5rem] border-none shadow-2xl shadow-primary/5 p-10 bg-gradient-to-br from-slate-900 to-slate-800 text-white border border-border/40 overflow-hidden relative group">
+                                                <div className="absolute top-0 right-0 w-40 h-40 bg-primary rounded-full -mr-20 -mt-20 blur-[80px] opacity-20 group-hover:scale-150 transition-transform duration-700" />
+                                                <div className="relative z-10">
+                                                    <div className="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-xl flex items-center justify-center mb-8 border border-white/10 shadow-xl">
+                                                        <ShieldCheck className="w-7 h-7 text-primary" />
+                                                    </div>
+                                                    <h4 className="text-xl font-extrabold mb-4">Tier Benefits</h4>
+                                                    <ul className="space-y-4">
+                                                        {[
+                                                            "Verified Directory Profile",
+                                                            "Marketplace Storefront",
+                                                            "Trade Leads Access",
+                                                            "Event Discounts",
+                                                            "Advocacy Support"
+                                                        ].map((benefit, i) => (
+                                                            <li key={i} className="flex items-center gap-3 text-sm font-medium text-slate-300">
+                                                                <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                                                                {benefit}
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                    <Button className="w-full mt-10 rounded-2xl h-12 font-extrabold uppercase tracking-widest text-[10px] bg-primary hover:bg-primary/90 text-white shadow-xl shadow-primary/20">
+                                                        Upgrade Tier
+                                                    </Button>
+                                                </div>
+                                            </Card>
+                                        </div>
                                     </motion.div>
                                 )}
 
@@ -823,10 +907,7 @@ export default function ProfilePage() {
                                             </div>
 
                                             <div className="space-y-6">
-                                                {[
-                                                    { title: "Eldoret Business Expo 2026", date: "Oct 15, 2026", type: "Conference", status: "Open for Gold", speakers: 12 },
-                                                    { title: "SME Digital Growth Forum", date: "Nov 02, 2026", type: "Workshop", status: "Limited Slots", speakers: 4 },
-                                                ].map((event, i) => (
+                                                {displayEvents.slice(0, 3).map((event, i) => (
                                                     <motion.div
                                                         key={i}
                                                         initial={{ opacity: 0, x: -10 }}
@@ -837,20 +918,22 @@ export default function ProfilePage() {
                                                         <div className="flex items-center gap-6 mb-4 sm:mb-0">
                                                             <div className="w-16 h-16 rounded-[1.5rem] bg-white dark:bg-slate-900 flex flex-col items-center justify-center border border-border/20 shadow-sm group-hover:border-primary/40 transition-colors">
                                                                 <span className="text-[10px] font-bold text-muted-foreground uppercase opacity-60 tracking-tighter">{event.date.split(' ')[0]}</span>
-                                                                <span className="text-2xl font-extrabold text-primary leading-none -mt-1">{event.date.split(' ')[1].slice(0, 2)}</span>
+                                                                <span className="text-2xl font-extrabold text-primary leading-none -mt-1">{event.date.includes(' ') ? event.date.split(' ')[1].replace(',', '').slice(0, 2) : "15"}</span>
                                                             </div>
                                                             <div>
                                                                 <h4 className="font-extrabold text-base uppercase tracking-tight group-hover:text-primary transition-colors">{event.title}</h4>
                                                                 <div className="flex flex-wrap items-center gap-3 mt-2">
-                                                                    <Badge variant="outline" className="text-[9px] h-5 font-bold border-primary/20 bg-primary/5 text-primary tracking-widest uppercase">{event.type}</Badge>
-                                                                    <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full uppercase tracking-widest">{event.status}</span>
+                                                                    <Badge variant="outline" className="text-[9px] h-5 font-bold border-primary/20 bg-primary/5 text-primary tracking-widest uppercase">{event.category || "Event"}</Badge>
+                                                                    <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full uppercase tracking-widest">Registration Open</span>
                                                                     <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1">
-                                                                        <Users className="w-3 h-3" /> {event.speakers} Key Speakers
+                                                                        <MapPin className="w-3 h-3" /> {event.location}
                                                                     </span>
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                        <Button variant="ghost" className="rounded-xl font-bold text-xs uppercase tracking-widest text-primary hover:bg-primary/5 px-6">Event Details</Button>
+                                                        <Link href={`/events/${event.id}`}>
+                                                            <Button variant="ghost" className="rounded-xl font-bold text-xs uppercase tracking-widest text-primary hover:bg-primary/5 px-6">Event Details</Button>
+                                                        </Link>
                                                     </motion.div>
                                                 ))}
                                             </div>
@@ -1268,11 +1351,11 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
 
     // Sub-tab navigation
     const [subTab, setSubTab] = useState<'overview' | 'products' | 'categories' | 'orders'>('overview');
-    
+
     // Orders state
     const [orders, setOrders] = useState<CmsOrder[]>([]);
     const [loadingOrders, setLoadingOrders] = useState(false);
-    
+
     useEffect(() => {
         loadCmsData();
     }, [business]);
@@ -1489,49 +1572,6 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
             await loadCmsData(); // Update dashboard stats
         } catch (err: any) {
             toast({ title: "Error", description: "Failed to update order status.", variant: "destructive" });
-        }
-    };
-
-    const handleSeedOrders = async () => {
-        try {
-            const product = dashboard?.products?.data?.[0];
-            const productId = product?._id || "640a1b2c3d4e5f6a7b8c9d0e"; // Dummy or real ID
-            const productName = product?.name || "Marketplace Product";
-
-            const testOrder = {
-                guestInfo: {
-                    name: "Jane Doe Test",
-                    email: "jane.doe@example.com",
-                    phone: "+254 711 222333"
-                },
-                items: [
-                   { 
-                     productId: productId,
-                     name: productName, 
-                     quantity: 2, 
-                     basePrice: 500,
-                     totalPrice: 1000
-                   }
-                ],
-                paymentInfo: {
-                    method: 'mpesa',
-                    paymentReference: 'SEED-' + Math.random().toString(36).substring(7).toUpperCase(),
-                    paidAmount: 1000,
-                    paidAt: new Date().toISOString()
-                },
-                shipping: {
-                    type: 'pickup',
-                    price: 0
-                },
-                totalAmount: 1000,
-                status: "Pending"
-            };
-            await cmsService.createTestOrder(testOrder);
-            toast({ title: "Success", description: "Test order seeded successfully." });
-            await loadOrders();
-            await loadCmsData(); // Update dash
-        } catch (err: any) {
-            toast({ title: "Error", description: err.response?.data?.message || "Failed to seed order.", variant: "destructive" });
         }
     };
 
@@ -1763,10 +1803,10 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
                     )}
                 </div>
                 <div className="flex items-center gap-2">
-                     <div className="text-right">
-                         <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Store Slug</p>
-                         <p className="text-[11px] font-extrabold text-foreground truncate max-w-[150px]">{business?.cms_org_slug || 'active-store'}</p>
-                     </div>
+                    <div className="text-right">
+                        <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Store Slug</p>
+                        <p className="text-[11px] font-extrabold text-foreground truncate max-w-[150px]">{business?.cms_org_slug || 'active-store'}</p>
+                    </div>
                 </div>
             </div>
 
@@ -1864,157 +1904,157 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
                         {/* Products Card */}
                         <Card className="rounded-[2.5rem] border-none shadow-2xl shadow-primary/5 bg-white dark:bg-slate-900 overflow-hidden">
                             <CardHeader className="p-8 pb-4">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                        <div>
-                            <CardTitle className="text-xl font-extrabold">Your Products</CardTitle>
-                            <CardDescription className="font-medium">Manage your marketplace listings</CardDescription>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <Button
-                                variant="outline"
-                                className="rounded-xl font-bold text-xs uppercase tracking-widest border-primary/20 text-primary h-10 px-5"
-                                onClick={() => {
-                                    const token = localStorage.getItem('accessToken');
-                                    const url = token ? `${import.meta.env.VITE_MARKETPLACE_URL || 'http://localhost:3000'}/?token=${token}` : `${import.meta.env.VITE_MARKETPLACE_URL || 'http://localhost:3000'}/`;
-                                    window.open(url, '_blank');
-                                }}
-                            >
-                                <ExternalLink className="w-3.5 h-3.5 mr-2" /> View Store
-                            </Button>
-                            <Button className="rounded-xl font-bold text-xs uppercase tracking-widest h-10 px-5 shadow-lg shadow-primary/20" onClick={() => {
-                                setShowAddForm(!showAddForm);
-                                if (!showAddForm) loadCategories();
-                            }}>
-                                <Plus className="w-4 h-4 mr-2" /> Add Product
-                            </Button>
-                        </div>
+                                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                                    <div>
+                                        <CardTitle className="text-xl font-extrabold">Your Products</CardTitle>
+                                        <CardDescription className="font-medium">Manage your marketplace listings</CardDescription>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <Button
+                                            variant="outline"
+                                            className="rounded-xl font-bold text-xs uppercase tracking-widest border-primary/20 text-primary h-10 px-5"
+                                            onClick={() => {
+                                                const token = localStorage.getItem('accessToken');
+                                                const url = token ? `${import.meta.env.VITE_MARKETPLACE_URL || 'http://localhost:3000'}/?token=${token}` : `${import.meta.env.VITE_MARKETPLACE_URL || 'http://localhost:3000'}/`;
+                                                window.open(url, '_blank');
+                                            }}
+                                        >
+                                            <ExternalLink className="w-3.5 h-3.5 mr-2" /> View Store
+                                        </Button>
+                                        <Button className="rounded-xl font-bold text-xs uppercase tracking-widest h-10 px-5 shadow-lg shadow-primary/20" onClick={() => {
+                                            setShowAddForm(!showAddForm);
+                                            if (!showAddForm) loadCategories();
+                                        }}>
+                                            <Plus className="w-4 h-4 mr-2" /> Add Product
+                                        </Button>
+                                    </div>
 
-                    </div>
-                </CardHeader>
-
-                {/* Add Product Form (inline) */}
-                <AnimatePresence>
-                    {showAddForm && (
-                        <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            className="overflow-hidden"
-                        >
-                            <div className="px-8 pb-6 pt-2 border-t border-border/20">
-                                <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary mb-4">New Product</p>
-                                <div className="grid sm:grid-cols-3 gap-4">
-                                    <Input placeholder="Product name *" value={newProduct.name} onChange={e => setNewProduct({ ...newProduct, name: e.target.value })} className="rounded-xl h-11" />
-                                    <Select onValueChange={val => setNewProduct({ ...newProduct, category: val })} value={newProduct.category}>
-                                        <SelectTrigger className="rounded-xl h-11"><SelectValue placeholder="Select category *" /></SelectTrigger>
-                                        <SelectContent className="rounded-xl">
-                                            {categories.length > 0 ? (
-                                                categories.map(c => <SelectItem key={c._id} value={c.name}>{c.name} ({c.categoryType})</SelectItem>)
-                                            ) : (
-                                                <SelectItem value="none" disabled>No categories found</SelectItem>
-                                            )}
-                                        </SelectContent>
-                                    </Select>
-                                    <Input placeholder="Price (KES) *" type="number" value={newProduct.price} onChange={e => setNewProduct({ ...newProduct, price: e.target.value })} className="rounded-xl h-11" />
-                                    <Input placeholder="Stock quantity" type="number" value={newProduct.stock} onChange={e => setNewProduct({ ...newProduct, stock: e.target.value })} className="rounded-xl h-11" />
-                                    <Input placeholder="Unit (e.g. Kg, Box, Hr)" value={newProduct.unit} onChange={e => setNewProduct({ ...newProduct, unit: e.target.value })} className="rounded-xl h-11" />
                                 </div>
+                            </CardHeader>
 
-                                <Textarea placeholder="Product description *" value={newProduct.description} onChange={e => setNewProduct({ ...newProduct, description: e.target.value })} className="mt-4 rounded-xl min-h-[80px]" />
-                                <div className="flex justify-end gap-3 mt-4">
-                                    <Button variant="ghost" className="rounded-xl font-bold" onClick={() => setShowAddForm(false)}>Cancel</Button>
-                                    <Button className="rounded-xl px-8 font-bold shadow-lg shadow-primary/20" onClick={handleAddProduct} disabled={addingProduct}>
-                                        {addingProduct ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</> : "Save Product"}
-                                    </Button>
-                                </div>
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                            {/* Add Product Form (inline) */}
+                            <AnimatePresence>
+                                {showAddForm && (
+                                    <motion.div
+                                        initial={{ height: 0, opacity: 0 }}
+                                        animate={{ height: "auto", opacity: 1 }}
+                                        exit={{ height: 0, opacity: 0 }}
+                                        className="overflow-hidden"
+                                    >
+                                        <div className="px-8 pb-6 pt-2 border-t border-border/20">
+                                            <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary mb-4">New Product</p>
+                                            <div className="grid sm:grid-cols-3 gap-4">
+                                                <Input placeholder="Product name *" value={newProduct.name} onChange={e => setNewProduct({ ...newProduct, name: e.target.value })} className="rounded-xl h-11" />
+                                                <Select onValueChange={val => setNewProduct({ ...newProduct, category: val })} value={newProduct.category}>
+                                                    <SelectTrigger className="rounded-xl h-11"><SelectValue placeholder="Select category *" /></SelectTrigger>
+                                                    <SelectContent className="rounded-xl">
+                                                        {categories.length > 0 ? (
+                                                            categories.map(c => <SelectItem key={c._id} value={c.name}>{c.name} ({c.categoryType})</SelectItem>)
+                                                        ) : (
+                                                            <SelectItem value="none" disabled>No categories found</SelectItem>
+                                                        )}
+                                                    </SelectContent>
+                                                </Select>
+                                                <Input placeholder="Price (KES) *" type="number" value={newProduct.price} onChange={e => setNewProduct({ ...newProduct, price: e.target.value })} className="rounded-xl h-11" />
+                                                <Input placeholder="Stock quantity" type="number" value={newProduct.stock} onChange={e => setNewProduct({ ...newProduct, stock: e.target.value })} className="rounded-xl h-11" />
+                                                <Input placeholder="Unit (e.g. Kg, Box, Hr)" value={newProduct.unit} onChange={e => setNewProduct({ ...newProduct, unit: e.target.value })} className="rounded-xl h-11" />
+                                            </div>
 
-                {/* Products List */}
-                <CardContent className="p-0">
-                    {products.length === 0 ? (
-                        <div className="p-12 text-center">
-                            <div className="w-20 h-20 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center mx-auto mb-6">
-                                <Package className="w-8 h-8 text-muted-foreground/30" />
-                            </div>
-                            <h4 className="font-extrabold text-lg mb-2">No Products Yet</h4>
-                            <p className="text-sm text-muted-foreground max-w-sm mx-auto font-medium">Start listing your products and services to reach the KNCCI trade network.</p>
-                            <Button className="mt-6 rounded-xl font-bold shadow-lg shadow-primary/20" onClick={() => setShowAddForm(true)}>
-                                <Plus className="w-4 h-4 mr-2" /> Add Your First Product
-                            </Button>
-                        </div>
-                    ) : (
-                        <div className="divide-y divide-border/20">
-                            {products.map((product, i) => (
-                                <motion.div
-                                    key={product._id || i}
-                                    initial={{ opacity: 0, x: -10 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: i * 0.05 }}
-                                    className="p-6 flex items-center justify-between gap-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all group cursor-pointer"
-                                    onClick={() => {
-                                        setSelectedProduct(product);
-                                        setIsEditingProduct(false);
-                                    }}
-
-                                >
-                                    <div className="flex items-center gap-4 min-w-0">
-                                        <div className="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0 overflow-hidden">
-                                            {product.images?.[0] ? (
-                                                <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
-                                            ) : (
-                                                <Package className="w-6 h-6 text-muted-foreground/40" />
-                                            )}
-                                        </div>
-                                        <div className="min-w-0">
-                                            <h4 className="font-extrabold text-sm truncate group-hover:text-primary transition-colors">{product.name}</h4>
-                                            <div className="flex items-center gap-3 mt-1">
-                                                <span className="text-xs font-bold text-primary">KES {((product.basePrice || product.price || 0) + (product.additions || 0)).toLocaleString()}</span>
-                                                <Badge variant="outline" className={`text-[9px] h-5 font-bold tracking-widest uppercase ${product.isActive !== false ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600' : 'border-red-500/30 bg-red-500/10 text-red-500'
-                                                    }`}>
-                                                    {product.isActive !== false ? "Active" : "Inactive"}
-                                                </Badge>
-                                                {product.category && <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{product.category}</span>}
-                                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">{product.stock || 0} {product.unit || 'Units'}</span>
+                                            <Textarea placeholder="Product description *" value={newProduct.description} onChange={e => setNewProduct({ ...newProduct, description: e.target.value })} className="mt-4 rounded-xl min-h-[80px]" />
+                                            <div className="flex justify-end gap-3 mt-4">
+                                                <Button variant="ghost" className="rounded-xl font-bold" onClick={() => setShowAddForm(false)}>Cancel</Button>
+                                                <Button className="rounded-xl px-8 font-bold shadow-lg shadow-primary/20" onClick={handleAddProduct} disabled={addingProduct}>
+                                                    {addingProduct ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</> : "Save Product"}
+                                                </Button>
                                             </div>
                                         </div>
-                                    </div>
-                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/5"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setSelectedProduct(product);
-                                                setIsEditingProduct(true);
-                                                loadCategories();
-                                            }}
-                                        >
-                                            <Edit className="w-4 h-4" />
-                                        </Button>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="rounded-xl text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleDeleteProduct(product._id, product.name);
-                                            }}
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </Button>
-                                    </div>
-                                </motion.div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
 
-                            ))}
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
-            </motion.div>
+                            {/* Products List */}
+                            <CardContent className="p-0">
+                                {products.length === 0 ? (
+                                    <div className="p-12 text-center">
+                                        <div className="w-20 h-20 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center mx-auto mb-6">
+                                            <Package className="w-8 h-8 text-muted-foreground/30" />
+                                        </div>
+                                        <h4 className="font-extrabold text-lg mb-2">No Products Yet</h4>
+                                        <p className="text-sm text-muted-foreground max-w-sm mx-auto font-medium">Start listing your products and services to reach the KNCCI trade network.</p>
+                                        <Button className="mt-6 rounded-xl font-bold shadow-lg shadow-primary/20" onClick={() => setShowAddForm(true)}>
+                                            <Plus className="w-4 h-4 mr-2" /> Add Your First Product
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <div className="divide-y divide-border/20">
+                                        {products.map((product, i) => (
+                                            <motion.div
+                                                key={product._id || i}
+                                                initial={{ opacity: 0, x: -10 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                transition={{ delay: i * 0.05 }}
+                                                className="p-6 flex items-center justify-between gap-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all group cursor-pointer"
+                                                onClick={() => {
+                                                    setSelectedProduct(product);
+                                                    setIsEditingProduct(false);
+                                                }}
+
+                                            >
+                                                <div className="flex items-center gap-4 min-w-0">
+                                                    <div className="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0 overflow-hidden">
+                                                        {product.images?.[0] ? (
+                                                            <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
+                                                        ) : (
+                                                            <Package className="w-6 h-6 text-muted-foreground/40" />
+                                                        )}
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <h4 className="font-extrabold text-sm truncate group-hover:text-primary transition-colors">{product.name}</h4>
+                                                        <div className="flex items-center gap-3 mt-1">
+                                                            <span className="text-xs font-bold text-primary">KES {((product.basePrice || product.price || 0) + (product.additions || 0)).toLocaleString()}</span>
+                                                            <Badge variant="outline" className={`text-[9px] h-5 font-bold tracking-widest uppercase ${product.isActive !== false ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600' : 'border-red-500/30 bg-red-500/10 text-red-500'
+                                                                }`}>
+                                                                {product.isActive !== false ? "Active" : "Inactive"}
+                                                            </Badge>
+                                                            {product.category && <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{product.category}</span>}
+                                                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">{product.stock || 0} {product.unit || 'Units'}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/5"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setSelectedProduct(product);
+                                                            setIsEditingProduct(true);
+                                                            loadCategories();
+                                                        }}
+                                                    >
+                                                        <Edit className="w-4 h-4" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="rounded-xl text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleDeleteProduct(product._id, product.name);
+                                                        }}
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </Button>
+                                                </div>
+                                            </motion.div>
+
+                                        ))}
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </motion.div>
                 )}
 
                 {subTab === 'categories' && (
@@ -2102,13 +2142,6 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
                                         <CardTitle className="text-xl font-extrabold">Order Management</CardTitle>
                                         <CardDescription className="font-medium">Track and fulfill customer orders</CardDescription>
                                     </div>
-                                    <Button
-                                        variant="outline"
-                                        className="rounded-xl font-bold text-xs uppercase tracking-widest border-primary/20 text-primary h-10 px-5"
-                                        onClick={handleSeedOrders}
-                                    >
-                                        <Plus className="w-3.5 h-3.5 mr-2" /> Seed Test Order
-                                    </Button>
                                 </div>
                             </CardHeader>
                             <CardContent className="p-0">
