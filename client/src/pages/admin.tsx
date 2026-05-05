@@ -543,10 +543,11 @@ export default function AdminDashboard() {
             const res = await adminService.updateApplicationStatus(id, status);
             toast({ title: "Status Updated", description: `Application is now ${status}.` });
 
-            // If approved, send the approval email with the generated password
-            if (status === 'approved' && res.data?.password) {
+            // Always send approval notification when approving — password may be undefined for
+            // returning applicants (user already exists); backend falls back to '********' gracefully.
+            if (status === 'approved') {
                 try {
-                    await adminService.sendApprovalEmail(id, res.data.password);
+                    await adminService.sendApprovalEmail(id, res.data?.password);
                     toast({ title: "Email Sent", description: "Membership approval email and SMS sent successfully." });
                 } catch (emailErr) {
                     console.error("Failed to send approval email:", emailErr);
