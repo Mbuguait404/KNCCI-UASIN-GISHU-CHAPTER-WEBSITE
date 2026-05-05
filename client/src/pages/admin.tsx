@@ -36,6 +36,7 @@ import { SEOHead } from "@/components/seo/seo-head";
 import { useAuth } from "@/services/auth-context";
 import { adminService, DashboardStats, MemberDoc, PaginatedMembers, SellerDoc, PaginatedSellers, OrderStats, SubscriptionPlan, SubscriptionStats, PaginatedOrders, PaginatedSubscribers } from "@/services/admin-service";
 import { messagingService, MessageTemplate, MessageLogEntry, MessageChannel, MessagingStats, PaginatedLogs, MessagingSettings } from "@/services/messaging-service";
+import { notificationService } from "@/services/notification-service";
 import { useToast } from "@/hooks/use-toast";
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
@@ -547,13 +548,37 @@ export default function AdminDashboard() {
             // returning applicants (user already exists); backend falls back to '********' gracefully.
             if (status === 'approved') {
                 try {
-                    await adminService.sendApprovalEmail(id, res.data?.password);
-                    toast({ title: "Email Sent", description: "Membership approval email and SMS sent successfully." });
+                    const app = applications.find(a => a._id === id);
+                    if (app) {
+                        const name = app.name;
+                        const company = app.businessName;
+                        const email = app.email;
+                        const phone = app.contact;
+                        const regNo = app.reg_no || "PENDING";
+                        const plan = app.subscriptionFee || "Standard";
+                        const password = res.data?.password;
+
+                        console.log("Sending approval notifications from admin frontend:", { email, phone });
+
+                        // Send Email
+                        await notificationService.sendApprovalEmail(name, company, regNo, plan, email, password);
+                        
+                        // Send SMS
+                        if (phone) {
+                            await notificationService.sendApprovalSms(name, company, regNo, phone);
+                        }
+
+                        toast({ title: "Email & SMS Sent", description: "Membership approval notifications sent successfully from frontend." });
+                    } else {
+                        // Fallback to backend if app data not found in local state
+                        await adminService.sendApprovalEmail(id, res.data?.password);
+                        toast({ title: "Email Sent", description: "Membership approval notification triggered via backend." });
+                    }
                 } catch (emailErr) {
-                    console.error("Failed to send approval email:", emailErr);
+                    console.error("Failed to send approval notification:", emailErr);
                     toast({ 
                         title: "Notification Delayed", 
-                        description: "Status updated, but welcome email failed. You can resend it from the details view.", 
+                        description: "Status updated, but welcome notification failed. You can resend it from the details view.", 
                         variant: "destructive" 
                     });
                 }
@@ -571,17 +596,25 @@ export default function AdminDashboard() {
         setActionLoading(true);
         try {
             if (type === 'confirmation') {
-                await adminService.sendConfirmationEmail(id);
-                toast({ title: "Confirmation Resent", description: "The registration confirmation email has been resent." });
+                const app = applications.find(a => a._id === id);
+                if (app) {
+                    await notificationService.sendWelcomeEmail(app.name, app.businessName, app.email);
+                    if (app.contact) await notificationService.sendWelcomeSms(app.name, app.businessName, app.contact);
+                    toast({ title: "Confirmation Resent", description: "Registration confirmation sent from frontend." });
+                } else {
+                    await adminService.sendConfirmationEmail(id);
+                    toast({ title: "Confirmation Resent", description: "The registration confirmation email has been resent." });
+                }
             } else {
-                // For approval, we don't have the password anymore (it's hashed), 
-                // so the backend will have to handle password-less welcome emails or we just send it without password
-                // Actually, the backend sendApprovalEmail(id, password) requires a password.
-                // If we don't have it, we might need a different endpoint or a way to reset and send.
-                // For now, let's assume we can trigger it. 
-                // Actually, I'll update the backend to allow null password if we just want to send a generic "You are approved"
-                await adminService.sendApprovalEmail(id, ""); 
-                toast({ title: "Welcome Email Resent", description: "The membership approval notification has been resent." });
+                const app = applications.find(a => a._id === id);
+                if (app) {
+                    await notificationService.sendApprovalEmail(app.name, app.businessName, app.reg_no || "PENDING", app.subscriptionFee || "Standard", app.email);
+                    if (app.contact) await notificationService.sendApprovalSms(app.name, app.businessName, app.reg_no || "PENDING", app.contact);
+                    toast({ title: "Welcome Resent", description: "Membership approval notification sent from frontend." });
+                } else {
+                    await adminService.sendApprovalEmail(id, ""); 
+                    toast({ title: "Welcome Email Resent", description: "The membership approval notification has been resent." });
+                }
             }
         } catch (err: any) {
             toast({ title: "Error", description: err.response?.data?.message || "Failed to resend email", variant: "destructive" });
