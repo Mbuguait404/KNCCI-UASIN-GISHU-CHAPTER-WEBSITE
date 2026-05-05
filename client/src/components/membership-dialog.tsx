@@ -73,6 +73,7 @@ import {
 import { motion } from "framer-motion";
 import { CheckCircle2, Loader2, Send, Building2, User, Phone, Mail, MapPin, CreditCard, Smartphone, Copy } from "lucide-react";
 import { CardContent } from "@/components/ui/card";
+import { notificationService } from "@/services/notification-service";
 
 const businessClasses = [
     "Agriculture / Livestock",
@@ -130,13 +131,39 @@ function MembershipDialogForm({ onComplete }: { onComplete: () => void }) {
     const mutation = useMutation({
         mutationFn: async (data: InsertMembershipApplication) => {
             await api.post("/membership-applications", data);
+
+            // Send notifications from frontend as requested
+            try {
+                const name = data.name;
+                const company = data.businessName;
+                const email = data.email;
+                const phone = data.contact;
+
+                console.log("Sending notifications from dialog to:", { email, phone });
+
+                // Send Email
+                await notificationService.sendWelcomeEmail(name, company, email);
+                
+                // Send SMS
+                if (phone) {
+                    await notificationService.sendWelcomeSms(name, company, phone);
+                }
+
+                toast({ 
+                    title: "Application Received", 
+                    description: "A confirmation email and SMS have been sent to you." 
+                });
+            } catch (notifyError) {
+                console.error("Failed to send notifications from dialog:", notifyError);
+                toast({ 
+                    title: "Application Received", 
+                    description: "Your application was received, but we encountered an issue sending notifications.",
+                    variant: "destructive"
+                });
+            }
         },
         onSuccess: () => {
             setIsSubmitted(true);
-            toast({
-                title: "Application Received",
-                description: "Your membership application has been submitted successfully.",
-            });
         },
         onError: (error) => {
             toast({

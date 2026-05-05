@@ -62,6 +62,7 @@ const subscriptionFees = [
 ];
 
 import { adminService } from "@/services/admin-service";
+import { notificationService } from "@/services/notification-service";
 
 export function MembershipForm() {
     const { toast } = useToast();
@@ -86,28 +87,40 @@ export function MembershipForm() {
             const response = await api.post("/membership-applications", data);
             const application = response.data.data;
             
-            if (application?._id) {
-                try {
-                    await adminService.sendConfirmationEmail(application._id);
-                    toast({ title: "Registration Successful", description: "A confirmation email has been sent to your address." });
-                } catch (emailError) {
-                    console.error("Failed to send confirmation email:", emailError);
-                    toast({ 
-                        title: "Registration Successful", 
-                        description: "Your application was received, but we couldn't send the confirmation email. Our team will contact you soon.",
-                        variant: "destructive"
-                    });
+            // Send notifications from frontend as requested
+            try {
+                const name = data.name;
+                const company = data.businessName;
+                const email = data.email;
+                const phone = data.contact;
+
+                console.log("Sending notifications to:", { email, phone });
+
+                // Send Email
+                await notificationService.sendWelcomeEmail(name, company, email);
+                
+                // Send SMS
+                if (phone) {
+                    await notificationService.sendWelcomeSms(name, company, phone);
                 }
+
+                toast({ 
+                    title: "Application Received", 
+                    description: "A confirmation email and SMS have been sent to you." 
+                });
+            } catch (notifyError) {
+                console.error("Failed to send notifications:", notifyError);
+                toast({ 
+                    title: "Application Received", 
+                    description: "Your application was received, but we encountered an issue sending notifications. Our team will contact you soon.",
+                    variant: "destructive"
+                });
             }
             
             return application;
         },
         onSuccess: () => {
             setIsSubmitted(true);
-            toast({
-                title: "Application Received",
-                description: "Your membership application has been submitted successfully.",
-            });
         },
         onError: (error) => {
             toast({
