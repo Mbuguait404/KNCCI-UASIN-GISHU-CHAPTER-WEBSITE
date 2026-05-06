@@ -343,6 +343,33 @@ export default function ProfilePage() {
         }
     };
 
+    const openMarketplace = async () => {
+        const marketplaceUrl = import.meta.env.VITE_MARKETPLACE_URL || 'http://localhost:3000';
+        const token = localStorage.getItem('accessToken');
+        if (!token) {
+            window.open(marketplaceUrl, '_blank');
+            return;
+        }
+        try {
+            const apiUrl = import.meta.env.VITE_API_URL || '';
+            const res = await fetch(`${apiUrl}/auth/marketplace-token`, {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            if (res.ok) {
+                const json = await res.json();
+                const code = json?.data?.code ?? json?.code;
+                if (code) {
+                    window.open(`${marketplaceUrl}/auth/exchange?code=${code}`, '_blank');
+                    return;
+                }
+            }
+        } catch {
+            // fallback — open without SSO
+        }
+        window.open(marketplaceUrl, '_blank');
+    };
+
     if (authLoading || (loading && !business && user)) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
@@ -1820,11 +1847,7 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
                     <motion.div key="overview" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }} className="space-y-6">
                         <div className="grid md:grid-cols-2 gap-6">
                             <motion.div whileHover={{ y: -3 }} transition={{ type: "spring", stiffness: 300 }}>
-                                <Card className="rounded-[2rem] border-none shadow-xl shadow-primary/5 p-8 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800/80 group overflow-hidden relative cursor-pointer" onClick={() => {
-                                    const token = localStorage.getItem('accessToken');
-                                    const url = token ? `${import.meta.env.VITE_MARKETPLACE_URL || 'http://localhost:3000'}/?token=${token}` : `${import.meta.env.VITE_MARKETPLACE_URL || 'http://localhost:3000'}/`;
-                                    window.open(url, '_blank');
-                                }}>
+                                <Card className="rounded-[2rem] border-none shadow-xl shadow-primary/5 p-8 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800/80 group overflow-hidden relative cursor-pointer" onClick={() => { openMarketplace(); }}>
                                     <div className="absolute -top-10 -right-10 w-32 h-32 bg-secondary/5 rounded-full blur-[40px] group-hover:bg-secondary/10 transition-colors" />
                                     <div className="flex items-center gap-4">
                                         <div className="w-12 h-12 rounded-xl bg-secondary/10 text-secondary flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -1873,11 +1896,7 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
                             <Button
                                 variant="outline"
                                 className="rounded-xl font-bold text-xs uppercase tracking-widest border-primary/20 text-primary h-10 px-5"
-                                onClick={() => {
-                                    const token = localStorage.getItem('accessToken');
-                                    const url = token ? `${import.meta.env.VITE_MARKETPLACE_URL || 'http://localhost:3000'}/?token=${token}` : `${import.meta.env.VITE_MARKETPLACE_URL || 'http://localhost:3000'}/`;
-                                    window.open(url, '_blank');
-                                }}
+                                onClick={() => { openMarketplace(); }}
                             >
                                 <ExternalLink className="w-3.5 h-3.5 mr-2" /> View Store
                             </Button>
