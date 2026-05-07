@@ -1297,11 +1297,11 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
 
     // Sub-tab navigation
     const [subTab, setSubTab] = useState<'overview' | 'products' | 'categories' | 'orders'>('overview');
-    
+
     // Orders state
     const [orders, setOrders] = useState<CmsOrder[]>([]);
     const [loadingOrders, setLoadingOrders] = useState(false);
-    
+
     useEffect(() => {
         loadCmsData();
     }, [business]);
@@ -1643,13 +1643,13 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
                     phone: "+254 711 222333"
                 },
                 items: [
-                   { 
-                     productId: productId,
-                     name: productName, 
-                     quantity: 2, 
-                     basePrice: 500,
-                     totalPrice: 1000
-                   }
+                    {
+                        productId: productId,
+                        name: productName,
+                        quantity: 2,
+                        basePrice: 500,
+                        totalPrice: 1000
+                    }
                 ],
                 paymentInfo: {
                     method: 'mpesa',
@@ -1908,10 +1908,10 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
                     )}
                 </div>
                 <div className="flex items-center gap-2">
-                     <div className="text-right">
-                         <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Store Slug</p>
-                         <p className="text-[11px] font-extrabold text-foreground truncate max-w-[150px]">{business?.cms_org_slug || 'active-store'}</p>
-                     </div>
+                    <div className="text-right">
+                        <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Store Slug</p>
+                        <p className="text-[11px] font-extrabold text-foreground truncate max-w-[150px]">{business?.cms_org_slug || 'active-store'}</p>
+                    </div>
                 </div>
             </div>
 
@@ -2005,191 +2005,191 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
                         {/* Products Card */}
                         <Card className="rounded-[2.5rem] border-none shadow-2xl shadow-primary/5 bg-white dark:bg-slate-900 overflow-hidden">
                             <CardHeader className="p-8 pb-4">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                        <div>
-                            <CardTitle className="text-xl font-extrabold">Your Products</CardTitle>
-                            <CardDescription className="font-medium">Manage your marketplace listings</CardDescription>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <Button
-                                variant="outline"
-                                className="rounded-xl font-bold text-xs uppercase tracking-widest border-primary/20 text-primary h-10 px-5"
-                                onClick={() => { openMarketplace(); }}
-                            >
-                                <ExternalLink className="w-3.5 h-3.5 mr-2" /> View Store
-                            </Button>
-                            <Button className="rounded-xl font-bold text-xs uppercase tracking-widest h-10 px-5 shadow-lg shadow-primary/20" onClick={() => {
-                                setShowAddForm(!showAddForm);
-                                if (!showAddForm) loadCategories();
-                            }}>
-                                <Plus className="w-4 h-4 mr-2" /> Add Product
-                            </Button>
-                        </div>
-
-                    </div>
-                </CardHeader>
-
-                {/* Add Product Form (inline) */}
-                <AnimatePresence>
-                    {showAddForm && (
-                        <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            className="overflow-hidden"
-                        >
-                            <div className="px-8 pb-6 pt-2 border-t border-border/20">
-                                <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary mb-4">New Product</p>
-                                <div className="grid sm:grid-cols-3 gap-4">
-                                    <Input placeholder="Product name *" value={newProduct.name} onChange={e => setNewProduct({ ...newProduct, name: e.target.value })} className="rounded-xl h-11" />
-                                    <Select onValueChange={val => setNewProduct({ ...newProduct, category: val })} value={newProduct.category}>
-                                        <SelectTrigger className="rounded-xl h-11"><SelectValue placeholder="Select category *" /></SelectTrigger>
-                                        <SelectContent className="rounded-xl">
-                                            {categories.length > 0 ? (
-                                                categories.map(c => <SelectItem key={c._id} value={c.name}>{c.name} ({c.categoryType})</SelectItem>)
-                                            ) : (
-                                                <SelectItem value="none" disabled>No categories found</SelectItem>
-                                            )}
-                                        </SelectContent>
-                                    </Select>
-                                    <Input placeholder="Price (KES) *" type="number" value={newProduct.price} onChange={e => setNewProduct({ ...newProduct, price: e.target.value })} className="rounded-xl h-11" />
-                                    <Input placeholder="Stock quantity" type="number" value={newProduct.stock} onChange={e => setNewProduct({ ...newProduct, stock: e.target.value })} className="rounded-xl h-11" />
-                                    <Input placeholder="Unit (e.g. Kg, Box, Hr)" value={newProduct.unit} onChange={e => setNewProduct({ ...newProduct, unit: e.target.value })} className="rounded-xl h-11" />
-                                </div>
-
-                                <Textarea placeholder="Product description *" value={newProduct.description} onChange={e => setNewProduct({ ...newProduct, description: e.target.value })} className="mt-4 rounded-xl min-h-[80px]" />
-                                <div className="mt-4 flex flex-col gap-4 rounded-2xl border border-border/30 bg-muted/20 p-4 sm:flex-row sm:items-center">
-                                    <div className="h-24 w-24 overflow-hidden rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center border border-border/20 shrink-0">
-                                        {newProduct.image ? (
-                                            <img src={newProduct.image} alt="New product" className="h-full w-full object-cover" />
-                                        ) : (
-                                            <Package className="w-8 h-8 text-muted-foreground/30" />
-                                        )}
+                                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                                    <div>
+                                        <CardTitle className="text-xl font-extrabold">Your Products</CardTitle>
+                                        <CardDescription className="font-medium">Manage your marketplace listings</CardDescription>
                                     </div>
-                                    <div className="flex-1 space-y-2">
-                                        <div>
-                                            <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">Product Image</p>
-                                            <p className="text-xs text-muted-foreground mt-1">Upload a cover image for this product.</p>
-                                        </div>
-                                        <div className="flex flex-wrap items-center gap-3">
-                                            <label className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/20 cursor-pointer">
-                                                {isUploadingProductImage ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                                                {newProduct.image ? "Replace Image" : "Upload Image"}
-                                                <input
-                                                    type="file"
-                                                    accept="image/*"
-                                                    className="hidden"
-                                                    onChange={handleNewProductImageChange}
-                                                    disabled={isUploadingProductImage}
-                                                />
-                                            </label>
-                                            {newProduct.image && (
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    className="rounded-xl font-bold"
-                                                    onClick={() => setNewProduct((prev) => ({ ...prev, image: "" }))}
-                                                >
-                                                    Remove Image
+                                    <div className="flex items-center gap-3">
+                                        <Button
+                                            variant="outline"
+                                            className="rounded-xl font-bold text-xs uppercase tracking-widest border-primary/20 text-primary h-10 px-5"
+                                            onClick={() => { openMarketplace(); }}
+                                        >
+                                            <ExternalLink className="w-3.5 h-3.5 mr-2" /> View Store
+                                        </Button>
+                                        <Button className="rounded-xl font-bold text-xs uppercase tracking-widest h-10 px-5 shadow-lg shadow-primary/20" onClick={() => {
+                                            setShowAddForm(!showAddForm);
+                                            if (!showAddForm) loadCategories();
+                                        }}>
+                                            <Plus className="w-4 h-4 mr-2" /> Add Product
+                                        </Button>
+                                    </div>
+
+                                </div>
+                            </CardHeader>
+
+                            {/* Add Product Form (inline) */}
+                            <AnimatePresence>
+                                {showAddForm && (
+                                    <motion.div
+                                        initial={{ height: 0, opacity: 0 }}
+                                        animate={{ height: "auto", opacity: 1 }}
+                                        exit={{ height: 0, opacity: 0 }}
+                                        className="overflow-hidden"
+                                    >
+                                        <div className="px-8 pb-6 pt-2 border-t border-border/20">
+                                            <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary mb-4">New Product</p>
+                                            <div className="grid sm:grid-cols-3 gap-4">
+                                                <Input placeholder="Product name *" value={newProduct.name} onChange={e => setNewProduct({ ...newProduct, name: e.target.value })} className="rounded-xl h-11" />
+                                                <Select onValueChange={val => setNewProduct({ ...newProduct, category: val })} value={newProduct.category}>
+                                                    <SelectTrigger className="rounded-xl h-11"><SelectValue placeholder="Select category *" /></SelectTrigger>
+                                                    <SelectContent className="rounded-xl">
+                                                        {categories.length > 0 ? (
+                                                            categories.map(c => <SelectItem key={c._id} value={c.name}>{c.name} ({c.categoryType})</SelectItem>)
+                                                        ) : (
+                                                            <SelectItem value="none" disabled>No categories found</SelectItem>
+                                                        )}
+                                                    </SelectContent>
+                                                </Select>
+                                                <Input placeholder="Price (KES) *" type="number" value={newProduct.price} onChange={e => setNewProduct({ ...newProduct, price: e.target.value })} className="rounded-xl h-11" />
+                                                <Input placeholder="Stock quantity" type="number" value={newProduct.stock} onChange={e => setNewProduct({ ...newProduct, stock: e.target.value })} className="rounded-xl h-11" />
+                                                <Input placeholder="Unit (e.g. Kg, Box, Hr)" value={newProduct.unit} onChange={e => setNewProduct({ ...newProduct, unit: e.target.value })} className="rounded-xl h-11" />
+                                            </div>
+
+                                            <Textarea placeholder="Product description *" value={newProduct.description} onChange={e => setNewProduct({ ...newProduct, description: e.target.value })} className="mt-4 rounded-xl min-h-[80px]" />
+                                            <div className="mt-4 flex flex-col gap-4 rounded-2xl border border-border/30 bg-muted/20 p-4 sm:flex-row sm:items-center">
+                                                <div className="h-24 w-24 overflow-hidden rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center border border-border/20 shrink-0">
+                                                    {newProduct.image ? (
+                                                        <img src={newProduct.image} alt="New product" className="h-full w-full object-cover" />
+                                                    ) : (
+                                                        <Package className="w-8 h-8 text-muted-foreground/30" />
+                                                    )}
+                                                </div>
+                                                <div className="flex-1 space-y-2">
+                                                    <div>
+                                                        <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">Product Image</p>
+                                                        <p className="text-xs text-muted-foreground mt-1">Upload a cover image for this product.</p>
+                                                    </div>
+                                                    <div className="flex flex-wrap items-center gap-3">
+                                                        <label className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/20 cursor-pointer">
+                                                            {isUploadingProductImage ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                                                            {newProduct.image ? "Replace Image" : "Upload Image"}
+                                                            <input
+                                                                type="file"
+                                                                accept="image/*"
+                                                                className="hidden"
+                                                                onChange={handleNewProductImageChange}
+                                                                disabled={isUploadingProductImage}
+                                                            />
+                                                        </label>
+                                                        {newProduct.image && (
+                                                            <Button
+                                                                type="button"
+                                                                variant="ghost"
+                                                                className="rounded-xl font-bold"
+                                                                onClick={() => setNewProduct((prev) => ({ ...prev, image: "" }))}
+                                                            >
+                                                                Remove Image
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="flex justify-end gap-3 mt-4">
+                                                <Button variant="ghost" className="rounded-xl font-bold" onClick={() => setShowAddForm(false)}>Cancel</Button>
+                                                <Button className="rounded-xl px-8 font-bold shadow-lg shadow-primary/20" onClick={handleAddProduct} disabled={addingProduct}>
+                                                    {addingProduct ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</> : "Save Product"}
                                                 </Button>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="flex justify-end gap-3 mt-4">
-                                    <Button variant="ghost" className="rounded-xl font-bold" onClick={() => setShowAddForm(false)}>Cancel</Button>
-                                    <Button className="rounded-xl px-8 font-bold shadow-lg shadow-primary/20" onClick={handleAddProduct} disabled={addingProduct}>
-                                        {addingProduct ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</> : "Save Product"}
-                                    </Button>
-                                </div>
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-
-                {/* Products List */}
-                <CardContent className="p-0">
-                    {products.length === 0 ? (
-                        <div className="p-12 text-center">
-                            <div className="w-20 h-20 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center mx-auto mb-6">
-                                <Package className="w-8 h-8 text-muted-foreground/30" />
-                            </div>
-                            <h4 className="font-extrabold text-lg mb-2">No Products Yet</h4>
-                            <p className="text-sm text-muted-foreground max-w-sm mx-auto font-medium">Start listing your products and services to reach the KNCCI trade network.</p>
-                            <Button className="mt-6 rounded-xl font-bold shadow-lg shadow-primary/20" onClick={() => setShowAddForm(true)}>
-                                <Plus className="w-4 h-4 mr-2" /> Add Your First Product
-                            </Button>
-                        </div>
-                    ) : (
-                        <div className="divide-y divide-border/20">
-                            {products.map((product, i) => (
-                                <motion.div
-                                    key={product._id || i}
-                                    initial={{ opacity: 0, x: -10 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: i * 0.05 }}
-                                    className="p-6 flex items-center justify-between gap-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all group cursor-pointer"
-                                    onClick={() => {
-                                        setSelectedProduct(product);
-                                        setIsEditingProduct(false);
-                                    }}
-
-                                >
-                                    <div className="flex items-center gap-4 min-w-0">
-                                        <div className="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0 overflow-hidden">
-                                            {product.image || product.images?.[0] ? (
-                                                <img src={product.image || product.images[0]} alt={product.name} className="w-full h-full object-cover" />
-                                            ) : (
-                                                <Package className="w-6 h-6 text-muted-foreground/40" />
-                                            )}
-                                        </div>
-                                        <div className="min-w-0">
-                                            <h4 className="font-extrabold text-sm truncate group-hover:text-primary transition-colors">{product.name}</h4>
-                                            <div className="flex items-center gap-3 mt-1">
-                                                <span className="text-xs font-bold text-primary">KES {((product.basePrice || product.price || 0) + (product.additions || 0)).toLocaleString()}</span>
-                                                <Badge variant="outline" className={`text-[9px] h-5 font-bold tracking-widest uppercase ${product.isActive !== false ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600' : 'border-red-500/30 bg-red-500/10 text-red-500'
-                                                    }`}>
-                                                    {product.isActive !== false ? "Active" : "Inactive"}
-                                                </Badge>
-                                                {product.category && <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{product.category}</span>}
-                                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">{product.stock || 0} {product.unit || 'Units'}</span>
                                             </div>
                                         </div>
-                                    </div>
-                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/5"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setSelectedProduct(product);
-                                                setIsEditingProduct(true);
-                                                loadCategories();
-                                            }}
-                                        >
-                                            <Edit className="w-4 h-4" />
-                                        </Button>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="rounded-xl text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleDeleteProduct(product._id, product.name);
-                                            }}
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </Button>
-                                    </div>
-                                </motion.div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
 
-                            ))}
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
-            </motion.div>
+                            {/* Products List */}
+                            <CardContent className="p-0">
+                                {products.length === 0 ? (
+                                    <div className="p-12 text-center">
+                                        <div className="w-20 h-20 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center mx-auto mb-6">
+                                            <Package className="w-8 h-8 text-muted-foreground/30" />
+                                        </div>
+                                        <h4 className="font-extrabold text-lg mb-2">No Products Yet</h4>
+                                        <p className="text-sm text-muted-foreground max-w-sm mx-auto font-medium">Start listing your products and services to reach the KNCCI trade network.</p>
+                                        <Button className="mt-6 rounded-xl font-bold shadow-lg shadow-primary/20" onClick={() => setShowAddForm(true)}>
+                                            <Plus className="w-4 h-4 mr-2" /> Add Your First Product
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <div className="divide-y divide-border/20">
+                                        {products.map((product, i) => (
+                                            <motion.div
+                                                key={product._id || i}
+                                                initial={{ opacity: 0, x: -10 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                transition={{ delay: i * 0.05 }}
+                                                className="p-6 flex items-center justify-between gap-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all group cursor-pointer"
+                                                onClick={() => {
+                                                    setSelectedProduct(product);
+                                                    setIsEditingProduct(false);
+                                                }}
+
+                                            >
+                                                <div className="flex items-center gap-4 min-w-0">
+                                                    <div className="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0 overflow-hidden">
+                                                        {product.image || product.images?.[0] ? (
+                                                            <img src={product.image || product.images[0]} alt={product.name} className="w-full h-full object-cover" />
+                                                        ) : (
+                                                            <Package className="w-6 h-6 text-muted-foreground/40" />
+                                                        )}
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <h4 className="font-extrabold text-sm truncate group-hover:text-primary transition-colors">{product.name}</h4>
+                                                        <div className="flex items-center gap-3 mt-1">
+                                                            <span className="text-xs font-bold text-primary">KES {((product.basePrice || product.price || 0) + (product.additions || 0)).toLocaleString()}</span>
+                                                            <Badge variant="outline" className={`text-[9px] h-5 font-bold tracking-widest uppercase ${product.isActive !== false ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600' : 'border-red-500/30 bg-red-500/10 text-red-500'
+                                                                }`}>
+                                                                {product.isActive !== false ? "Active" : "Inactive"}
+                                                            </Badge>
+                                                            {product.category && <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{product.category}</span>}
+                                                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">{product.stock || 0} {product.unit || 'Units'}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/5"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setSelectedProduct(product);
+                                                            setIsEditingProduct(true);
+                                                            loadCategories();
+                                                        }}
+                                                    >
+                                                        <Edit className="w-4 h-4" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="rounded-xl text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleDeleteProduct(product._id, product.name);
+                                                        }}
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </Button>
+                                                </div>
+                                            </motion.div>
+
+                                        ))}
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </motion.div>
                 )}
 
                 {subTab === 'categories' && (
