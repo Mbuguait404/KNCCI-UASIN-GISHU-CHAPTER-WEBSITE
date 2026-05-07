@@ -101,6 +101,55 @@ export interface CreateCategoryPayload {
 }
 
 
+export interface CmsService {
+    _id: string;
+    id?: string;
+    name: string;
+    slug?: string;
+    description?: string;
+    price?: number;
+    duration?: string;
+    category: string;
+    status: 'active' | 'inactive';
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface CreateServicePayload {
+    name: string;
+    description?: string;
+    price?: number;
+    duration?: string;
+    category: string;
+    status?: 'active' | 'inactive';
+}
+
+export interface CmsBlogPost {
+    _id: string;
+    title: string;
+    slug: string;
+    content: string;
+    author: string;
+    excerpt?: string;
+    featuredImage?: string;
+    category?: string;
+    tags?: string[];
+    status?: 'draft' | 'published';
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface CreateBlogPayload {
+    title: string;
+    content: string;
+    author: string;
+    excerpt?: string;
+    featuredImage?: string;
+    category?: string;
+    tags?: string[];
+    status?: 'draft' | 'published';
+}
+
 export const cmsService = {
     /** Check if the member's business is connected to the CMS marketplace */
     async getStatus(): Promise<{ success: boolean; data: CmsStatus }> {
@@ -185,8 +234,51 @@ export const cmsService = {
         return response.data;
     },
 
+    /** Services */
+    async getServices(params?: Record<string, any>): Promise<{ success: boolean; data: { data: CmsService[]; total: number } }> {
+        const response = await api.get('/cms/services', { params });
+        return response.data;
+    },
+
+    async createService(payload: CreateServicePayload): Promise<{ success: boolean; data: CmsService }> {
+        const response = await api.post('/cms/services', payload);
+        return response.data;
+    },
+
+    async updateService(serviceId: string, payload: Partial<CreateServicePayload>): Promise<{ success: boolean; data: CmsService }> {
+        const response = await api.patch(`/cms/services/${serviceId}`, payload);
+        return response.data;
+    },
+
+    async deleteService(serviceId: string): Promise<{ success: boolean }> {
+        const response = await api.delete(`/cms/services/${serviceId}`);
+        return response.data;
+    },
+
+    /** Blog Posts */
+    async getBlogs(params?: Record<string, any>): Promise<{ success: boolean; data: { posts?: CmsBlogPost[]; data?: CmsBlogPost[]; total: number } }> {
+        const response = await api.get('/cms/blogs', { params });
+        return response.data;
+    },
+
+    async createBlog(payload: CreateBlogPayload): Promise<{ success: boolean; data: CmsBlogPost }> {
+        const response = await api.post('/cms/blogs', payload);
+        return response.data;
+    },
+
+    async updateBlog(blogId: string, payload: Partial<CreateBlogPayload>): Promise<{ success: boolean; data: CmsBlogPost }> {
+        const response = await api.patch(`/cms/blogs/${blogId}`, payload);
+        return response.data;
+    },
+
+    async deleteBlog(blogId: string): Promise<{ success: boolean }> {
+        const response = await api.delete(`/cms/blogs/${blogId}`);
+        return response.data;
+    },
+
     async createTestOrder(payload: any): Promise<{ success: boolean; data: CmsOrder }> {
         const response = await api.post('/cms/orders/seed', payload);
         return response.data;
     }
 };
+
