@@ -309,7 +309,7 @@ export default function ProfilePage() {
             setIsSubmittingPassword(true);
             const { authService } = await import('@/lib/auth-service');
             const response = await authService.changePassword({
-                oldPassword: passwordForm.currentPassword,
+                currentPassword: passwordForm.currentPassword,
                 newPassword: passwordForm.newPassword,
                 confirmPassword: passwordForm.confirmPassword
             });
@@ -351,7 +351,7 @@ export default function ProfilePage() {
             return;
         }
         try {
-            const apiUrl = import.meta.env.VITE_API_URL || '';
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000/api/v1';
             const res = await fetch(`${apiUrl}/auth/marketplace-token`, {
                 method: 'POST',
                 headers: { Authorization: `Bearer ${token}` },
@@ -1284,8 +1284,10 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
     const [cmsConfirmPassword, setCmsConfirmPassword] = useState("");
     const [showCmsPassword, setShowCmsPassword] = useState(false);
     const [addingProduct, setAddingProduct] = useState(false);
+    const [isUploadingProductImage, setIsUploadingProductImage] = useState(false);
+    const [isUploadingSelectedProductImage, setIsUploadingSelectedProductImage] = useState(false);
     const [showAddForm, setShowAddForm] = useState(false);
-    const [newProduct, setNewProduct] = useState({ name: "", description: "", price: "", category: "", stock: "", unit: "" });
+    const [newProduct, setNewProduct] = useState({ name: "", description: "", price: "", category: "", stock: "", unit: "", image: "" });
     const [selectedProduct, setSelectedProduct] = useState<CmsProduct | null>(null);
     const [isEditingProduct, setIsEditingProduct] = useState(false);
     const [categories, setCategories] = useState<CmsCategory[]>([]);
@@ -1383,6 +1385,33 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
         }
     };
 
+    const openMarketplace = async () => {
+        const marketplaceUrl = import.meta.env.VITE_MARKETPLACE_URL || 'http://localhost:3000';
+        const token = localStorage.getItem('accessToken');
+        if (!token) {
+            window.open(marketplaceUrl, '_blank');
+            return;
+        }
+        try {
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000/api/v1';
+            const res = await fetch(`${apiUrl}/auth/marketplace-token`, {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            if (res.ok) {
+                const json = await res.json();
+                const code = json?.data?.code ?? json?.code;
+                if (code) {
+                    window.open(`${marketplaceUrl}/auth/exchange?code=${code}`, '_blank');
+                    return;
+                }
+            }
+        } catch {
+            // fallback — open without SSO
+        }
+        window.open(marketplaceUrl, '_blank');
+    };
+
     const loadCategories = async () => {
         try {
             const res = await cmsService.getCategories();
@@ -1393,6 +1422,87 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
                 setIsSessionExpired(true);
             }
         }
+    };
+
+    const uploadMarketplaceImage = async (
+        file: File,
+        onUploaded: (url: string) => void,
+        setUploading: (value: boolean) => void,
+    ) => {
+        if (!file.type.startsWith("image/")) {
+            toast({
+                title: "Invalid file type",
+                description: "Please upload an image file.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+            toast({
+                title: "File too large",
+                description: "Image size should be less than 5MB.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        try {
+            setUploading(true);
+            const response = await cmsService.uploadImage(file);
+            const imageUrl = response.data?.url;
+
+            if (!imageUrl) {
+                throw new Error("No image URL was returned.");
+            }
+
+            onUploaded(imageUrl);
+            toast({
+                title: "Image uploaded",
+                description: "Your product image is ready to use.",
+            });
+        } catch (error: any) {
+            toast({
+                title: "Upload failed",
+                description: error.response?.data?.message || error.message || "Failed to upload image.",
+                variant: "destructive",
+            });
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    const handleNewProductImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        event.target.value = "";
+        if (!file) return;
+
+        void uploadMarketplaceImage(
+            file,
+            (url) => setNewProduct((prev) => ({ ...prev, image: url })),
+            setIsUploadingProductImage,
+        );
+    };
+
+    const handleSelectedProductImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        event.target.value = "";
+        if (!file || !selectedProduct) return;
+
+        void uploadMarketplaceImage(
+            file,
+            (url) =>
+                setSelectedProduct((prev) =>
+                    prev
+                        ? {
+                            ...prev,
+                            image: url,
+                            images: [url],
+                        }
+                        : prev,
+                ),
+            setIsUploadingSelectedProductImage,
+        );
     };
 
     const handleAddProduct = async () => {
@@ -1407,11 +1517,12 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
                 description: newProduct.description,
                 price: parseFloat(newProduct.price),
                 category: newProduct.category,
+                image: newProduct.image || undefined,
                 stock: newProduct.stock ? parseInt(newProduct.stock) : undefined,
                 unit: newProduct.unit || undefined,
             });
             toast({ title: "Product Added", description: `"${newProduct.name}" is now listed on the marketplace.` });
-            setNewProduct({ name: "", description: "", price: "", category: "", stock: "", unit: "" });
+            setNewProduct({ name: "", description: "", price: "", category: "", stock: "", unit: "", image: "" });
             setShowAddForm(false);
             await loadCmsData();
         } catch (error: any) {
@@ -1761,6 +1872,13 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
                     >
                         {isLoggingIn ? <Loader2 className="w-4 h-4 animate-spin" /> : "Verify Identity"}
                     </Button>
+                    <Button
+                        variant="outline"
+                        className="w-full rounded-2xl h-12 font-bold uppercase tracking-widest text-[10px]"
+                        onClick={openMarketplace}
+                    >
+                        Visit Marketplace
+                    </Button>
                 </div>
             </Card>
         );
@@ -1940,6 +2058,44 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
                                 </div>
 
                                 <Textarea placeholder="Product description *" value={newProduct.description} onChange={e => setNewProduct({ ...newProduct, description: e.target.value })} className="mt-4 rounded-xl min-h-[80px]" />
+                                <div className="mt-4 flex flex-col gap-4 rounded-2xl border border-border/30 bg-muted/20 p-4 sm:flex-row sm:items-center">
+                                    <div className="h-24 w-24 overflow-hidden rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center border border-border/20 shrink-0">
+                                        {newProduct.image ? (
+                                            <img src={newProduct.image} alt="New product" className="h-full w-full object-cover" />
+                                        ) : (
+                                            <Package className="w-8 h-8 text-muted-foreground/30" />
+                                        )}
+                                    </div>
+                                    <div className="flex-1 space-y-2">
+                                        <div>
+                                            <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">Product Image</p>
+                                            <p className="text-xs text-muted-foreground mt-1">Upload a cover image for this product.</p>
+                                        </div>
+                                        <div className="flex flex-wrap items-center gap-3">
+                                            <label className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/20 cursor-pointer">
+                                                {isUploadingProductImage ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                                                {newProduct.image ? "Replace Image" : "Upload Image"}
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    className="hidden"
+                                                    onChange={handleNewProductImageChange}
+                                                    disabled={isUploadingProductImage}
+                                                />
+                                            </label>
+                                            {newProduct.image && (
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    className="rounded-xl font-bold"
+                                                    onClick={() => setNewProduct((prev) => ({ ...prev, image: "" }))}
+                                                >
+                                                    Remove Image
+                                                </Button>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
                                 <div className="flex justify-end gap-3 mt-4">
                                     <Button variant="ghost" className="rounded-xl font-bold" onClick={() => setShowAddForm(false)}>Cancel</Button>
                                     <Button className="rounded-xl px-8 font-bold shadow-lg shadow-primary/20" onClick={handleAddProduct} disabled={addingProduct}>
@@ -1981,8 +2137,8 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
                                 >
                                     <div className="flex items-center gap-4 min-w-0">
                                         <div className="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0 overflow-hidden">
-                                            {product.images?.[0] ? (
-                                                <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
+                                            {product.image || product.images?.[0] ? (
+                                                <img src={product.image || product.images[0]} alt={product.name} className="w-full h-full object-cover" />
                                             ) : (
                                                 <Package className="w-6 h-6 text-muted-foreground/40" />
                                             )}
@@ -2271,6 +2427,51 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
                                             className="rounded-xl min-h-[100px]"
                                         />
                                     </div>
+                                    <div className="rounded-2xl border border-border/20 bg-slate-50 dark:bg-slate-900/40 p-4">
+                                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary mb-3">Product Image</p>
+                                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                                            <div className="w-28 h-28 rounded-[1.5rem] bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden border border-border/20 shrink-0">
+                                                {selectedProduct.image || selectedProduct.images?.[0] ? (
+                                                    <img
+                                                        src={selectedProduct.image || selectedProduct.images?.[0]}
+                                                        alt={selectedProduct.name}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                ) : (
+                                                    <Package className="w-10 h-10 text-muted-foreground/30" />
+                                                )}
+                                            </div>
+                                            <div className="space-y-3">
+                                                <label className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/20 cursor-pointer">
+                                                    {isUploadingSelectedProductImage ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                                                    {selectedProduct.image || selectedProduct.images?.[0] ? "Replace Image" : "Upload Image"}
+                                                    <input
+                                                        type="file"
+                                                        accept="image/*"
+                                                        className="hidden"
+                                                        onChange={handleSelectedProductImageChange}
+                                                        disabled={isUploadingSelectedProductImage}
+                                                    />
+                                                </label>
+                                                {(selectedProduct.image || selectedProduct.images?.[0]) && (
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        className="rounded-xl font-bold"
+                                                        onClick={() =>
+                                                            setSelectedProduct({
+                                                                ...selectedProduct,
+                                                                image: undefined,
+                                                                images: [],
+                                                            })
+                                                        }
+                                                    >
+                                                        Remove Image
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
                                     <div className="flex justify-end gap-3 pt-4">
                                         <Button variant="ghost" className="rounded-xl font-bold" onClick={() => setIsEditingProduct(false)}>Cancel</Button>
                                         <Button
@@ -2281,6 +2482,7 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
                                                 price: selectedProduct.price,
                                                 category: selectedProduct.category,
                                                 description: selectedProduct.description,
+                                                image: selectedProduct.image || selectedProduct.images?.[0],
                                                 stock: selectedProduct.stock,
                                                 unit: selectedProduct.unit
                                             })}
@@ -2293,8 +2495,8 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
                                 <div className="space-y-6">
                                     <div className="flex gap-6">
                                         <div className="w-32 h-32 rounded-[2rem] bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0 overflow-hidden border border-border/20">
-                                            {selectedProduct.images?.[0] ? (
-                                                <img src={selectedProduct.images[0]} alt={selectedProduct.name} className="w-full h-full object-cover" />
+                                            {selectedProduct.image || selectedProduct.images?.[0] ? (
+                                                <img src={selectedProduct.image || selectedProduct.images[0]} alt={selectedProduct.name} className="w-full h-full object-cover" />
                                             ) : (
                                                 <Package className="w-10 h-10 text-muted-foreground/30" />
                                             )}
