@@ -244,6 +244,32 @@ export const cmsService = {
         return response.data;
     },
 
+    /** Bulk import products via CSV/JSON */
+    async bulkImportProducts(file: File): Promise<{ success: boolean; data: { imported: number; errors: any[] } }> {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await api.post('/cms/products/import', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    },
+
+    /** Bulk import services via CSV/JSON */
+    async bulkImportServices(file: File): Promise<{ success: boolean; data: { imported: number; errors: any[] } }> {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await api.post('/cms/services/import', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    },
+
+
+
     /** Categories */
     async getCategories(params?: Record<string, any>): Promise<{ success: boolean; data: { data: CmsCategory[]; total: number } }> {
         const response = await api.get('/cms/categories', { params });

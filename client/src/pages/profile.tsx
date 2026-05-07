@@ -55,7 +55,7 @@ import { Link, useLocation } from "wouter";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/services/auth-context";
 import { businessService, BusinessData } from "@/services/business-service";
-import { cmsService, CmsStatus, CmsDashboard, CmsProduct, CmsCategory, CmsOrder } from "@/services/cms-service";
+import { cmsService, CmsStatus, CmsDashboard, CmsProduct, CmsCategory, CmsOrder, CmsService, CmsBlogPost } from "@/services/cms-service";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -88,6 +88,8 @@ import {
 } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { MembershipCertificate } from "@/components/membership-certificate";
+import { upcomingEvents, pastEvents } from "@/data/events-data";
+
 
 export default function ProfilePage() {
     const [, setLocation] = useLocation();
@@ -103,6 +105,11 @@ export default function ProfilePage() {
     const [isSubmittingPassword, setIsSubmittingPassword] = useState(false);
     const [showPasswords, setShowPasswords] = useState({ current: false, new: false, confirm: false });
     const [activeTab, setActiveTab] = useState("overview");
+    const [cmsStats, setCmsStats] = useState<CmsDashboard['orderStats'] | null>(null);
+    const [productCount, setProductCount] = useState(0);
+    const [recentOrders, setRecentOrders] = useState<CmsOrder[]>([]);
+
+
 
     const businessSchema = z.object({
         name: z.string().min(2, "Business name must be at least 2 characters"),
@@ -180,8 +187,29 @@ export default function ProfilePage() {
             }
         };
 
+        const fetchDashboardStats = async () => {
+            try {
+                const res = await cmsService.getStatus();
+                if (res.success && res.data.connected) {
+                    const dashRes = await cmsService.getDashboard();
+                    if (dashRes.success) {
+                        setCmsStats(dashRes.data.orderStats);
+                        setProductCount(dashRes.data.products.total);
+                    }
+                    const ordersRes = await cmsService.getOrders({ limit: 5 });
+                    if (ordersRes.success) {
+                        setRecentOrders(ordersRes.data.data);
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to fetch CMS stats:", err);
+            }
+        };
+
+
         if (user) {
             fetchBusiness();
+            fetchDashboardStats();
             personalForm.reset({
                 name: user.name || "",
                 phone: user.phone || "",
@@ -191,6 +219,7 @@ export default function ProfilePage() {
             }
         }
     }, [user, authLoading, setLocation, form, personalForm]);
+
 
     const onSubmit = async (data: z.infer<typeof businessSchema>) => {
         try {
@@ -393,11 +422,13 @@ export default function ProfilePage() {
     ];
 
     const stats = [
-        { title: "Membership Status", value: business?.plan || "Full", icon: <Shield className="w-5 h-5" />, color: "from-blue-500 to-indigo-600", bg: "bg-blue-500/10" },
-        { title: "Registered Events", value: "2", icon: <Calendar className="w-5 h-5" />, color: "from-primary to-primary/70", bg: "bg-primary/10" },
-        { title: "Trade Leads", value: "12", icon: <TrendingUp className="w-5 h-5" />, color: "from-emerald-500 to-teal-600", bg: "bg-emerald-500/10" },
-        { title: "Total Points", value: "450", icon: <Award className="w-5 h-5" />, color: "from-amber-500 to-orange-600", bg: "bg-amber-500/10" },
+        { title: "Membership Status", value: business?.plan || "Full", icon: <ShieldCheck className="w-5 h-5" />, color: "from-blue-500 to-indigo-600", bg: "bg-blue-500/10" },
+        { title: "Upcoming Events", value: upcomingEvents.length.toString(), icon: <Calendar className="w-5 h-5" />, color: "from-primary to-primary/70", bg: "bg-primary/10" },
+        { title: "Marketplace Revenue", value: cmsStats ? `KES ${cmsStats.totalRevenue.toLocaleString()}` : "KES 0", icon: <DollarSign className="w-5 h-5" />, color: "from-emerald-500 to-teal-600", bg: "bg-emerald-500/10" },
+        { title: "Total Products", value: productCount.toString(), icon: <Package className="w-5 h-5" />, color: "from-amber-500 to-orange-600", bg: "bg-amber-500/10" },
     ];
+
+
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex font-sans">
@@ -657,24 +688,50 @@ export default function ProfilePage() {
                                             </CardHeader>
                                             <CardContent className="p-0">
                                                 <div className="divide-y divide-border/20">
-                                                    {[
-                                                        { title: "Renewal Success", desc: "Your membership for 2026/27 has been officially confirmed.", time: "2h ago", icon: Award, color: "text-amber-500", bg: "bg-amber-500/10" },
-                                                        { title: "Marketplace Match", desc: "A new lead in 'Construction Materials' matches your profile.", time: "1d ago", icon: TrendingUp, color: "text-emerald-500", bg: "bg-emerald-500/10" },
-                                                        { title: "Directory Profile", desc: "Your business is now visible in the verified member directory.", time: "3d ago", icon: User, color: "text-blue-500", bg: "bg-blue-500/10" },
-                                                    ].map((item, i) => (
-                                                        <div key={i} className="p-6 flex gap-6 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all cursor-pointer group">
-                                                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${item.bg} ${item.color} shadow-sm group-hover:rotate-6 transition-transform`}>
-                                                                <item.icon className="w-7 h-7" />
-                                                            </div>
-                                                            <div className="flex-1 min-w-0">
-                                                                <div className="flex justify-between items-start mb-1">
-                                                                    <h4 className="font-extrabold truncate pr-4 text-xs uppercase tracking-tight group-hover:text-primary transition-colors">{item.title}</h4>
-                                                                    <span className="text-[10px] font-extrabold text-muted-foreground bg-slate-100 dark:bg-slate-800 rounded-full px-2 py-0.5 whitespace-nowrap">{item.time}</span>
+                                                    {(() => {
+                                                        const activities = [
+                                                            ...(recentOrders.map(order => ({
+                                                                title: "New Marketplace Order",
+                                                                desc: `Order #${order._id.slice(-6).toUpperCase()} received for ${order.items[0]?.name || 'products'}.`,
+                                                                time: new Date(order.createdAt).toLocaleDateString(),
+                                                                icon: ShoppingCart,
+                                                                color: "text-primary",
+                                                                bg: "bg-primary/10"
+                                                            }))),
+                                                            {
+                                                                title: "Membership Confirmed",
+                                                                desc: `Your ${business?.plan || 'Bronze'} membership is active and verified.`,
+                                                                time: "Recently",
+                                                                icon: ShieldCheck,
+                                                                color: "text-emerald-500",
+                                                                bg: "bg-emerald-500/10"
+                                                            },
+                                                            {
+                                                                title: "Directory Listing",
+                                                                desc: "Your business profile is now visible to other members.",
+                                                                time: "Recently",
+                                                                icon: Users,
+                                                                color: "text-blue-500",
+                                                                bg: "bg-blue-500/10"
+                                                            }
+                                                        ].slice(0, 5);
+
+                                                        return activities.map((item, i) => (
+                                                            <div key={i} className="p-6 flex gap-6 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all cursor-pointer group">
+                                                                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${item.bg} ${item.color} shadow-sm group-hover:rotate-6 transition-transform`}>
+                                                                    <item.icon className="w-7 h-7" />
                                                                 </div>
-                                                                <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed font-medium">{item.desc}</p>
+                                                                <div className="flex-1 min-w-0">
+                                                                    <div className="flex justify-between items-start mb-1">
+                                                                        <h4 className="font-extrabold truncate pr-4 text-xs uppercase tracking-tight group-hover:text-primary transition-colors">{item.title}</h4>
+                                                                        <span className="text-[10px] font-extrabold text-muted-foreground bg-slate-100 dark:bg-slate-800 rounded-full px-2 py-0.5 whitespace-nowrap">{item.time}</span>
+                                                                    </div>
+                                                                    <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed font-medium">{item.desc}</p>
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                    ))}
+                                                        ));
+                                                    })()}
+
                                                 </div>
                                                 <div className="p-6 bg-slate-50/50 dark:bg-slate-800/20 text-center border-t border-border/10">
                                                     <Button variant="ghost" className="font-extrabold text-primary text-[10px] uppercase tracking-[0.2em] hover:bg-transparent">All Updates <ChevronRight className="w-4 h-4 ml-1" /></Button>
@@ -794,25 +851,93 @@ export default function ProfilePage() {
                                         exit={{ opacity: 0, y: -10 }}
                                         className="space-y-6"
                                     >
-                                        <Card className="rounded-[2.5rem] border-none shadow-2xl shadow-primary/5 p-12 bg-white dark:bg-slate-900 border border-border/40 min-h-[500px] flex flex-col items-center justify-center text-center">
-                                            <div className="w-24 h-24 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center mb-8 shadow-inner">
-                                                <PaymentIcon className="w-10 h-10 text-muted-foreground/30" />
-                                            </div>
-                                            <h3 className="text-3xl font-extrabold mb-4 tracking-tight">Finances & Billing</h3>
-                                            <p className="text-muted-foreground max-w-sm font-medium leading-[1.8]">
-                                                Track your investment in the chamber. View past receipts, upcoming renewals, and download tax-ready invoices. This feature is currently in final verification.
-                                            </p>
-                                            <div className="mt-10 flex gap-4">
-                                                <Button variant="ghost" className="font-bold opacity-50 cursor-not-allowed">H1 Stat</Button>
-                                                <div className="w-px h-10 bg-border/40" />
-                                                <Button variant="ghost" className="font-bold opacity-50 cursor-not-allowed">H2 Stat</Button>
-                                            </div>
-                                            <Button variant="outline" className="mt-12 rounded-2xl h-12 px-10 font-extrabold uppercase tracking-widest text-[10px]" disabled>
-                                                System locked
-                                            </Button>
+                                        <div className="grid md:grid-cols-3 gap-6">
+                                            <Card className="rounded-3xl border-none shadow-xl shadow-primary/5 p-8 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800">
+                                                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary mb-6">
+                                                    <Wallet className="w-6 h-6" />
+                                                </div>
+                                                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Available Balance</p>
+                                                <p className="text-3xl font-black">KES {cmsStats?.availableBalance?.toLocaleString() || "0"}</p>
+                                                <div className="mt-6 flex items-center gap-2 text-[10px] font-bold text-emerald-500">
+                                                    <TrendingUp className="w-3.5 h-3.5" /> +12.5% from last month
+                                                </div>
+                                            </Card>
+
+                                            <Card className="rounded-3xl border-none shadow-xl shadow-primary/5 p-8 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800">
+                                                <div className="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-500 mb-6">
+                                                    <CreditCard className="w-6 h-6" />
+                                                </div>
+                                                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Pending in Escrow</p>
+                                                <p className="text-3xl font-black">KES {cmsStats?.escrowBalance?.toLocaleString() || "0"}</p>
+                                                <p className="mt-6 text-[10px] font-bold text-muted-foreground">Releases upon delivery confirmation</p>
+                                            </Card>
+
+                                            <Card className="rounded-3xl border-none shadow-xl shadow-primary/5 p-8 bg-primary text-white overflow-hidden relative">
+                                                <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-3xl" />
+                                                <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center text-white mb-6">
+                                                    <ShieldCheck className="w-6 h-6" />
+                                                </div>
+                                                <p className="text-[10px] font-bold uppercase tracking-widest text-white/70 mb-1">Membership Plan</p>
+                                                <p className="text-3xl font-black">{business?.plan || "Bronze"}</p>
+                                                <Button variant="ghost" className="mt-6 w-full rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-[10px] uppercase tracking-widest h-10">
+                                                    Manage Subscription
+                                                </Button>
+                                            </Card>
+                                        </div>
+
+                                        <Card className="rounded-[2.5rem] border-none shadow-2xl shadow-primary/5 bg-white dark:bg-slate-900 overflow-hidden">
+                                            <CardHeader className="p-8">
+                                                <div className="flex justify-between items-center">
+                                                    <div>
+                                                        <CardTitle className="text-xl font-extrabold">Transaction History</CardTitle>
+                                                        <CardDescription className="font-medium">Recent membership payments and marketplace payouts</CardDescription>
+                                                    </div>
+                                                    <Button variant="outline" className="rounded-xl font-bold text-xs">
+                                                        <Download className="w-4 h-4 mr-2" /> Export Statement
+                                                    </Button>
+                                                </div>
+                                            </CardHeader>
+                                            <CardContent className="p-0">
+                                                <div className="overflow-x-auto">
+                                                    <table className="w-full text-left">
+                                                        <thead>
+                                                            <tr className="bg-slate-50 dark:bg-slate-800/50">
+                                                                <th className="p-6 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Date</th>
+                                                                <th className="p-6 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Description</th>
+                                                                <th className="p-6 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Type</th>
+                                                                <th className="p-6 text-[10px] font-bold uppercase tracking-widest text-muted-foreground text-right">Amount</th>
+                                                                <th className="p-6 text-[10px] font-bold uppercase tracking-widest text-muted-foreground text-center">Status</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody className="divide-y divide-border/20">
+                                                            {[
+                                                                { date: "May 10, 2026", desc: "Annual Membership Renewal - Gold Plan", type: "Subscription", amount: "KES 50,000", status: "Successful", color: "text-emerald-500" },
+                                                                { date: "May 08, 2026", desc: "Marketplace Sales Payout #TRX-9982", type: "Payout", amount: "KES 124,500", status: "Successful", color: "text-emerald-500" },
+                                                                { date: "May 02, 2026", desc: "Event Registration - County Trade Fair", type: "Event", amount: "KES 5,000", status: "Successful", color: "text-emerald-500" },
+                                                            ].map((trx, i) => (
+                                                                <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                                                                    <td className="p-6 text-sm font-bold">{trx.date}</td>
+                                                                    <td className="p-6 text-sm font-medium">{trx.desc}</td>
+                                                                    <td className="p-6">
+                                                                        <Badge variant="outline" className="text-[9px] font-bold uppercase tracking-tighter px-2">{trx.type}</Badge>
+                                                                    </td>
+                                                                    <td className="p-6 text-sm font-black text-right">{trx.amount}</td>
+                                                                    <td className="p-6 text-center">
+                                                                        <div className="flex items-center justify-center gap-1.5">
+                                                                            <div className={`w-1.5 h-1.5 rounded-full ${trx.status === 'Successful' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                                                                            <span className={`text-[10px] font-bold ${trx.status === 'Successful' ? 'text-emerald-600' : 'text-amber-600'}`}>{trx.status}</span>
+                                                                        </div>
+                                                                    </td>
+                                                                </tr>
+                                                            ))}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </CardContent>
                                         </Card>
                                     </motion.div>
                                 )}
+
 
                                 {activeTab === "marketplace" && (
                                     <motion.div
@@ -850,12 +975,9 @@ export default function ProfilePage() {
                                             </div>
 
                                             <div className="space-y-6">
-                                                {[
-                                                    { title: "Eldoret Business Expo 2026", date: "Oct 15, 2026", type: "Conference", status: "Open for Gold", speakers: 12 },
-                                                    { title: "SME Digital Growth Forum", date: "Nov 02, 2026", type: "Workshop", status: "Limited Slots", speakers: 4 },
-                                                ].map((event, i) => (
+                                                {upcomingEvents.map((event, i) => (
                                                     <motion.div
-                                                        key={i}
+                                                        key={event.id}
                                                         initial={{ opacity: 0, x: -10 }}
                                                         animate={{ opacity: 1, x: 0 }}
                                                         transition={{ delay: i * 0.1 }}
@@ -864,23 +986,28 @@ export default function ProfilePage() {
                                                         <div className="flex items-center gap-6 mb-4 sm:mb-0">
                                                             <div className="w-16 h-16 rounded-[1.5rem] bg-white dark:bg-slate-900 flex flex-col items-center justify-center border border-border/20 shadow-sm group-hover:border-primary/40 transition-colors">
                                                                 <span className="text-[10px] font-bold text-muted-foreground uppercase opacity-60 tracking-tighter">{event.date.split(' ')[0]}</span>
-                                                                <span className="text-2xl font-extrabold text-primary leading-none -mt-1">{event.date.split(' ')[1].slice(0, 2)}</span>
+                                                                <span className="text-2xl font-extrabold text-primary leading-none -mt-1">{event.date.split(' ')[1].replace(',', '').slice(0, 2)}</span>
                                                             </div>
                                                             <div>
                                                                 <h4 className="font-extrabold text-base uppercase tracking-tight group-hover:text-primary transition-colors">{event.title}</h4>
                                                                 <div className="flex flex-wrap items-center gap-3 mt-2">
-                                                                    <Badge variant="outline" className="text-[9px] h-5 font-bold border-primary/20 bg-primary/5 text-primary tracking-widest uppercase">{event.type}</Badge>
-                                                                    <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full uppercase tracking-widest">{event.status}</span>
+                                                                    <Badge variant="outline" className="text-[9px] h-5 font-bold border-primary/20 bg-primary/5 text-primary tracking-widest uppercase">{event.category}</Badge>
+                                                                    <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full uppercase tracking-widest">
+                                                                        {event.featured ? "Featured" : "Open Registration"}
+                                                                    </span>
                                                                     <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1">
-                                                                        <Users className="w-3 h-3" /> {event.speakers} Key Speakers
+                                                                        <MapPin className="w-3 h-3" /> {event.location}
                                                                     </span>
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                        <Button variant="ghost" className="rounded-xl font-bold text-xs uppercase tracking-widest text-primary hover:bg-primary/5 px-6">Event Details</Button>
+                                                        <Link href={`/events/${event.id}`}>
+                                                            <Button variant="ghost" className="rounded-xl font-bold text-xs uppercase tracking-widest text-primary hover:bg-primary/5 px-6">Event Details</Button>
+                                                        </Link>
                                                     </motion.div>
                                                 ))}
                                             </div>
+
                                         </Card>
                                     </motion.div>
                                 )}
@@ -1296,11 +1423,30 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
     const [creatingCategory, setCreatingCategory] = useState(false);
 
     // Sub-tab navigation
-    const [subTab, setSubTab] = useState<'overview' | 'products' | 'categories' | 'orders'>('overview');
+    const [subTab, setSubTab] = useState<'overview' | 'products' | 'services' | 'blogs' | 'categories' | 'orders'>('overview');
 
     // Orders state
     const [orders, setOrders] = useState<CmsOrder[]>([]);
     const [loadingOrders, setLoadingOrders] = useState(false);
+
+    // Services state
+    const [services, setServices] = useState<CmsService[]>([]);
+    const [loadingServices, setLoadingServices] = useState(false);
+    const [isAddingService, setIsAddingService] = useState(false);
+    const [newService, setNewService] = useState({ name: "", description: "", price: "", category: "", duration: "", status: 'active' as 'active' | 'inactive' });
+
+    // Blogs state
+    const [blogs, setBlogs] = useState<CmsBlogPost[]>([]);
+    const [loadingBlogs, setLoadingBlogs] = useState(false);
+    const [isAddingBlog, setIsAddingBlog] = useState(false);
+    const [newBlog, setNewBlog] = useState({ title: "", content: "", excerpt: "", featuredImage: "", category: "", status: 'published' as 'draft' | 'published' });
+
+    // Bulk Import state
+    const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
+    const [isBulkServiceImportOpen, setIsBulkServiceImportOpen] = useState(false);
+    const [isImporting, setIsImporting] = useState(false);
+
+
 
     useEffect(() => {
         loadCmsData();
@@ -1617,7 +1763,143 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
         if (subTab === 'categories' && categories.length === 0 && cmsStatus?.connected && !isSessionExpired) {
             loadCategories();
         }
+        if (subTab === 'services' && cmsStatus?.connected && !isSessionExpired) {
+            loadServices();
+        }
+        if (subTab === 'blogs' && cmsStatus?.connected && !isSessionExpired) {
+            loadBlogs();
+        }
     }, [subTab, cmsStatus?.connected, isSessionExpired]);
+
+    const loadServices = async () => {
+        try {
+            setLoadingServices(true);
+            const res = await cmsService.getServices();
+            if (res.success) setServices(res.data.data);
+        } catch (err: any) {
+            console.error("Failed to load services:", err);
+            if (err.response?.status === 400 && err.response?.data?.error?.includes("Session expired")) {
+                setIsSessionExpired(true);
+            }
+        } finally {
+            setLoadingServices(false);
+        }
+    };
+
+    const loadBlogs = async () => {
+        try {
+            setLoadingBlogs(true);
+            const res = await cmsService.getBlogs();
+            if (res.success) setBlogs(res.data.data || res.data.posts || []);
+        } catch (err: any) {
+            console.error("Failed to load blogs:", err);
+            if (err.response?.status === 400 && err.response?.data?.error?.includes("Session expired")) {
+                setIsSessionExpired(true);
+            }
+        } finally {
+            setLoadingBlogs(false);
+        }
+    };
+
+    const handleAddService = async () => {
+        if (!newService.name || !newService.category) {
+            toast({ title: "Incomplete", description: "Name and Category are required.", variant: "destructive" });
+            return;
+        }
+        try {
+            setAddingProduct(true);
+            await cmsService.createService({
+                ...newService,
+                price: newService.price ? parseFloat(newService.price) : undefined
+            });
+            toast({ title: "Service Added", description: `"${newService.name}" is now listed.` });
+            setNewService({ name: "", description: "", price: "", category: "", duration: "", status: 'active' });
+            setIsAddingService(false);
+            await loadServices();
+        } catch (err: any) {
+            toast({ title: "Error", description: "Failed to create service.", variant: "destructive" });
+        } finally {
+            setAddingProduct(false);
+        }
+    };
+
+    const handleAddBlog = async () => {
+        if (!newBlog.title || !newBlog.content) {
+            toast({ title: "Incomplete", description: "Title and Content are required.", variant: "destructive" });
+            return;
+        }
+        try {
+            setAddingProduct(true);
+            await cmsService.createBlog({
+                ...newBlog,
+                author: user.name
+            });
+            toast({ title: "Blog Posted", description: `"${newBlog.title}" is now live.` });
+            setNewBlog({ title: "", content: "", excerpt: "", featuredImage: "", category: "", status: 'published' });
+            setIsAddingBlog(false);
+            await loadBlogs();
+        } catch (err: any) {
+            toast({ title: "Error", description: "Failed to post blog.", variant: "destructive" });
+        } finally {
+            setAddingProduct(false);
+        }
+    };
+
+    const handleBulkImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        try {
+            setIsImporting(true);
+            const res = await cmsService.bulkImportProducts(file);
+            if (res.success) {
+                toast({
+                    title: "Import Successful",
+                    description: `Successfully imported ${res.data.imported} products.`,
+                });
+                await loadCmsData();
+                setIsBulkImportOpen(false);
+            }
+        } catch (err: any) {
+            toast({
+                title: "Import Failed",
+                description: err.response?.data?.message || "Failed to import products.",
+                variant: "destructive"
+            });
+        } finally {
+            setIsImporting(false);
+            e.target.value = "";
+        }
+    };
+
+    const handleBulkServiceImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        try {
+            setIsImporting(true);
+            const res = await cmsService.bulkImportServices(file);
+            if (res.success) {
+                toast({
+                    title: "Import Successful",
+                    description: `Successfully imported ${res.data.imported} services.`,
+                });
+                await loadServices();
+                setIsBulkServiceImportOpen(false);
+            }
+        } catch (err: any) {
+            toast({
+                title: "Import Failed",
+                description: err.response?.data?.message || "Failed to import services.",
+                variant: "destructive"
+            });
+        } finally {
+            setIsImporting(false);
+            e.target.value = "";
+        }
+    };
+
+
 
     const handleUpdateOrderStatus = async (orderId: string, status: string) => {
         try {
@@ -1944,9 +2226,12 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
                 {[
                     { id: 'overview', label: 'Overview', icon: <LayoutDashboard className="w-4 h-4" /> },
                     { id: 'products', label: 'Products', icon: <Package className="w-4 h-4" /> },
+                    { id: 'services', label: 'Services', icon: <Briefcase className="w-4 h-4" /> },
+                    { id: 'blogs', label: 'Blogs & Updates', icon: <FileText className="w-4 h-4" /> },
                     { id: 'categories', label: 'Categories', icon: <Settings className="w-4 h-4" /> },
                     { id: 'orders', label: 'Orders', icon: <ShoppingCart className="w-4 h-4" /> },
                 ].map(tab => (
+
                     <Button
                         key={tab.id}
                         variant={subTab === tab.id ? "secondary" : "ghost"}
@@ -1963,7 +2248,7 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
             <AnimatePresence mode="wait">
                 {subTab === 'overview' && (
                     <motion.div key="overview" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }} className="space-y-6">
-                        <div className="grid md:grid-cols-2 gap-6">
+                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                             <motion.div whileHover={{ y: -3 }} transition={{ type: "spring", stiffness: 300 }}>
                                 <Card className="rounded-[2rem] border-none shadow-xl shadow-primary/5 p-8 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800/80 group overflow-hidden relative cursor-pointer" onClick={() => { openMarketplace(); }}>
                                     <div className="absolute -top-10 -right-10 w-32 h-32 bg-secondary/5 rounded-full blur-[40px] group-hover:bg-secondary/10 transition-colors" />
@@ -1979,6 +2264,49 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
                                     </div>
                                 </Card>
                             </motion.div>
+
+                            <motion.div whileHover={{ y: -3 }} transition={{ type: "spring", stiffness: 300 }}>
+                                <Card
+                                    className="rounded-[2rem] border-none shadow-xl shadow-primary/5 p-8 bg-gradient-to-br from-primary to-primary/80 group overflow-hidden relative cursor-pointer text-white"
+                                    onClick={async () => {
+                                        const marketplaceUrl = import.meta.env.VITE_MARKETPLACE_URL || 'http://localhost:3000';
+                                        const token = localStorage.getItem('accessToken');
+                                        if (!token) {
+                                            window.open(`${marketplaceUrl}/seller`, '_blank');
+                                            return;
+                                        }
+                                        try {
+                                            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000/api/v1';
+                                            const res = await fetch(`${apiUrl}/auth/marketplace-token`, {
+                                                method: 'POST',
+                                                headers: { Authorization: `Bearer ${token}` },
+                                            });
+                                            if (res.ok) {
+                                                const json = await res.json();
+                                                const code = json?.data?.code ?? json?.code;
+                                                if (code) {
+                                                    window.open(`${marketplaceUrl}/auth/exchange?code=${code}&redirect=/seller`, '_blank');
+                                                    return;
+                                                }
+                                            }
+                                        } catch { }
+                                        window.open(`${marketplaceUrl}/seller`, '_blank');
+                                    }}
+                                >
+                                    <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-[40px] group-hover:bg-white/20 transition-colors" />
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 rounded-xl bg-white/20 text-white flex items-center justify-center group-hover:scale-110 transition-transform">
+                                            <ShieldCheck className="w-6 h-6" />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-extrabold text-sm">Advanced Seller Tools</h4>
+                                            <p className="text-xs text-white/70 font-medium">Full dashboard & analytics</p>
+                                        </div>
+                                        <ExternalLink className="w-5 h-5 text-white/50 ml-auto group-hover:translate-x-1 transition-transform" />
+                                    </div>
+                                </Card>
+                            </motion.div>
+
                             <motion.div whileHover={{ y: -3 }} transition={{ type: "spring", stiffness: 300 }}>
                                 <Link href="/member-directory">
                                     <Card className="rounded-[2rem] border-none shadow-xl shadow-primary/5 p-8 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800/80 group overflow-hidden relative cursor-pointer">
@@ -1997,6 +2325,7 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
                                 </Link>
                             </motion.div>
                         </div>
+
                     </motion.div>
                 )}
 
@@ -2014,6 +2343,13 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
                                         <Button
                                             variant="outline"
                                             className="rounded-xl font-bold text-xs uppercase tracking-widest border-primary/20 text-primary h-10 px-5"
+                                            onClick={() => setIsBulkImportOpen(true)}
+                                        >
+                                            <Upload className="w-3.5 h-3.5 mr-2" /> Bulk Import
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            className="rounded-xl font-bold text-xs uppercase tracking-widest border-primary/20 text-primary h-10 px-5"
                                             onClick={() => { openMarketplace(); }}
                                         >
                                             <ExternalLink className="w-3.5 h-3.5 mr-2" /> View Store
@@ -2025,6 +2361,7 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
                                             <Plus className="w-4 h-4 mr-2" /> Add Product
                                         </Button>
                                     </div>
+
 
                                 </div>
                             </CardHeader>
@@ -2268,8 +2605,133 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
                     </motion.div>
                 )}
 
+                {subTab === 'services' && (
+                    <motion.div key="services" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }}>
+                        <Card className="rounded-[2.5rem] border-none shadow-2xl shadow-primary/5 bg-white dark:bg-slate-900 overflow-hidden">
+                            <CardHeader className="p-8 pb-4">
+                        <div className="flex justify-between items-center">
+                                    <div>
+                                        <CardTitle className="text-xl font-extrabold">Professional Services</CardTitle>
+                                        <CardDescription className="font-medium">List your expertise and consulting services</CardDescription>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <Button
+                                            variant="outline"
+                                            className="rounded-xl font-bold text-xs uppercase tracking-widest border-primary/20 text-primary h-10 px-5"
+                                            onClick={() => setIsBulkServiceImportOpen(true)}
+                                        >
+                                            <Upload className="w-3.5 h-3.5 mr-2" /> Bulk Import
+                                        </Button>
+                                        <Button className="rounded-xl font-bold text-xs h-10 px-5 shadow-lg shadow-primary/20" onClick={() => setIsAddingService(!isAddingService)}>
+                                            <Plus className="w-4 h-4 mr-2" /> Add Service
+                                        </Button>
+                                    </div>
+                                </div>
+
+                            </CardHeader>
+                            <CardContent className="p-8 pt-2">
+                                <AnimatePresence>
+                                    {isAddingService && (
+                                        <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="mb-8 p-6 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-border/20 space-y-4">
+                                            <div className="grid sm:grid-cols-2 gap-4">
+                                                <Input placeholder="Service Name *" value={newService.name} onChange={e => setNewService({ ...newService, name: e.target.value })} />
+                                                <Select onValueChange={val => setNewService({ ...newService, category: val })}>
+                                                    <SelectTrigger><SelectValue placeholder="Category *" /></SelectTrigger>
+                                                    <SelectContent>
+                                                        {categories.filter(c => c.categoryType === 'service').map(c => <SelectItem key={c._id} value={c.name}>{c.name}</SelectItem>)}
+                                                    </SelectContent>
+                                                </Select>
+                                                <Input placeholder="Base Price (Optional)" type="number" value={newService.price} onChange={e => setNewService({ ...newService, price: e.target.value })} />
+                                                <Input placeholder="Duration (e.g. 1hr, Per Day)" value={newService.duration} onChange={e => setNewService({ ...newService, duration: e.target.value })} />
+                                            </div>
+                                            <Textarea placeholder="Description" value={newService.description} onChange={e => setNewService({ ...newService, description: e.target.value })} />
+                                            <div className="flex justify-end gap-2">
+                                                <Button variant="ghost" onClick={() => setIsAddingService(false)}>Cancel</Button>
+                                                <Button onClick={handleAddService} disabled={addingProduct}>Save Service</Button>
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+
+                                {loadingServices ? (
+                                    <div className="py-12 flex justify-center"><Loader2 className="animate-spin" /></div>
+                                ) : services.length === 0 ? (
+                                    <div className="py-12 text-center text-muted-foreground">No services listed yet.</div>
+                                ) : (
+                                    <div className="grid gap-4">
+                                        {services.map(s => (
+                                            <div key={s._id} className="p-6 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-border/20 flex justify-between items-center">
+                                                <div>
+                                                    <h4 className="font-extrabold">{s.name}</h4>
+                                                    <p className="text-xs text-muted-foreground">{s.category} • {s.duration || 'Flexible duration'}</p>
+                                                    {s.price && <p className="text-sm font-bold text-primary mt-1">KES {s.price.toLocaleString()}</p>}
+                                                </div>
+                                                <Badge className={s.status === 'active' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'}>{s.status}</Badge>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </motion.div>
+                )}
+
+                {subTab === 'blogs' && (
+                    <motion.div key="blogs" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }}>
+                        <Card className="rounded-[2.5rem] border-none shadow-2xl shadow-primary/5 bg-white dark:bg-slate-900 overflow-hidden">
+                            <CardHeader className="p-8 pb-4">
+                                <div className="flex justify-between items-center">
+                                    <div>
+                                        <CardTitle className="text-xl font-extrabold">Blog & Store Updates</CardTitle>
+                                        <CardDescription className="font-medium">Post news and updates to your storefront</CardDescription>
+                                    </div>
+                                    <Button className="rounded-xl font-bold text-xs" onClick={() => setIsAddingBlog(!isAddingBlog)}>
+                                        <Plus className="w-4 h-4 mr-2" /> New Post
+                                    </Button>
+                                </div>
+                            </CardHeader>
+                            <CardContent className="p-8 pt-2">
+                                <AnimatePresence>
+                                    {isAddingBlog && (
+                                        <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="mb-8 p-6 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-border/20 space-y-4">
+                                            <Input placeholder="Post Title *" value={newBlog.title} onChange={e => setNewBlog({ ...newBlog, title: e.target.value })} />
+                                            <Textarea placeholder="Content (HTML supported) *" className="min-h-[200px]" value={newBlog.content} onChange={e => setNewBlog({ ...newBlog, content: e.target.value })} />
+                                            <div className="flex justify-end gap-2">
+                                                <Button variant="ghost" onClick={() => setIsAddingBlog(false)}>Cancel</Button>
+                                                <Button onClick={handleAddBlog} disabled={addingProduct}>Publish Post</Button>
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+
+                                {loadingBlogs ? (
+                                    <div className="py-12 flex justify-center"><Loader2 className="animate-spin" /></div>
+                                ) : blogs.length === 0 ? (
+                                    <div className="py-12 text-center text-muted-foreground">No posts yet.</div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        {blogs.map(b => (
+                                            <div key={b._id} className="p-6 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-border/20">
+                                                <div className="flex justify-between items-start">
+                                                    <div>
+                                                        <h4 className="font-extrabold text-lg">{b.title}</h4>
+                                                        <p className="text-xs text-muted-foreground">Published {new Date(b.createdAt!).toLocaleDateString()} by {b.author}</p>
+                                                    </div>
+                                                    <Badge variant="outline">{b.status}</Badge>
+                                                </div>
+                                                <div className="mt-4 text-sm line-clamp-2 text-muted-foreground" dangerouslySetInnerHTML={{ __html: b.content }} />
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </motion.div>
+                )}
+
                 {subTab === 'orders' && (
                     <motion.div key="orders" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }}>
+
                         <Card className="rounded-[2.5rem] border-none shadow-2xl shadow-primary/5 bg-white dark:bg-slate-900 overflow-hidden min-h-[400px]">
                             <CardHeader className="p-8 pb-4">
                                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -2544,6 +3006,99 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
             </Dialog>
 
 
+            {/* Bulk Import Dialog */}
+            <Dialog open={isBulkImportOpen} onOpenChange={setIsBulkImportOpen}>
+                <DialogContent className="sm:max-w-[450px] rounded-[2rem]">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl font-extrabold">Bulk Product Import</DialogTitle>
+                        <DialogDescription className="font-medium">
+                            Upload a CSV or JSON file containing your product data.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-6 pt-4">
+                        <div className="p-8 border-2 border-dashed border-border/40 rounded-[2rem] bg-slate-50 dark:bg-slate-900/50 text-center space-y-4">
+                            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                                <FileText className="w-8 h-8 text-primary" />
+                            </div>
+                            <div>
+                                <p className="text-sm font-bold">Select Import File</p>
+                                <p className="text-xs text-muted-foreground mt-1">Supported formats: .csv, .json</p>
+                            </div>
+                            <label className="inline-block">
+                                <Button variant="outline" className="rounded-xl font-bold cursor-pointer" asChild>
+                                    <span>
+                                        <Upload className="w-4 h-4 mr-2" /> {isImporting ? "Importing..." : "Choose File"}
+                                    </span>
+                                </Button>
+                                <input
+                                    type="file"
+                                    accept=".csv,.json"
+                                    className="hidden"
+                                    onChange={handleBulkImport}
+                                    disabled={isImporting}
+                                />
+                            </label>
+                        </div>
+                        <div className="space-y-3">
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-primary">Import Guidelines</p>
+                            <ul className="text-xs text-muted-foreground space-y-2 font-medium">
+                                <li className="flex items-start gap-2"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" /> Required columns: name, price, description, category</li>
+                                <li className="flex items-start gap-2"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" /> Category must exist in your category list</li>
+                                <li className="flex items-start gap-2"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" /> Maximum 500 rows per file</li>
+                            </ul>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+
+
+            {/* Bulk Service Import Dialog */}
+            <Dialog open={isBulkServiceImportOpen} onOpenChange={setIsBulkServiceImportOpen}>
+                <DialogContent className="sm:max-w-[450px] rounded-[2rem]">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl font-extrabold">Bulk Service Import</DialogTitle>
+                        <DialogDescription className="font-medium">
+                            Upload a CSV or JSON file containing your service data.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-6 pt-4">
+                        <div className="p-8 border-2 border-dashed border-border/40 rounded-[2rem] bg-slate-50 dark:bg-slate-900/50 text-center space-y-4">
+                            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                                <FileText className="w-8 h-8 text-primary" />
+                            </div>
+                            <div>
+                                <p className="text-sm font-bold">Select Import File</p>
+                                <p className="text-xs text-muted-foreground mt-1">Supported formats: .csv, .json</p>
+                            </div>
+                            <label className="inline-block">
+                                <Button variant="outline" className="rounded-xl font-bold cursor-pointer" asChild>
+                                    <span>
+                                        <Upload className="w-4 h-4 mr-2" /> {isImporting ? "Importing..." : "Choose File"}
+                                    </span>
+                                </Button>
+                                <input
+                                    type="file"
+                                    accept=".csv,.json"
+                                    className="hidden"
+                                    onChange={handleBulkServiceImport}
+                                    disabled={isImporting}
+                                />
+                            </label>
+                        </div>
+                        <div className="space-y-3">
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-primary">Import Guidelines</p>
+                            <ul className="text-xs text-muted-foreground space-y-2 font-medium">
+                                <li className="flex items-start gap-2"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" /> Required columns: name, description, category</li>
+                                <li className="flex items-start gap-2"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" /> Optional: price, duration</li>
+                                <li className="flex items-start gap-2"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" /> Category must exist as a "service" type</li>
+                            </ul>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
         </div>
     );
 }
+
