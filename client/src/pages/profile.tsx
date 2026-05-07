@@ -43,8 +43,7 @@ import {
     Trash2,
     AlertCircle,
     ShieldCheck,
-    Wallet,
-    Receipt
+    Wallet
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -56,8 +55,7 @@ import { Link, useLocation } from "wouter";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/services/auth-context";
 import { businessService, BusinessData } from "@/services/business-service";
-import { cmsService, CmsDashboard } from "@/services/cms-service";
-import { MarketplaceTab } from "@/components/profile/MarketplaceTab";
+import { cmsService, CmsStatus, CmsDashboard, CmsProduct, CmsCategory, CmsOrder } from "@/services/cms-service";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -90,7 +88,6 @@ import {
 } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { MembershipCertificate } from "@/components/membership-certificate";
-import { upcomingEvents } from "@/data/events-data";
 
 export default function ProfilePage() {
     const [, setLocation] = useLocation();
@@ -106,10 +103,6 @@ export default function ProfilePage() {
     const [isSubmittingPassword, setIsSubmittingPassword] = useState(false);
     const [showPasswords, setShowPasswords] = useState({ current: false, new: false, confirm: false });
     const [activeTab, setActiveTab] = useState("overview");
-    const [marketplaceDashboard, setMarketplaceDashboard] = useState<CmsDashboard | null>(null);
-    const [loadingDashboard, setLoadingDashboard] = useState(false);
-    const [eventsCount, setEventsCount] = useState(0);
-    const [displayEvents, setDisplayEvents] = useState(upcomingEvents);
 
     const businessSchema = z.object({
         name: z.string().min(2, "Business name must be at least 2 characters"),
@@ -196,35 +189,6 @@ export default function ProfilePage() {
             if (user.requirePasswordChange) {
                 setIsPasswordOpen(true);
             }
-
-            // Fetch marketplace dashboard for stats
-            const fetchDashboard = async () => {
-                try {
-                    setLoadingDashboard(true);
-                    const res = await cmsService.getDashboard();
-                    if (res.success) {
-                        setMarketplaceDashboard(res.data);
-                    }
-                } catch (err) {
-                    console.error("Dashboard load failed:", err);
-                } finally {
-                    setLoadingDashboard(false);
-                }
-            };
-            fetchDashboard();
-
-            // Fetch events count
-            const fetchEvents = async () => {
-                try {
-                    // Using the source of truth from events-data.ts as requested
-                    const count = upcomingEvents.length;
-                    setEventsCount(count);
-                    setDisplayEvents(upcomingEvents);
-                } catch (err) {
-                    console.error("Events load failed:", err);
-                }
-            };
-            fetchEvents();
         }
     }, [user, authLoading, setLocation, form, personalForm]);
 
@@ -430,15 +394,9 @@ export default function ProfilePage() {
 
     const stats = [
         { title: "Membership Status", value: business?.plan || "Full", icon: <Shield className="w-5 h-5" />, color: "from-blue-500 to-indigo-600", bg: "bg-blue-500/10" },
-        { title: "Upcoming Events", value: upcomingEvents.length.toString(), icon: <Calendar className="w-5 h-5" />, color: "from-primary to-primary/70", bg: "bg-primary/10" },
-        { title: "Marketplace Products", value: (marketplaceDashboard?.products?.total || 0).toString(), icon: <Package className="w-5 h-5" />, color: "from-emerald-500 to-teal-600", bg: "bg-emerald-500/10" },
-        { title: "Total Orders", value: (marketplaceDashboard?.orderStats?.totalOrders || 0).toString(), icon: <ShoppingCart className="w-5 h-5" />, color: "from-amber-500 to-orange-600", bg: "bg-amber-500/10" },
-    ];
-
-    const activities = [
-        { title: "Profile Verified", desc: `Your business "${business?.name || user.name}" is now visible in the verified member directory.`, time: "Recent", icon: BadgeCheck, color: "text-blue-500", bg: "bg-blue-500/10" },
-        { title: "Marketplace Status", desc: marketplaceDashboard ? "Your storefront is active and receiving traffic." : "Activate your marketplace store to start selling.", time: marketplaceDashboard ? "Active" : "Pending", icon: Store, color: "text-emerald-500", bg: "bg-emerald-500/10" },
-        { title: "Account Created", desc: "You have been a member of the KNCCI UG Chapter since joining the portal.", time: "Joined", icon: Award, color: "text-amber-500", bg: "bg-amber-500/10" },
+        { title: "Registered Events", value: "2", icon: <Calendar className="w-5 h-5" />, color: "from-primary to-primary/70", bg: "bg-primary/10" },
+        { title: "Trade Leads", value: "12", icon: <TrendingUp className="w-5 h-5" />, color: "from-emerald-500 to-teal-600", bg: "bg-emerald-500/10" },
+        { title: "Total Points", value: "450", icon: <Award className="w-5 h-5" />, color: "from-amber-500 to-orange-600", bg: "bg-amber-500/10" },
     ];
 
     return (
@@ -699,7 +657,11 @@ export default function ProfilePage() {
                                             </CardHeader>
                                             <CardContent className="p-0">
                                                 <div className="divide-y divide-border/20">
-                                                    {activities.map((item, i) => (
+                                                    {[
+                                                        { title: "Renewal Success", desc: "Your membership for 2026/27 has been officially confirmed.", time: "2h ago", icon: Award, color: "text-amber-500", bg: "bg-amber-500/10" },
+                                                        { title: "Marketplace Match", desc: "A new lead in 'Construction Materials' matches your profile.", time: "1d ago", icon: TrendingUp, color: "text-emerald-500", bg: "bg-emerald-500/10" },
+                                                        { title: "Directory Profile", desc: "Your business is now visible in the verified member directory.", time: "3d ago", icon: User, color: "text-blue-500", bg: "bg-blue-500/10" },
+                                                    ].map((item, i) => (
                                                         <div key={i} className="p-6 flex gap-6 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all cursor-pointer group">
                                                             <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${item.bg} ${item.color} shadow-sm group-hover:rotate-6 transition-transform`}>
                                                                 <item.icon className="w-7 h-7" />
@@ -808,15 +770,15 @@ export default function ProfilePage() {
                                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                                                     <div className="p-8 rounded-[2rem] bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/60 transition-all hover:bg-white dark:hover:bg-slate-800 hover:shadow-xl hover:shadow-primary/5 group cursor-default">
                                                         <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-3 group-hover:text-primary transition-colors">KRA PIN Status</p>
-                                                        <p className="font-extrabold font-mono text-foreground text-sm tracking-wider uppercase">{business?.kra_pin || "NOT LINKED"}</p>
+                                                        <p className="font-extrabold font-mono text-foreground text-sm tracking-wider uppercase">{business?.kra_pin || "---"}</p>
                                                     </div>
                                                     <div className="p-8 rounded-[2rem] bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/60 transition-all hover:bg-white dark:hover:bg-slate-800 hover:shadow-xl hover:shadow-primary/5 group cursor-default">
                                                         <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-3 group-hover:text-primary transition-colors">Company Registry</p>
-                                                        <p className="font-extrabold font-mono text-foreground text-sm tracking-wider uppercase">{business?.company_reg_no || "NOT LINKED"}</p>
+                                                        <p className="font-extrabold font-mono text-foreground text-sm tracking-wider uppercase">{business?.company_reg_no || "---"}</p>
                                                     </div>
                                                     <div className="p-8 rounded-[2rem] bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/60 transition-all hover:bg-white dark:hover:bg-slate-800 hover:shadow-xl hover:shadow-primary/5 group cursor-default">
                                                         <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-3 group-hover:text-primary transition-colors">Operating Permit</p>
-                                                        <p className="font-extrabold font-mono text-foreground text-sm tracking-wider uppercase">{business?.business_permit || "NOT LINKED"}</p>
+                                                        <p className="font-extrabold font-mono text-foreground text-sm tracking-wider uppercase">{business?.business_permit || "---"}</p>
                                                     </div>
                                                 </div>
                                             </div>
@@ -832,70 +794,23 @@ export default function ProfilePage() {
                                         exit={{ opacity: 0, y: -10 }}
                                         className="space-y-6"
                                     >
-                                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                                            <Card className="lg:col-span-2 rounded-[2.5rem] border-none shadow-2xl shadow-primary/5 p-12 bg-white dark:bg-slate-900 border border-border/40">
-                                                <div className="flex items-center justify-between mb-10">
-                                                    <div>
-                                                        <h3 className="text-3xl font-extrabold tracking-tight">Current Subscription</h3>
-                                                        <p className="text-muted-foreground font-medium mt-1">Details of your KNCCI membership investment.</p>
-                                                    </div>
-                                                    <Badge className="rounded-xl px-4 py-2 bg-primary text-white font-extrabold text-[10px] uppercase tracking-widest">Active</Badge>
-                                                </div>
-
-                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-                                                    <div className="p-8 rounded-[2rem] bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/60">
-                                                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary mb-3">Membership Tier</p>
-                                                        <p className="text-2xl font-extrabold">{business?.plan || "Bronze"} Member</p>
-                                                        <p className="text-xs text-muted-foreground font-medium mt-2">Verified KNCCI Uasin Gishu Chapter</p>
-                                                    </div>
-                                                    <div className="p-8 rounded-[2rem] bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/60">
-                                                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary mb-3">Renewal Date</p>
-                                                        <p className="text-2xl font-extrabold">Jan 12, 2027</p>
-                                                        <p className="text-xs text-muted-foreground font-medium mt-2">Annual billing cycle</p>
-                                                    </div>
-                                                </div>
-
-                                                <div className="mt-10 p-8 rounded-[2rem] border border-dashed border-border/60 bg-slate-50/50 dark:bg-slate-800/20">
-                                                    <div className="flex items-center gap-4 text-muted-foreground">
-                                                        <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-900 flex items-center justify-center shadow-sm">
-                                                            <Receipt className="w-5 h-5" />
-                                                        </div>
-                                                        <div className="flex-1">
-                                                            <h4 className="font-bold text-sm text-foreground">Recent Invoices</h4>
-                                                            <p className="text-xs font-medium">No recent invoices found in your digital record.</p>
-                                                        </div>
-                                                        <Button variant="ghost" className="text-xs font-bold uppercase tracking-widest opacity-30 cursor-not-allowed">Download</Button>
-                                                    </div>
-                                                </div>
-                                            </Card>
-
-                                            <Card className="rounded-[2.5rem] border-none shadow-2xl shadow-primary/5 p-10 bg-gradient-to-br from-slate-900 to-slate-800 text-white border border-border/40 overflow-hidden relative group">
-                                                <div className="absolute top-0 right-0 w-40 h-40 bg-primary rounded-full -mr-20 -mt-20 blur-[80px] opacity-20 group-hover:scale-150 transition-transform duration-700" />
-                                                <div className="relative z-10">
-                                                    <div className="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-xl flex items-center justify-center mb-8 border border-white/10 shadow-xl">
-                                                        <ShieldCheck className="w-7 h-7 text-primary" />
-                                                    </div>
-                                                    <h4 className="text-xl font-extrabold mb-4">Tier Benefits</h4>
-                                                    <ul className="space-y-4">
-                                                        {[
-                                                            "Verified Directory Profile",
-                                                            "Marketplace Storefront",
-                                                            "Trade Leads Access",
-                                                            "Event Discounts",
-                                                            "Advocacy Support"
-                                                        ].map((benefit, i) => (
-                                                            <li key={i} className="flex items-center gap-3 text-sm font-medium text-slate-300">
-                                                                <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                                                                {benefit}
-                                                            </li>
-                                                        ))}
-                                                    </ul>
-                                                    <Button className="w-full mt-10 rounded-2xl h-12 font-extrabold uppercase tracking-widest text-[10px] bg-primary hover:bg-primary/90 text-white shadow-xl shadow-primary/20">
-                                                        Upgrade Tier
-                                                    </Button>
-                                                </div>
-                                            </Card>
-                                        </div>
+                                        <Card className="rounded-[2.5rem] border-none shadow-2xl shadow-primary/5 p-12 bg-white dark:bg-slate-900 border border-border/40 min-h-[500px] flex flex-col items-center justify-center text-center">
+                                            <div className="w-24 h-24 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center mb-8 shadow-inner">
+                                                <PaymentIcon className="w-10 h-10 text-muted-foreground/30" />
+                                            </div>
+                                            <h3 className="text-3xl font-extrabold mb-4 tracking-tight">Finances & Billing</h3>
+                                            <p className="text-muted-foreground max-w-sm font-medium leading-[1.8]">
+                                                Track your investment in the chamber. View past receipts, upcoming renewals, and download tax-ready invoices. This feature is currently in final verification.
+                                            </p>
+                                            <div className="mt-10 flex gap-4">
+                                                <Button variant="ghost" className="font-bold opacity-50 cursor-not-allowed">H1 Stat</Button>
+                                                <div className="w-px h-10 bg-border/40" />
+                                                <Button variant="ghost" className="font-bold opacity-50 cursor-not-allowed">H2 Stat</Button>
+                                            </div>
+                                            <Button variant="outline" className="mt-12 rounded-2xl h-12 px-10 font-extrabold uppercase tracking-widest text-[10px]" disabled>
+                                                System locked
+                                            </Button>
+                                        </Card>
                                     </motion.div>
                                 )}
 
@@ -935,7 +850,10 @@ export default function ProfilePage() {
                                             </div>
 
                                             <div className="space-y-6">
-                                                {displayEvents.slice(0, 3).map((event, i) => (
+                                                {[
+                                                    { title: "Eldoret Business Expo 2026", date: "Oct 15, 2026", type: "Conference", status: "Open for Gold", speakers: 12 },
+                                                    { title: "SME Digital Growth Forum", date: "Nov 02, 2026", type: "Workshop", status: "Limited Slots", speakers: 4 },
+                                                ].map((event, i) => (
                                                     <motion.div
                                                         key={i}
                                                         initial={{ opacity: 0, x: -10 }}
@@ -946,22 +864,20 @@ export default function ProfilePage() {
                                                         <div className="flex items-center gap-6 mb-4 sm:mb-0">
                                                             <div className="w-16 h-16 rounded-[1.5rem] bg-white dark:bg-slate-900 flex flex-col items-center justify-center border border-border/20 shadow-sm group-hover:border-primary/40 transition-colors">
                                                                 <span className="text-[10px] font-bold text-muted-foreground uppercase opacity-60 tracking-tighter">{event.date.split(' ')[0]}</span>
-                                                                <span className="text-2xl font-extrabold text-primary leading-none -mt-1">{event.date.includes(' ') ? event.date.split(' ')[1].replace(',', '').slice(0, 2) : "15"}</span>
+                                                                <span className="text-2xl font-extrabold text-primary leading-none -mt-1">{event.date.split(' ')[1].slice(0, 2)}</span>
                                                             </div>
                                                             <div>
                                                                 <h4 className="font-extrabold text-base uppercase tracking-tight group-hover:text-primary transition-colors">{event.title}</h4>
                                                                 <div className="flex flex-wrap items-center gap-3 mt-2">
-                                                                    <Badge variant="outline" className="text-[9px] h-5 font-bold border-primary/20 bg-primary/5 text-primary tracking-widest uppercase">{event.category || "Event"}</Badge>
-                                                                    <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full uppercase tracking-widest">Registration Open</span>
+                                                                    <Badge variant="outline" className="text-[9px] h-5 font-bold border-primary/20 bg-primary/5 text-primary tracking-widest uppercase">{event.type}</Badge>
+                                                                    <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full uppercase tracking-widest">{event.status}</span>
                                                                     <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1">
-                                                                        <MapPin className="w-3 h-3" /> {event.location}
+                                                                        <Users className="w-3 h-3" /> {event.speakers} Key Speakers
                                                                     </span>
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                        <Link href={`/events/${event.id}`}>
-                                                            <Button variant="ghost" className="rounded-xl font-bold text-xs uppercase tracking-widest text-primary hover:bg-primary/5 px-6">Event Details</Button>
-                                                        </Link>
+                                                        <Button variant="ghost" className="rounded-xl font-bold text-xs uppercase tracking-widest text-primary hover:bg-primary/5 px-6">Event Details</Button>
                                                     </motion.div>
                                                 ))}
                                             </div>
