@@ -14,6 +14,7 @@ export interface CmsProduct {
     basePrice?: number;
     additions?: number;
     category: string;
+    image?: string;
     images: string[];
     isActive: boolean;
     stock?: number;
@@ -87,6 +88,7 @@ export interface CreateProductPayload {
     description: string;
     price: number;
     category: string;
+    image?: string;
     images?: string[];
     isActive?: boolean;
     stock?: number;
@@ -98,6 +100,37 @@ export interface CreateCategoryPayload {
     categoryType: 'product' | 'service';
     description?: string;
     status?: 'Active' | 'Inactive';
+}
+
+function getPrimaryImageUrl(value: unknown): string | undefined {
+    if (typeof value === 'string' && value.trim()) return value.trim();
+    if (Array.isArray(value)) {
+        const firstImage = value.find(
+            (item): item is string => typeof item === 'string' && item.trim().length > 0,
+        );
+        return firstImage?.trim();
+    }
+    return undefined;
+}
+
+function normalizeProduct(product: any): CmsProduct {
+    const image = getPrimaryImageUrl(product?.image ?? product?.images);
+    return {
+        ...product,
+        image,
+        images: image ? [image] : [],
+    };
+}
+
+function normalizeCollection<T>(payload: any, normalizer: (item: any) => T) {
+    if (Array.isArray(payload)) return payload.map(normalizer);
+    if (payload && Array.isArray(payload.data)) {
+        return {
+            ...payload,
+            data: payload.data.map(normalizer),
+        };
+    }
+    return payload;
 }
 
 
@@ -126,24 +159,33 @@ export const cmsService = {
     /** Get marketplace dashboard data (products + orders summary) */
     async getDashboard(): Promise<{ success: boolean; data: CmsDashboard }> {
         const response = await api.get('/cms/dashboard');
+        if (response.data?.data?.products) {
+            response.data.data = {
+                ...response.data.data,
+                products: normalizeCollection(response.data.data.products, normalizeProduct),
+            };
+        }
         return response.data;
     },
 
     /** List products */
     async getProducts(params?: Record<string, any>): Promise<{ success: boolean; data: any }> {
         const response = await api.get('/cms/products', { params });
+        response.data.data = normalizeCollection(response.data.data, normalizeProduct);
         return response.data;
     },
 
     /** Create a new product */
     async createProduct(payload: CreateProductPayload): Promise<{ success: boolean; data: CmsProduct }> {
         const response = await api.post('/cms/products', payload);
+        response.data.data = normalizeProduct(response.data.data);
         return response.data;
     },
 
     /** Update a product */
     async updateProduct(productId: string, payload: Partial<CreateProductPayload>): Promise<{ success: boolean; data: CmsProduct }> {
         const response = await api.patch(`/cms/products/${productId}`, payload);
+        response.data.data = normalizeProduct(response.data.data);
         return response.data;
     },
 
@@ -187,6 +229,17 @@ export const cmsService = {
 
     async createTestOrder(payload: any): Promise<{ success: boolean; data: CmsOrder }> {
         const response = await api.post('/cms/orders/seed', payload);
+        return response.data;
+    },
+
+    async uploadImage(file: File): Promise<{ success: boolean; data: { url: string; filename?: string; size?: number; mimeType?: string } }> {
+        const formData = new FormData();
+        formData.append('files', file);
+        const response = await api.post('/cms/upload', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
         return response.data;
     }
 };
