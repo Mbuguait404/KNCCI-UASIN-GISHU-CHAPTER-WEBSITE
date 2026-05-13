@@ -5,21 +5,13 @@ import { staticOrganization } from "@/data/static-data";
 import { Link } from "wouter";
 
 const benefits = [
-  "Trade Facilitation Services",
-  "Visibility and Credibility",
-  "Promotion of Foreign Direct Investments & Joint Ventures",
-  "Youth, Women & PWDs Enterprise Development",
-  "Annual Budget & Tax Seminars",
-  "Informal Businesses Formalization",
-  "Trade & Industrial Policies Interventions",
-  "Enterprise Development Support & Consulting",
-  "County Trade & Investment Services",
-  "Trade Disputes Settlement & Arbitration",
-  "Business Networking Services",
-  "Finance & Technical Support Services",
-  "Trade & Investment Information Dissemination",
-  "Government Representation",
-  "Issuing Certificates of Origin",
+  "Networking Opportunities",
+  "Business Advocacy",
+  "Access to Information",
+  "Training and Workshops",
+  "Visibility and Branding",
+  "Business Services",
+  "Discounts and Deals",
 ];
 
 export function AboutSection() {
@@ -99,7 +91,7 @@ export function AboutSection() {
                 Becoming a member of KNCCI Uasin Gishu Chapter unlocks unparalleled opportunities for your business. 
                 From direct access to government decision-makers and exclusive trade facilitation services, to high-value 
                 networking events and capacity-building programs — membership positions your business at the centre of 
-                Uasin Gishu's economic transformation. Join over 1,000 active members who are already benefiting from 
+                Uasin Gishu's economic transformation. Join over 5,000 active members who are already benefiting from 
                 our advocacy, market access, and strategic partnerships.
               </p>
             </div>
