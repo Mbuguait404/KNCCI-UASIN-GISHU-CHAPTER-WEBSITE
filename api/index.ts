@@ -8,13 +8,6 @@ import { randomUUID } from "crypto";
 const registrations = new Map<string, any>();
 const registrationPayloads = new Map<string, any>(); // New format (event, attendee, tickets, payment)
 const newsletterSubscriptions = new Map<string, any>();
-const CMS_API_BASE_URL =
-  process.env.CMS_API_URL ||
-  process.env.VITE_CMS_API_URL ||
-  "https://print-shop-api.vercel.app";
-const CMS_TENANT_ID =
-  process.env.CMS_TENANT_ID ||
-  "69e37354ae0d3b8019eb1625";
 
 const storage = {
   async createRegistration(data: any) {
@@ -334,47 +327,6 @@ app.get("/api/testimonials", (req, res) => {
   } catch (error) {
     console.error("Error in /api/testimonials:", error);
     res.status(500).json({ error: "Internal server error" });
-  }
-});
-
-app.get("/api/advertisements/active", async (req, res) => {
-  try {
-    const placement =
-      typeof req.query.placement === "string" && req.query.placement.trim()
-        ? req.query.placement.trim()
-        : "homepage";
-
-    const cmsResponse = await fetch(
-      `${CMS_API_BASE_URL}/advertisements/active?placement=${encodeURIComponent(placement)}`,
-      {
-        headers: {
-          "Content-Type": "application/json",
-          "x-tenant-id": CMS_TENANT_ID,
-        },
-      },
-    );
-
-    const responseText = await cmsResponse.text();
-    let responseData: unknown;
-    try {
-      responseData = responseText ? JSON.parse(responseText) : null;
-    } catch {
-      responseData = responseText || null;
-    }
-
-    if (!cmsResponse.ok) {
-      console.error("[Advertisement] CMS proxy error:", cmsResponse.status, responseData);
-      return res.status(cmsResponse.status).json(
-        typeof responseData === "object" && responseData !== null
-          ? responseData
-          : { message: "Failed to fetch advertisement." },
-      );
-    }
-
-    res.json(responseData);
-  } catch (error) {
-    console.error("[Advertisement] Proxy request failed:", error);
-    res.status(500).json({ message: "Failed to fetch advertisement." });
   }
 });
 
