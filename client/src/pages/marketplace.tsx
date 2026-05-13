@@ -1,29 +1,69 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Navigation } from "@/components/navigation";
 import { Footer } from "@/components/footer";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
     ShoppingBag,
     Search,
-    Filter,
     Store,
     ArrowUpRight,
-    Tag,
     ChevronRight,
-    Package,
     CheckCircle2,
-    Building2
+    MapPin,
+    ExternalLink,
+    Loader2,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SEOHead } from "@/components/seo/seo-head";
-import { membersList } from "@/data/members";
+import api from "@/lib/api";
+
+interface Vendor {
+    id: string;
+    name: string;
+    slug: string;
+    category: string;
+    description: string;
+    email: string;
+    phone: string;
+    location: string;
+    website: string;
+    logoUrl: string | null;
+    bannerUrl: string | null;
+    plan: string;
+    services: string[];
+    tenantId: string;
+    joinedAt: string;
+}
+
+const MARKETPLACE_URL = import.meta.env.VITE_MARKETPLACE_URL || "http://localhost:3002";
 
 export default function MarketplacePage() {
     const [searchQuery, setSearchQuery] = useState("");
+    const [vendors, setVendors] = useState<Vendor[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        async function fetchVendors() {
+            try {
+                setLoading(true);
+                const response = await api.get("/marketplace/vendors", {
+                    params: { limit: 5, page: 1 },
+                });
+                // Response shape: { data: { data: Vendor[], total, page, limit }, message }
+                const result = response.data?.data;
+                setVendors(result?.data || []);
+            } catch (err: any) {
+                setError(err?.response?.data?.message || "Failed to load businesses");
+            } finally {
+                setLoading(false);
+            }
+        }
+        fetchVendors();
+    }, []);
 
     const categories = [
         "All Categories",
@@ -32,53 +72,14 @@ export default function MarketplacePage() {
         "Professional Services",
         "Hospitality & Tourism",
         "Construction",
-        "Technology"
+        "Technology",
     ];
-
-    const featuredProducts = [
-        {
-            id: 1,
-            name: "Organic Eldoret Tea",
-            seller: "Rift Valley Farmers Co-op",
-            price: "KES 450",
-            image: "https://images.unsplash.com/photo-1594631252845-29fc4586c567?auto=format&fit=crop&q=80&w=800",
-            category: "Agribusiness"
-        },
-        {
-            id: 2,
-            name: "Handcrafted Leather Goods",
-            seller: "Uasin Gishu Artisans",
-            price: "KES 2,500",
-            image: "https://images.unsplash.com/photo-1524289286702-f07229da36f5?auto=format&fit=crop&q=80&w=800",
-            category: "Manufacturing"
-        },
-        {
-            id: 3,
-            name: "Business Strategy Consultation",
-            seller: "Ken Mwenda & Associates",
-            price: "Contact for Quote",
-            image: "https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&q=80&w=800",
-            category: "Professional Services"
-        },
-        {
-            id: 4,
-            name: "Premium Maize Flour",
-            seller: "Eldoret Millers Ltd",
-            price: "KES 180",
-            image: "https://images.unsplash.com/photo-1536511110382-7f9e851d7237?auto=format&fit=crop&q=80&w=800",
-            category: "Agribusiness"
-        }
-    ];
-
-    const filteredMembers = membersList.filter(member =>
-        member.name.toLowerCase().includes(searchQuery.toLowerCase())
-    ).slice(0, 12); // Limit for listing
 
     return (
         <div className="min-h-screen bg-background">
             <SEOHead
-                title="Marketplace & Member Directory | KNCCI Uasin Gishu"
-                description="Discover and trade with verified businesses in Uasin Gishu County. Explore our member directory and marketplace for local products and services."
+                title="Marketplace | KNCCI Uasin Gishu"
+                description="Discover and trade with verified businesses in Uasin Gishu County. Explore our marketplace for local products and services."
             />
             <Navigation />
 
@@ -91,7 +92,9 @@ export default function MarketplacePage() {
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                             >
-                                <span className="text-primary font-bold text-sm uppercase tracking-widest block mb-4">The Chamber Marketplace</span>
+                                <span className="text-primary font-bold text-sm uppercase tracking-widest block mb-4">
+                                    The Chamber Marketplace
+                                </span>
                                 <h1 className="text-4xl md:text-6xl font-extrabold mb-6 tracking-tight">
                                     Discover <span className="text-primary">Verified</span> Local Business
                                 </h1>
@@ -113,8 +116,14 @@ export default function MarketplacePage() {
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                     />
                                 </div>
-                                <Button size="lg" className="h-14 px-12 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all hover:scale-105">
-                                    Explore Marketplace
+                                <Button
+                                    size="lg"
+                                    className="h-14 px-12 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all hover:scale-105"
+                                    asChild
+                                >
+                                    <a href={MARKETPLACE_URL} target="_blank" rel="noopener noreferrer">
+                                        Explore Marketplace <ExternalLink className="w-4 h-4 ml-2" />
+                                    </a>
                                 </Button>
                             </div>
                         </div>
@@ -129,7 +138,7 @@ export default function MarketplacePage() {
                                 <Button
                                     key={i}
                                     variant={i === 0 ? "default" : "outline"}
-                                    className={`rounded-full px-8 ${i === 0 ? 'bg-primary text-white shadow-lg' : 'bg-background hover:bg-primary/5'}`}
+                                    className={`rounded-full px-8 ${i === 0 ? "bg-primary text-white shadow-lg" : "bg-background hover:bg-primary/5"}`}
                                 >
                                     {cat}
                                 </Button>
@@ -138,108 +147,111 @@ export default function MarketplacePage() {
                     </div>
                 </section>
 
-                {/* Featured Products */}
+                {/* Featured Businesses */}
                 <section className="py-24">
                     <div className="container mx-auto px-4">
                         <div className="flex items-end justify-between mb-12">
                             <div>
-                                <h2 className="text-3xl font-bold italic mb-2">Featured Products</h2>
+                                <h2 className="text-3xl font-bold italic mb-2">Featured Businesses</h2>
                                 <div className="w-20 h-1.5 bg-primary rounded-full" />
                             </div>
-                            <Button variant="ghost" className="gap-2 font-bold group">
-                                View All <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                            </Button>
                         </div>
 
-                        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                            {featuredProducts.map((product) => (
-                                <motion.div
-                                    key={product.id}
-                                    initial={{ opacity: 0, scale: 0.95 }}
-                                    whileInView={{ opacity: 1, scale: 1 }}
-                                    viewport={{ once: true }}
-                                >
-                                    <Card className="h-full overflow-hidden border-border/50 group hover:shadow-2xl transition-all duration-500">
-                                        <div className="relative aspect-[4/5] overflow-hidden">
-                                            <img
-                                                src={product.image}
-                                                alt={product.name}
-                                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                                            />
-                                            <div className="absolute top-4 left-4">
-                                                <Badge className="bg-white/90 backdrop-blur-md text-slate-900 border-none px-3 py-1">{product.category}</Badge>
-                                            </div>
-                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                <Button className="rounded-full bg-primary text-white font-bold gap-2 scale-90 group-hover:scale-100 transition-transform">
-                                                    View Details <ArrowUpRight className="w-4 h-4" />
-                                                </Button>
-                                            </div>
-                                        </div>
-                                        <CardContent className="p-6">
-                                            <h3 className="text-lg font-bold mb-1 truncate">{product.name}</h3>
-                                            <p className="text-sm text-muted-foreground mb-4 flex items-center gap-1">
-                                                <Store className="w-3.5 h-3.5" /> {product.seller}
-                                            </p>
-                                            <div className="flex items-center justify-between mt-auto">
-                                                <span className="text-xl font-black text-primary">{product.price}</span>
-                                                <div className="w-8 h-8 rounded-full border border-border flex items-center justify-center hover:bg-primary hover:text-white transition-colors">
-                                                    <ShoppingBag className="w-4 h-4" />
-                                                </div>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                </motion.div>
-                            ))}
-                        </div>
-                    </div>
-                </section>
-
-                {/* Member Directory Preview */}
-                <section className="py-24 bg-slate-50 dark:bg-slate-900/40 border-y border-border">
-                    <div className="container mx-auto px-4">
-                        <div className="max-w-6xl mx-auto">
-                            <div className="text-center mb-16">
-                                <h2 className="text-3xl md:text-5xl font-bold mb-6">Member <span className="text-primary italic">Directory</span></h2>
-                                <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                                    A comprehensive directory of the businesses driving growth in Uasin Gishu County.
-                                </p>
+                        {loading && (
+                            <div className="flex items-center justify-center py-20">
+                                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                                <span className="ml-3 text-muted-foreground">Loading businesses...</span>
                             </div>
+                        )}
 
-                            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-                                <AnimatePresence>
-                                    {filteredMembers.map((member, i) => (
-                                        <motion.div
-                                            key={i}
-                                            layout
-                                            initial={{ opacity: 0, y: 10 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            className="p-6 rounded-2xl bg-background border border-border shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all group"
-                                        >
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-12 h-12 rounded-xl bg-primary/5 text-primary flex items-center justify-center font-bold text-xl group-hover:bg-primary group-hover:text-white transition-colors">
-                                                    {member.name.charAt(0)}
-                                                </div>
-                                                <div>
-                                                    <h4 className="font-bold text-foreground leading-tight group-hover:text-primary transition-colors">{member.name}</h4>
-                                                    <span className="text-xs text-muted-foreground uppercase tracking-widest font-semibold">Verified Member</span>
-                                                </div>
-                                                <div className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                                                </div>
-                                            </div>
-                                        </motion.div>
-                                    ))}
-                                </AnimatePresence>
-                            </div>
-
-                            <div className="text-center">
-                                <Button size="lg" variant="outline" className="rounded-full px-12 h-14 font-bold border-primary text-primary hover:bg-primary hover:text-white transition-all shadow-lg hover:shadow-primary/25" asChild>
-                                    <a href="/member-directory">
-                                        View Full Member Directory
-                                    </a>
+                        {error && (
+                            <div className="text-center py-12">
+                                <p className="text-destructive mb-4">{error}</p>
+                                <Button onClick={() => window.location.reload()} variant="outline">
+                                    Try Again
                                 </Button>
                             </div>
-                        </div>
+                        )}
+
+                        {!loading && !error && vendors.length === 0 && (
+                            <div className="text-center py-12">
+                                <p className="text-muted-foreground">No businesses found.</p>
+                            </div>
+                        )}
+
+                        {!loading && !error && vendors.length > 0 && (
+                            <>
+                                <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+                                    {vendors.map((vendor, index) => (
+                                        <motion.div
+                                            key={vendor.id}
+                                            initial={{ opacity: 0, y: 20 }}
+                                            whileInView={{ opacity: 1, y: 0 }}
+                                            viewport={{ once: true }}
+                                            transition={{ delay: index * 0.1 }}
+                                        >
+                                            <Card className="h-full overflow-hidden border-border/50 group hover:shadow-2xl hover:border-primary/20 transition-all duration-500">
+                                                <div className="relative aspect-square overflow-hidden bg-muted">
+                                                    {vendor.logoUrl ? (
+                                                        <img
+                                                            src={vendor.logoUrl}
+                                                            alt={vendor.name}
+                                                            className="w-full h-full object-contain p-6 transition-transform duration-700 group-hover:scale-110"
+                                                        />
+                                                    ) : vendor.bannerUrl ? (
+                                                        <img
+                                                            src={vendor.bannerUrl}
+                                                            alt={vendor.name}
+                                                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                                        />
+                                                    ) : (
+                                                        <div className="w-full h-full flex items-center justify-center bg-primary/5">
+                                                            <Store className="w-16 h-16 text-primary/30" />
+                                                        </div>
+                                                    )}
+                                                    <div className="absolute top-3 left-3">
+                                                        <Badge className="bg-white/90 backdrop-blur-md text-slate-900 border-none px-2 py-0.5 text-[10px]">
+                                                            {vendor.category}
+                                                        </Badge>
+                                                    </div>
+                                                </div>
+                                                <CardContent className="p-5">
+                                                    <h3 className="font-bold text-foreground mb-1 truncate group-hover:text-primary transition-colors">
+                                                        {vendor.name}
+                                                    </h3>
+                                                    {vendor.location && (
+                                                        <p className="text-xs text-muted-foreground mb-3 flex items-center gap-1">
+                                                            <MapPin className="w-3 h-3" />
+                                                            {vendor.location}
+                                                        </p>
+                                                    )}
+                                                    <a
+                                                        href={`${MARKETPLACE_URL}/stores/${vendor.slug}`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline"
+                                                    >
+                                                        Visit Store <ArrowUpRight className="w-3 h-3" />
+                                                    </a>
+                                                </CardContent>
+                                            </Card>
+                                        </motion.div>
+                                    ))}
+                                </div>
+
+                                <div className="mt-16 text-center">
+                                    <Button
+                                        size="lg"
+                                        className="rounded-full px-12 h-14 font-bold shadow-lg shadow-primary/20 transition-all hover:scale-105"
+                                        asChild
+                                    >
+                                        <a href={MARKETPLACE_URL} target="_blank" rel="noopener noreferrer">
+                                            View More Businesses <ChevronRight className="w-4 h-4 ml-1" />
+                                        </a>
+                                    </Button>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </section>
 
@@ -249,7 +261,9 @@ export default function MarketplacePage() {
                         <div className="max-w-7xl mx-auto bg-primary rounded-[2.5rem] overflow-hidden flex flex-col md:flex-row items-center relative shadow-2xl">
                             <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full blur-[100px] pointer-events-none" />
                             <div className="p-10 md:p-12 md:w-3/5 text-white">
-                                <h2 className="text-2xl md:text-4xl font-extrabold mb-4 leading-tight">Grow your business <span className="italic opacity-80">Online</span></h2>
+                                <h2 className="text-2xl md:text-4xl font-extrabold mb-4 leading-tight">
+                                    Grow your business <span className="italic opacity-80">Online</span>
+                                </h2>
                                 <p className="text-lg text-white/90 mb-6 leading-relaxed max-w-xl">
                                     Join our marketplace and reach thousands of potential customers. It's time to scale your business beyond physical borders.
                                 </p>
@@ -271,7 +285,12 @@ export default function MarketplacePage() {
                                         <span className="font-medium text-base">E-commerce Ready</span>
                                     </li>
                                 </ul>
-                                <Button size="lg" variant="secondary" className="rounded-full px-10 h-14 text-base font-bold shadow-xl hover:scale-105 transition-transform" asChild>
+                                <Button
+                                    size="lg"
+                                    variant="secondary"
+                                    className="rounded-full px-10 h-14 text-base font-bold shadow-xl hover:scale-105 transition-transform"
+                                    asChild
+                                >
                                     <a href="/membership">Register as a Seller</a>
                                 </Button>
                             </div>

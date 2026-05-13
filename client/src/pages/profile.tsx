@@ -12,6 +12,7 @@ import {
     LogOut,
     ExternalLink,
     ChevronRight,
+    Globe,
     Shield,
     BadgeCheck,
     BaggageClaim,
@@ -88,6 +89,9 @@ import {
 } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { MembershipCertificate } from "@/components/membership-certificate";
+import { BUSINESS_CATEGORIES, normalizeBusinessCategory } from "@shared/business-categories";
+
+const DIRECTORY_MODE = import.meta.env.VITE_DIRECTORY_MODE === 'true';
 
 export default function ProfilePage() {
     const [, setLocation] = useLocation();
@@ -97,6 +101,7 @@ export default function ProfilePage() {
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [isPersonalEditDialogOpen, setIsPersonalEditDialogOpen] = useState(false);
     const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+    const [isUploadingCover, setIsUploadingCover] = useState(false);
     const [showCertificate, setShowCertificate] = useState(false);
     const [isPasswordOpen, setIsPasswordOpen] = useState(false);
     const [passwordForm, setPasswordForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
@@ -161,7 +166,7 @@ export default function ProfilePage() {
                     setBusiness(response.data);
                     form.reset({
                         name: response.data.name || "",
-                        category: response.data.category || "",
+                        category: normalizeBusinessCategory(response.data.category),
                         email: response.data.email || "",
                         phone: response.data.phone || "",
                         location: response.data.location || "",
@@ -284,6 +289,49 @@ export default function ProfilePage() {
         }
     };
 
+    const handleCoverUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        if (!file.type.startsWith('image/')) {
+            toast({
+                title: "Invalid file type",
+                description: "Please upload an image file.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+            toast({
+                title: "File too large",
+                description: "Cover image size should be less than 5MB.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        try {
+            setIsUploadingCover(true);
+            const response = await businessService.uploadCoverImage(file);
+            if (response.success) {
+                setBusiness(response.data);
+                toast({
+                    title: "Success",
+                    description: "Cover image updated successfully.",
+                });
+            }
+        } catch (error: any) {
+            toast({
+                title: "Error",
+                description: error.response?.data?.message || "Failed to upload cover image.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsUploadingCover(false);
+        }
+    };
+
     const handlePasswordSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -344,7 +392,10 @@ export default function ProfilePage() {
     };
 
     const openMarketplace = async () => {
-        const marketplaceUrl = import.meta.env.VITE_MARKETPLACE_URL || 'http://localhost:3000';
+        let marketplaceUrl = import.meta.env.VITE_MARKETPLACE_URL || 'http://localhost:3000';
+        if (!marketplaceUrl.startsWith('http://') && !marketplaceUrl.startsWith('https://')) {
+            marketplaceUrl = `https://${marketplaceUrl}`;
+        }
         const token = localStorage.getItem('accessToken');
         if (!token) {
             window.open(marketplaceUrl, '_blank');
@@ -384,13 +435,14 @@ export default function ProfilePage() {
 
     if (!user) return null;
 
-    const sideNavItems = [
+    const allNavItems = [
         { key: "overview", label: "Dashboard", icon: <LayoutDashboard className="w-4 h-4" /> },
         { key: "business", label: "Business Profile", icon: <Briefcase className="w-4 h-4" /> },
-        { key: "finances", label: "Finances", icon: <PaymentIcon className="w-4 h-4" /> },
-        { key: "marketplace", label: "Marketplace", icon: <Store className="w-4 h-4" /> },
+        ...(DIRECTORY_MODE ? [] : [{ key: "finances", label: "Finances", icon: <PaymentIcon className="w-4 h-4" /> }]),
+        { key: "marketplace", label: DIRECTORY_MODE ? "Business Directory" : "Marketplace", icon: <Store className="w-4 h-4" /> },
         { key: "events", label: "Events & Trade", icon: <Activity className="w-4 h-4" /> },
     ];
+    const sideNavItems = allNavItems;
 
     const stats = [
         { title: "Membership Status", value: business?.plan || "Full", icon: <Shield className="w-5 h-5" />, color: "from-blue-500 to-indigo-600", bg: "bg-blue-500/10" },
@@ -692,6 +744,34 @@ export default function ProfilePage() {
                                         exit={{ opacity: 0, y: -10 }}
                                         className="space-y-6"
                                     >
+                                        {/* Cover Image */}
+                                        <Card className="rounded-[2.5rem] border-none shadow-2xl shadow-primary/5 overflow-hidden relative bg-white dark:bg-slate-900 border border-border/40">
+                                            <div className="relative w-full h-48 md:h-64 lg:h-80 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 group">
+                                                {business?.coverImageUrl ? (
+                                                    <img src={business.coverImageUrl} alt="Cover" className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center">
+                                                        <div className="text-center">
+                                                            <Camera className="w-10 h-10 mx-auto mb-2 text-muted-foreground/40" />
+                                                            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground/40">No cover image</p>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                <label className="absolute inset-0 flex items-center justify-center bg-black/40 text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                                                    <div className="flex flex-col items-center">
+                                                        <Upload className="w-8 h-8 mb-1" />
+                                                        <span className="text-xs font-bold uppercase tracking-wider">{business?.coverImageUrl ? "Change Cover" : "Upload Cover"}</span>
+                                                    </div>
+                                                    <input type="file" className="hidden" accept="image/*" onChange={handleCoverUpload} disabled={isUploadingCover} />
+                                                </label>
+                                                {isUploadingCover && (
+                                                    <div className="absolute inset-0 flex items-center justify-center bg-white/60 dark:bg-slate-900/60">
+                                                        <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </Card>
+
                                         <Card className="rounded-[2.5rem] border-none shadow-2xl shadow-primary/5 p-8 lg:p-12 bg-white dark:bg-slate-900 border border-border/40 overflow-hidden relative">
                                             <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -mr-32 -mt-32 blur-3xl opacity-50" />
 
@@ -943,12 +1023,11 @@ export default function ProfilePage() {
                                                     </SelectTrigger>
                                                 </FormControl>
                                                 <SelectContent className="rounded-xl">
-                                                    <SelectItem value="Agriculture">Agriculture & Food</SelectItem>
-                                                    <SelectItem value="Manufacturing">Manufacturing</SelectItem>
-                                                    <SelectItem value="Trade">Retail & Wholesale</SelectItem>
-                                                    <SelectItem value="Services">Professional Services</SelectItem>
-                                                    <SelectItem value="Construction">Construction</SelectItem>
-                                                    <SelectItem value="Technology">Technology & Innovation</SelectItem>
+                                                    {BUSINESS_CATEGORIES.map((category) => (
+                                                        <SelectItem key={category} value={category}>
+                                                            {category}
+                                                        </SelectItem>
+                                                    ))}
                                                 </SelectContent>
                                             </Select>
                                             <FormMessage />
@@ -1386,7 +1465,10 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
     };
 
     const openMarketplace = async () => {
-        const marketplaceUrl = import.meta.env.VITE_MARKETPLACE_URL || 'http://localhost:3000';
+        let marketplaceUrl = import.meta.env.VITE_MARKETPLACE_URL || 'http://localhost:3000';
+        if (!marketplaceUrl.startsWith('http://') && !marketplaceUrl.startsWith('https://')) {
+            marketplaceUrl = `https://${marketplaceUrl}`;
+        }
         const token = localStorage.getItem('accessToken');
         if (!token) {
             window.open(marketplaceUrl, '_blank');
@@ -1682,6 +1764,123 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
                     <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Loading marketplace...</p>
                 </div>
             </Card>
+        );
+    }
+
+    // ─── Directory Mode: Business Listing View ─────────────────────
+    if (DIRECTORY_MODE) {
+        const marketplaceUrl = import.meta.env.VITE_MARKETPLACE_URL || 'http://localhost:3002';
+        const storeSlug = business?.cms_org_slug || business?.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '') || '';
+        const storeUrl = `${marketplaceUrl}/stores/${storeSlug}`;
+
+        return (
+            <div className="space-y-8">
+                <Card className="rounded-[2.5rem] border-none shadow-2xl shadow-primary/5 p-10 lg:p-12 bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-950/20 dark:to-slate-900 overflow-hidden relative">
+                    <div className="absolute -top-20 -right-20 w-64 h-64 bg-emerald-500/10 rounded-full blur-[80px]" />
+                    <div className="relative z-10">
+                        <div className="flex items-center gap-4 mb-6">
+                            <div className="w-16 h-16 rounded-[1.5rem] bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center text-white shadow-lg shadow-emerald-500/20">
+                                <BadgeCheck className="w-8 h-8" />
+                            </div>
+                            <div>
+                                <h3 className="text-2xl lg:text-3xl font-extrabold tracking-tight">Your Business Is Listed</h3>
+                                <p className="text-sm text-muted-foreground font-bold uppercase tracking-widest mt-1">KNCCI Business Directory</p>
+                            </div>
+                        </div>
+                        <p className="text-muted-foreground max-w-2xl leading-relaxed font-medium">
+                            Your business is visible on the KNCCI Business Directory. Verified members and businesses search and connect through the platform.
+                        </p>
+                    </div>
+                </Card>
+
+                <div className="grid md:grid-cols-2 gap-8">
+                    <Card className="rounded-[2.5rem] border-none shadow-xl shadow-primary/5 p-8 bg-white dark:bg-slate-900">
+                        <h4 className="font-extrabold text-sm uppercase tracking-[0.2em] text-muted-foreground mb-6 flex items-center gap-2">
+                            <Store className="w-4 h-4 text-primary" /> Your Store Listing
+                        </h4>
+                        <div className="rounded-2xl border border-[#e6e8ed] bg-gray-50 p-6 space-y-4">
+                            <div className="flex items-center gap-4">
+                                <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-extrabold text-xl overflow-hidden">
+                                    {business?.logoUrl ? (
+                                        <img src={business.logoUrl} alt={business.name} className="w-full h-full object-cover" />
+                                    ) : (
+                                        (business?.name || 'B').slice(0, 2).toUpperCase()
+                                    )}
+                                </div>
+                                <div>
+                                    <p className="font-bold text-gray-900 text-base">{business?.name || 'Your Business'}</p>
+                                    <p className="text-xs text-gray-500">{business?.category || 'Category'}</p>
+                                </div>
+                            </div>
+                            <div className="flex flex-wrap gap-2 text-xs text-gray-600">
+                                {business?.location && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {business.location}</span>}
+                                {business?.phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3" /> {business.phone}</span>}
+                                {business?.email && <span className="flex items-center gap-1"><Mail className="w-3 h-3" /> {business.email}</span>}
+                            </div>
+                            <div className="flex items-center gap-2 text-xs font-medium text-emerald-600">
+                                <CheckCircle2 className="w-4 h-4" /> Verified KNCCI Member
+                            </div>
+                            <Button asChild className="w-full rounded-xl h-11 font-bold shadow-lg shadow-emerald-500/20 mt-2 bg-gradient-to-r from-emerald-600 to-emerald-700">
+                                <a href={storeUrl} target="_blank" rel="noopener noreferrer">
+                                    <ExternalLink className="w-4 h-4 mr-2" /> View Your Listing
+                                </a>
+                            </Button>
+                        </div>
+                    </Card>
+
+                    <Card className="rounded-[2.5rem] border-none shadow-xl shadow-primary/5 p-8 bg-white dark:bg-slate-900">
+                        <h4 className="font-extrabold text-sm uppercase tracking-[0.2em] text-muted-foreground mb-6 flex items-center gap-2">
+                            <Globe className="w-4 h-4 text-primary" /> Directory Details
+                        </h4>
+                        <div className="space-y-4">
+                            {[
+                                { label: "Store URL", value: storeUrl.replace(/^https?:\/\//, ''), ok: true },
+                                { label: "Business Name", value: business?.name || 'Not set', ok: !!business?.name },
+                                { label: "Category", value: business?.category || 'Not set', ok: !!business?.category },
+                                { label: "Location", value: business?.location || 'Not set', ok: !!business?.location },
+                                { label: "Contact", value: business?.phone || business?.email || 'Not set', ok: !!(business?.phone || business?.email) },
+                            ].map((item, i) => (
+                                <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                                    <div className="flex items-center gap-3">
+                                        {item.ok ? <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" /> : <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />}
+                                        <div>
+                                            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{item.label}</p>
+                                            <p className="text-xs font-extrabold truncate max-w-[200px]">{item.value}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                            <Button variant="outline" className="w-full rounded-xl h-11 font-bold border-primary/20 text-primary" onClick={onBusinessTabSwitch}>
+                                <Edit className="w-4 h-4 mr-2" /> Update Business Profile
+                            </Button>
+                        </div>
+                    </Card>
+                </div>
+
+                <Card className="rounded-[2.5rem] border-none shadow-xl shadow-primary/5 p-8 bg-white dark:bg-slate-900">
+                    <h4 className="font-extrabold text-sm uppercase tracking-[0.2em] text-muted-foreground mb-6 flex items-center gap-2">
+                        <Users className="w-4 h-4 text-primary" /> Quick Links
+                    </h4>
+                    <div className="grid sm:grid-cols-2 gap-4">
+                        <Button asChild variant="outline" className="rounded-2xl h-14 font-bold justify-start px-6 border-primary/10 hover:border-primary/30">
+                            <a href={storeUrl} target="_blank" rel="noopener noreferrer">
+                                <ExternalLink className="w-4 h-4 mr-3 text-primary" />
+                                <div className="text-left">
+                                    <p className="text-sm font-bold">View Store Page</p>
+                                    <p className="text-[10px] font-medium text-muted-foreground">See how customers view your listing</p>
+                                </div>
+                            </a>
+                        </Button>
+                        <Link href="/member-directory" className="rounded-2xl h-14 font-bold justify-start px-6 border border-primary/10 hover:border-primary/30 flex items-center bg-transparent">
+                            <Users className="w-4 h-4 mr-3 text-primary" />
+                            <div className="text-left">
+                                <p className="text-sm font-bold">Member Directory</p>
+                                <p className="text-[10px] font-medium text-muted-foreground">Connect with verified members</p>
+                            </div>
+                        </Link>
+                    </div>
+                </Card>
+            </div>
         );
     }
 

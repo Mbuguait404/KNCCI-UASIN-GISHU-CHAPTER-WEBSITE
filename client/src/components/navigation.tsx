@@ -56,14 +56,13 @@ const navItems: NavItem[] = [
     label: "Marketplace",
     children: [
       { label: "Marketplace", href: "/marketplace", description: "Discover local products and services." },
-      { label: "Member Directory", href: "/member-directory", description: "Browse and connect with verified members." },
     ],
   },
   { label: "Contact", href: "/contact" },
 ];
 
 export function Navigation() {
-  const [isScrolled, setIsScrolled] = useState(false);
+  const isScrolled = true;
   const [mobileOpen, setMobileOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
   const [location] = useLocation();
@@ -72,14 +71,6 @@ export function Navigation() {
   const { openRegistration } = useRegistration();
   const { openMembership } = useMembership();
   const { user, isAuthenticated } = useAuth();
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   const navTriggerClass = (isActive: boolean) => cn(
     navigationMenuTriggerStyle(),

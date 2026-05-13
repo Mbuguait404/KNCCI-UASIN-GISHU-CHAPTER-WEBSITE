@@ -29,13 +29,13 @@ export const boardMembers: BoardMember[] = [
     },
     {
         name: "Allan Rop",
-        role: "Director",
+        role: "ICT and Innovation",
         category: "Director",
         image: "https://solby.sfo3.digitaloceanspaces.com/1771437809063-allanrop.jpg",
     },
     {
         name: "Noeline Maru",
-        role: "Director",
+        role: "Youth in Business",
         category: "Director",
         image: "https://solby.sfo3.digitaloceanspaces.com/1771437537010-noeline.jpeg",
     },

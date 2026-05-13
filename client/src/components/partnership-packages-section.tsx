@@ -3,10 +3,54 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
-import { Presentation, LayoutGrid, UtensilsCrossed, Sparkles, ArrowRight, Building2, GraduationCap, Handshake, Mic, Users } from "lucide-react";
-import { partnershipPackages, type PartnershipPackage } from "@/data/partnership-data";
+import { Plus, Minus } from "lucide-react";
+import { type PartnershipPackage } from "@/data/partnership-data";
 import { PartnershipModal } from "@/components/partnership-modal";
-import { cn } from "@/lib/utils";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+
+const objectives = [
+  {
+    title: "Economic Diplomacy",
+    description: "We engage in economic diplomacy to foster international trade relations and create favorable business environments for our members.",
+  },
+  {
+    title: "Government Representation",
+    description: "We represent business interests to county and national government bodies, ensuring policies support private sector growth.",
+  },
+  {
+    title: "Export Promotion Activities",
+    description: "We organize initiatives to help local businesses access international markets and expand their export capabilities.",
+  },
+  {
+    title: "Trade Facilitation",
+    description: "We streamline trade processes, reduce barriers, and provide essential documentation support for cross-border commerce.",
+  },
+  {
+    title: "County Trade Investment",
+    description: "We promote investment opportunities within Uasin Gishu County and attract both local and foreign investors.",
+  },
+  {
+    title: "Business Information Services",
+    description: "We provide timely market intelligence, industry reports, and business data to support informed decision-making.",
+  },
+  {
+    title: "Internal Trade Promotion",
+    description: "We champion local trade by connecting businesses within the county and promoting intra-regional commerce.",
+  },
+  {
+    title: "Training and Consultancy",
+    description: "We offer specialized training programs and consultancy services to build capacity and enhance business competitiveness.",
+  },
+  {
+    title: "Business Forums/Events",
+    description: "We host forums, exhibitions, and networking events to create platforms for business collaboration and knowledge sharing.",
+  },
+];
 
 export function PartnershipPackagesSection() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -25,7 +69,7 @@ export function PartnershipPackagesSection() {
     >
 
 
-      <div className="mt-16 max-w-6xl mx-auto">
+      <div className="mt-16 max-w-4xl mx-auto px-4">
         <div className="text-center mb-12">
           <span className="text-primary font-semibold text-sm uppercase tracking-wider">
             What We Offer
@@ -35,79 +79,28 @@ export function PartnershipPackagesSection() {
           </h3>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card className="p-6 border border-border bg-card hover-elevate">
-            <div className="flex gap-4">
-              <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Building2 className="w-6 h-6 text-primary" />
-              </div>
-              <div>
-                <h4 className="text-lg font-semibold text-foreground mb-2">Advocacy</h4>
-                <p className="text-sm text-muted-foreground">We advocate for business-friendly policies to enhance growth and economic development.</p>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="p-6 border border-border bg-card hover-elevate">
-            <div className="flex gap-4">
-              <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-secondary/10 flex items-center justify-center">
-                <Mic className="w-6 h-6 text-secondary" />
-              </div>
-              <div>
-                <h4 className="text-lg font-semibold text-foreground mb-2">Business Support Services</h4>
-                <p className="text-sm text-muted-foreground">We offer support services to help businesses grow and achieve their objectives.</p>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="p-6 border border-border bg-card hover-elevate">
-            <div className="flex gap-4">
-              <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-chart-4/10 flex items-center justify-center">
-                <Users className="w-6 h-6 text-chart-4" />
-              </div>
-              <div>
-                <h4 className="text-lg font-semibold text-foreground mb-2">Training & Capacity Building</h4>
-                <p className="text-sm text-muted-foreground">We provide training programs to enhance skills and business competitiveness.</p>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="p-6 border border-border bg-card hover-elevate">
-            <div className="flex gap-4">
-              <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-chart-3/10 flex items-center justify-center">
-                <Handshake className="w-6 h-6 text-chart-3" />
-              </div>
-              <div>
-                <h4 className="text-lg font-semibold text-foreground mb-2">Networking Sessions</h4>
-                <p className="text-sm text-muted-foreground">Opportunities to forge collaborations.</p>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="p-6 border border-border bg-card hover-elevate">
-            <div className="flex gap-4">
-              <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-chart-1/10 flex items-center justify-center">
-                <UtensilsCrossed className="w-6 h-6 text-chart-1" />
-              </div>
-              <div>
-                <h4 className="text-lg font-semibold text-foreground mb-2">Networking Opportunities</h4>
-                <p className="text-sm text-muted-foreground">We create networking opportunities to connect businesses and foster collaborations.</p>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="p-6 border border-border bg-card hover-elevate">
-            <div className="flex gap-4">
-              <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                <GraduationCap className="w-6 h-6 text-primary" />
-              </div>
-              <div>
-                <h4 className="text-lg font-semibold text-foreground mb-2">Trade Promotion</h4>
-                <p className="text-sm text-muted-foreground">We promote trade locally and internationally to boost business success.</p>
-              </div>
-            </div>
-          </Card>
-        </div>
+        <Accordion type="single" collapsible className="w-full space-y-3">
+          {objectives.map((objective, index) => (
+            <AccordionItem
+              key={index}
+              value={`item-${index}`}
+              className="border-0 rounded-lg bg-card shadow-sm hover:shadow-md transition-shadow"
+            >
+              <AccordionTrigger className="px-6 py-5 text-left hover:no-underline group [&>svg]:hidden">
+                <div className="flex items-center gap-4">
+                  <div className="flex-shrink-0 w-8 h-8 rounded bg-slate-800 dark:bg-slate-200 flex items-center justify-center">
+                    <Plus className="w-4 h-4 text-white dark:text-slate-800 group-data-[state=open]:hidden" />
+                    <Minus className="w-4 h-4 text-white dark:text-slate-800 hidden group-data-[state=open]:block" />
+                  </div>
+                  <span className="text-lg font-semibold text-foreground">{objective.title}</span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-6 pb-5 pl-[4.5rem]">
+                <p className="text-muted-foreground leading-relaxed">{objective.description}</p>
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
       </div>
 
 

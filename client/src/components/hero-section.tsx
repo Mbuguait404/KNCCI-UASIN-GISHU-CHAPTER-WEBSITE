@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { Calendar, MapPin } from "lucide-react";
+import { ShoppingBag } from "lucide-react";
 import { staticEvent } from "@/data/static-data";
 import { Event } from "@shared/schema";
 import { useLocation } from "wouter";
@@ -14,7 +14,9 @@ interface CountdownValues {
   seconds: number;
 }
 
-function calculateTimeLeft(targetDate: Date): CountdownValues & { isOver: boolean } {
+function calculateTimeLeft(
+  targetDate: Date,
+): CountdownValues & { isOver: boolean } {
   const now = new Date().getTime();
   const target = targetDate.getTime();
   const difference = target - now;
@@ -36,7 +38,10 @@ function CountdownBlock({ value, label }: { value: number; label: string }) {
   return (
     <div className="flex flex-col items-center">
       <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg p-2 sm:p-3 min-w-[50px] sm:min-w-[60px]">
-        <span className="text-xl sm:text-2xl md:text-3xl font-bold text-white tabular-nums" data-testid={`countdown-${label.toLowerCase()}`}>
+        <span
+          className="text-xl sm:text-2xl md:text-3xl font-bold text-white tabular-nums"
+          data-testid={`countdown-${label.toLowerCase()}`}
+        >
           {value.toString().padStart(2, "0")}
         </span>
       </div>
@@ -72,12 +77,16 @@ export function HeroSection({ event: propEvent }: HeroSectionProps) {
     if (!event?.date) return null;
     // Parse date string and create date at 9 AM local time
     // Handle both YYYY-MM-DD and ISO strings
-    const dateStr = event.date.includes('T') ? event.date.split('T')[0] : event.date;
-    const [year, month, day] = dateStr.split('-').map(Number);
+    const dateStr = event.date.includes("T")
+      ? event.date.split("T")[0]
+      : event.date;
+    const [year, month, day] = dateStr.split("-").map(Number);
     return new Date(year, month - 1, day, 9, 0, 0);
   }, [event?.date]);
 
-  const [timeLeft, setTimeLeft] = useState<(CountdownValues & { isOver: boolean }) | null>(null);
+  const [timeLeft, setTimeLeft] = useState<
+    (CountdownValues & { isOver: boolean }) | null
+  >(null);
 
   useEffect(() => {
     if (!eventDate) {
@@ -154,7 +163,7 @@ export function HeroSection({ event: propEvent }: HeroSectionProps) {
         className="absolute inset-0"
         style={{
           background:
-            'radial-gradient(ellipse 80% 80% at center, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.6) 35%, rgba(0, 0, 0, 0.35) 70%, rgba(0, 0, 0, 0.15) 100%)',
+            "radial-gradient(ellipse 80% 80% at center, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.6) 35%, rgba(0, 0, 0, 0.35) 70%, rgba(0, 0, 0, 0.15) 100%)",
         }}
       />
 
@@ -165,14 +174,21 @@ export function HeroSection({ event: propEvent }: HeroSectionProps) {
               Uasin Gishu County Chapter
             </div>
 
-            <h1 className="text-4xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-white leading-[1.1] tracking-tight px-2 drop-shadow-2xl" data-testid="text-event-name">
+            <h1
+              className="text-4xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-white leading-[1.1] tracking-tight px-2 drop-shadow-2xl"
+              data-testid="text-event-name"
+            >
               Kenya National Chamber of <br className="hidden md:block" />
               Commerce & Industry <br />
               <span className="text-primary">Uasin Gishu Chapter</span>
             </h1>
 
-            <p className="text-lg sm:text-xl md:text-2xl text-white/90 max-w-3xl mx-auto leading-relaxed px-4 font-medium drop-shadow-lg" data-testid="text-event-subtitle">
-              The Voice of Business and the Champion for Economic Transformation in Uasin Gishu County
+            <p
+              className="text-lg sm:text-xl md:text-2xl text-white/90 max-w-3xl mx-auto leading-relaxed px-4 font-medium drop-shadow-lg"
+              data-testid="text-event-subtitle"
+            >
+              Join us in building a vibrant and prosperous business community in
+              Kenya.
             </p>
           </div>
 
@@ -188,16 +204,20 @@ export function HeroSection({ event: propEvent }: HeroSectionProps) {
             <Button
               size="lg"
               variant="outline"
-              onClick={() => setLocation("/work")}
-              className="w-full sm:w-auto border-white/40 text-white bg-white/10 hover:bg-white/20 backdrop-blur-md text-lg px-8 py-6 transition-all hover:scale-105 active:scale-95"
-              data-testid="button-about-hero"
+              onClick={() => setLocation("/marketplace")}
+              className="w-full sm:w-auto border-white/40 text-white bg-white/10 hover:bg-white/20 backdrop-blur-md text-lg px-8 py-6 transition-all hover:scale-105 active:scale-95 gap-2"
+              data-testid="button-marketplace-hero"
             >
-              Explore Our Work
+              <ShoppingBag className="w-5 h-5" />
+              Explore Marketplace
             </Button>
           </div>
         </div>
 
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce cursor-pointer" onClick={() => scrollToSection("#about")}>
+        <div
+          className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce cursor-pointer"
+          onClick={() => scrollToSection("#about")}
+        >
           <div className="w-6 h-10 border-2 border-white/30 rounded-full flex items-start justify-center p-1.5">
             <div className="w-1.5 h-3 bg-white/60 rounded-full" />
           </div>

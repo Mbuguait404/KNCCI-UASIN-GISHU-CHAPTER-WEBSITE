@@ -51,7 +51,7 @@ export default function HotelDetail() {
 
   const siteUrl = typeof window !== "undefined" ? window.location.origin : "";
   const pageUrl = `${siteUrl}/hotels/${hotel.id}`;
-  const ratingValue = parseFloat(hotel.rating) || 4.5;
+  const ratingValue = hotel.rating || 4.5;
 
   // LodgingBusiness schema for hotel
   const hotelSchema = {
