@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { RegistrationProvider } from "@/contexts/registration-context";
 import { MembershipProvider } from "@/contexts/membership-context";
 import { WhatsAppFloat } from "@/components/whatsapp-float";
+import { AdvertisementPopup } from "@/components/advertisement-popup";
 import Home from "@/pages/home";
 import Partnership from "@/pages/partnership";
 import Membership from "@/pages/membership";
@@ -73,6 +74,7 @@ function App() {
                   <Router />
                   <WhatsAppFloat />
                   <MembershipDialogWrapper />
+                  <AdvertisementPopup />
                 </MembershipProvider>
               </RegistrationProvider>
             </AuthProvider>
