@@ -393,6 +393,9 @@ app.get("/api/newsletter", async (req, res) => {
 const KNCCI_MESSAGING_URL =
   process.env.KNCCI_MESSAGING_URL ||
   "https://kncci-messaging.onrender.com/notifications/event-registration/sendgrid";
+const UNIFLOW_BASE_URL =
+  process.env.UNIFLOW_BASE_URL || "https://smsapi.solby.io:8443";
+const UNIFLOW_API_KEY = process.env.UNIFLOW_API_KEY;
 
 // Registration endpoint - proxies to KNCCI messaging, stores locally for backup
 app.post("/api/registration", async (req, res) => {
@@ -435,6 +438,73 @@ app.post("/api/registration", async (req, res) => {
   } catch (error) {
     console.error("Error in /api/registration:", error);
     res.status(500).json({ error: "Failed to create registration" });
+  }
+});
+
+app.post("/api/notifications", async (req, res) => {
+  try {
+    const { to, type, message, subject } = req.body ?? {};
+
+    if (!to || typeof to !== "string") {
+      return res.status(400).json({ error: "Recipient is required" });
+    }
+    if (type !== "sms" && type !== "email") {
+      return res.status(400).json({ error: "Notification type must be sms or email" });
+    }
+    if (!message || typeof message !== "string") {
+      return res.status(400).json({ error: "Message is required" });
+    }
+    if (type === "email" && subject !== undefined && typeof subject !== "string") {
+      return res.status(400).json({ error: "Email subject must be a string" });
+    }
+    if (!UNIFLOW_API_KEY) {
+      return res.status(500).json({ error: "Notification service is not configured" });
+    }
+
+    const providerPayload: Record<string, unknown> = {
+      to,
+      type,
+      message,
+      attachments: [],
+    };
+    if (type === "email" && subject) {
+      providerPayload.subject = subject;
+    }
+
+    const providerResponse = await fetch(
+      `${UNIFLOW_BASE_URL}/notifications/send?apikey=${encodeURIComponent(UNIFLOW_API_KEY)}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(providerPayload),
+      },
+    );
+
+    const responseText = await providerResponse.text();
+    let responseData: unknown;
+    try {
+      responseData = responseText ? JSON.parse(responseText) : {};
+    } catch {
+      responseData = { message: responseText };
+    }
+
+    if (!providerResponse.ok) {
+      console.error("[Notifications] Provider error:", providerResponse.status, responseData);
+      return res.status(providerResponse.status).json(
+        typeof responseData === "object" && responseData !== null
+          ? responseData
+          : { error: "Notification service error" },
+      );
+    }
+
+    res.status(providerResponse.status).json(
+      typeof responseData === "object" && responseData !== null
+        ? responseData
+        : { success: true },
+    );
+  } catch (error) {
+    console.error("Error in /api/notifications:", error);
+    res.status(500).json({ error: "Failed to send notification" });
   }
 });
 

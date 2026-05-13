@@ -286,7 +286,7 @@ export function StructuredData({
                 month: "long",
                 day: "numeric",
               })}.`
-            : "The Eldoret International Business Summit 2026 takes place in April 2026.",
+            : "The Eldoret International Business Summit 2026 takes place in July 2026.",
         },
       },
       {

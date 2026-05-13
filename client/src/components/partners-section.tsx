@@ -1,49 +1,166 @@
-import { staticPartners } from "@/data/static-data";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
-import { LogoCarousel } from "@/components/ui/logo-carousel";
-import type { Partner } from "@shared/schema";
 
-const tierColors = {
-  platinum: "from-slate-300 to-slate-100",
-  gold: "from-amber-300 to-amber-100",
-  silver: "from-gray-300 to-gray-100",
-  bronze: "from-orange-300 to-orange-100",
-};
+const sponsors = [
+  {
+    id: 1,
+    name: "Financial Sector Deepening Kenya",
+    logoUrl:
+      "https://www.kenyachamber.or.ke/wp-content/uploads/2019/09/partners-logos-fsd.jpg",
+    website: "https://www.fsdkenya.org/",
+  },
+  {
+    id: 2,
+    name: "Council of Governors",
+    logoUrl:
+      "https://www.kenyachamber.or.ke/wp-content/uploads/2019/09/partners-logos-cog.jpg",
+    website: "https://cog.go.ke/",
+  },
+  {
+    id: 3,
+    name: "Center for International Private Enterprise",
+    logoUrl:
+      "https://www.kenyachamber.or.ke/wp-content/uploads/2019/09/partners-logos-cipe.jpg",
+    website: "https://www.cipe.org/",
+  },
+  {
+    id: 4,
+    name: "ETIMOS Foundation",
+    logoUrl:
+      "https://www.kenyachamber.or.ke/wp-content/uploads/2019/09/partners-logos-etimos.jpg",
+  },
+  {
+    id: 5,
+    name: "Business Advocacy Fund",
+    logoUrl:
+      "https://www.kenyachamber.or.ke/wp-content/uploads/2019/09/partners-logos-baf.jpg",
+  },
+  {
+    id: 6,
+    name: "International Finance Corporation",
+    logoUrl:
+      "https://www.kenyachamber.or.ke/wp-content/uploads/2019/09/partners-logos-wbg.jpg",
+    website: "https://www.ifc.org/",
+  },
+  {
+    id: 7,
+    name: "United Nations Development Programme",
+    logoUrl:
+      "https://www.kenyachamber.or.ke/wp-content/uploads/2019/09/partners-logos-undp.jpg",
+    website: "https://www.undp.org/",
+  },
+  {
+    id: 8,
+    name: "Kenya Revenue Authority",
+    logoUrl:
+      "https://www.kenyachamber.or.ke/wp-content/uploads/2019/09/partners-logos-kra.jpg",
+    website: "https://www.kra.go.ke/",
+  },
+  {
+    id: 9,
+    name: "Kenya Bankers Association",
+    logoUrl:
+      "https://www.kenyachamber.or.ke/wp-content/uploads/2019/09/partners-logos-kba.jpg",
+    website: "https://www.kba.co.ke/",
+  },
+  {
+    id: 10,
+    name: "Dubuy",
+    logoUrl:
+      "https://www.kenyachamber.or.ke/wp-content/uploads/2021/02/DUBUY.png",
+  },
+  {
+    id: 11,
+    name: "Amref Health Africa",
+    logoUrl:
+      "https://www.kenyachamber.or.ke/wp-content/uploads/2021/02/Amref-Logo.webp",
+    website: "https://amref.org/",
+  },
+  {
+    id: 12,
+    name: "Sidian Bank",
+    logoUrl:
+      "https://www.kenyachamber.or.ke/wp-content/uploads/2021/02/sidianbank.png",
+    website: "https://sidianbank.co.ke/",
+  },
+  {
+    id: 13,
+    name: "Egyptian Exporters Association",
+    logoUrl:
+      "https://www.kenyachamber.or.ke/wp-content/uploads/2021/02/EGYPTIAN-EXPORTERS-ASSOCIATION.gif",
+  },
+  {
+    id: 14,
+    name: "French Chamber of Commerce",
+    logoUrl:
+      "https://www.kenyachamber.or.ke/wp-content/uploads/2021/02/FRENCH-CHAMBER-OF-COMMERCE.jpg",
+  },
+  {
+    id: 15,
+    name: "UNHCR",
+    logoUrl:
+      "https://www.kenyachamber.or.ke/wp-content/uploads/2021/02/UNHCR.png",
+    website: "https://www.unhcr.org/",
+  },
+  {
+    id: 16,
+    name: "Ethiad Credit Insurance",
+    logoUrl:
+      "https://www.kenyachamber.or.ke/wp-content/uploads/2021/02/ETIHAD-CREDIT-INSURANCE.jpg",
+  },
+  {
+    id: 17,
+    name: "Chambre de Commerce Rabat",
+    logoUrl:
+      "https://www.kenyachamber.or.ke/wp-content/uploads/2021/02/Chambre-de-Commerce-dIndustrie-et-de-Services-de-la-region-de-Rabat.jpg",
+  },
+  {
+    id: 18,
+    name: "Algerian Chamber of Commerce",
+    logoUrl:
+      "https://www.kenyachamber.or.ke/wp-content/uploads/2021/02/Algerian-Chamber-of-Commerce-and-Industry.jpg",
+  },
+];
 
-function PartnerLogo({ partner }: { partner: Partner }) {
-  const initials = partner.name.split(" ").map(w => w[0]).join("").slice(0, 3);
+function SponsorLogo({ sponsor }: { sponsor: (typeof sponsors)[number] }) {
+  const initials = sponsor.name
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 3);
+  const Card = sponsor.website ? "a" : "div";
 
   return (
     <Card
-      className="group p-6 border border-border bg-card hover-elevate flex items-center justify-center aspect-video"
-      data-testid={`card-partner-${partner.id}`}
+      className="group relative flex min-h-[130px] cursor-pointer items-center justify-center overflow-hidden rounded-2xl border border-border/30 bg-card p-5 transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-[0_18px_34px_rgba(236,37,44,0.14)]"
+      data-testid={`card-sponsor-${sponsor.id}`}
+      {...(sponsor.website
+        ? ({
+            href: sponsor.website,
+            target: "_blank",
+            rel: "noopener noreferrer",
+          } as any)
+        : {})}
     >
-      {partner.logoUrl ? (
-        <div className="w-full h-full flex items-center justify-center p-2">
+      <div className="flex flex-col items-center gap-2 w-full">
+        <div className="relative h-14 w-full max-w-[130px] flex items-center justify-center">
           <img
-            src={partner.logoUrl}
-            alt={partner.name}
-            className="max-h-full max-w-full object-contain"
+            src={sponsor.logoUrl}
+            alt={sponsor.name}
+            className="max-h-full max-w-full object-contain opacity-75 grayscale transition-all duration-300 group-hover:grayscale-0 group-hover:opacity-100"
             loading="lazy"
           />
         </div>
-      ) : (
-        <div className={`w-full h-full rounded-md bg-gradient-to-br ${tierColors[partner.tier]} opacity-50 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center`}>
-          <span className="text-2xl font-bold text-slate-700 dark:text-slate-800" data-testid={`text-partner-initials-${partner.id}`}>
-            {initials}
-          </span>
-        </div>
-      )}
+        <p className="text-center text-[10px] font-medium text-muted-foreground leading-tight line-clamp-2 transition-colors group-hover:text-foreground">
+          {sponsor.name}
+        </p>
+      </div>
     </Card>
   );
 }
 
-
 export function PartnersSection() {
-  const partners = staticPartners;
-
   return (
     <section
       id="partners"
@@ -52,75 +169,26 @@ export function PartnersSection() {
     >
       <div className="container mx-auto px-4">
         <div className="max-w-3xl mx-auto text-center mb-16">
-          <span className="text-primary font-semibold text-sm uppercase tracking-wider">
+          {/* <span className="text-primary font-semibold text-sm uppercase tracking-wider">
             Our Partners
-          </span>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mt-4 mb-6" data-testid="text-partners-title">
-            Partnering for Success
+          </span> */}
+          <h2
+            className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mt-4 mb-6"
+            data-testid="text-partners-title"
+          >
+            Trusted by Leading Organizations
           </h2>
           <p className="text-lg text-muted-foreground leading-relaxed">
-            We are grateful to our partners and sponsors whose support makes this
-            event possible and drives Kenya's business community forward.
+            We are proud to be supported by these distinguished organizations
+            that share our vision for Kenya's economic growth.
           </p>
         </div>
 
-        <>
-          {/* Platinum Partners */}
-          {/* {(() => {
-              const tierPartners = partners.filter(p => p.tier === "platinum");
-              if (tierPartners.length === 0) return null;
-              return (
-                <div className="mb-12" data-testid="tier-platinum">
-                  <h3 className="text-center text-lg font-semibold text-muted-foreground mb-6 uppercase tracking-wider" data-testid="text-tier-label-platinum">
-                    Platinum Partners
-                  </h3>
-                  <div className={`grid gap-6 max-w-5xl mx-auto ${tierPartners.length === 1 ? 'grid-cols-1 place-items-center' : 'grid-cols-2 md:grid-cols-2'}`}>
-                    {tierPartners.map((partner) => (
-                      <PartnerLogo key={partner.id} partner={partner} />
-                    ))}
-                  </div>
-                </div>
-              );
-            })()}
-
-            {/* Gold Partners */}
-          {/* {(() => {
-              const tierPartners = partners.filter(p => p.tier === "gold");
-              if (tierPartners.length === 0) return null;
-              return (
-                <div className="mb-12" data-testid="tier-gold">
-                  <h3 className="text-center text-lg font-semibold text-muted-foreground mb-6 uppercase tracking-wider" data-testid="text-tier-label-gold">
-                    Gold Partners
-                  </h3>
-                  <div className="grid gap-6 max-w-5xl mx-auto grid-cols-2 md:grid-cols-3">
-                    {tierPartners.map((partner) => (
-                      <PartnerLogo key={partner.id} partner={partner} />
-                    ))}
-                  </div>
-                </div>
-              );
-            })()}  */}
-
-          {/* Silver and Bronze Partners - Combined Carousel */}
-          {(() => {
-            const silverPartners = partners.filter(p => p.tier === "silver");
-            const bronzePartners = partners.filter(p => p.tier === "bronze");
-            const combinedPartners = [...silverPartners, ...bronzePartners];
-            if (combinedPartners.length === 0) return null;
-            return (
-              <div className="mb-12" data-testid="tier-silver-bronze">
-                {/* <h3 className="text-center text-lg font-semibold text-muted-foreground mb-6 uppercase tracking-wider" data-testid="text-tier-label-silver-bronze">
-                  Silver and Bronze Partners
-                </h3> */}
-                <LogoCarousel
-                  partners={combinedPartners}
-                  tier="combined"
-                  columnCount={6}
-                />
-              </div>
-            );
-          })()}
-        </>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 max-w-6xl mx-auto">
+          {sponsors.map((sponsor) => (
+            <SponsorLogo key={sponsor.id} sponsor={sponsor} />
+          ))}
+        </div>
 
         <div className="text-center mt-12">
           <p className="text-muted-foreground mb-6">
@@ -128,7 +196,11 @@ export function PartnersSection() {
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link href="/contact">
-              <Button size="lg" className="bg-primary text-primary-foreground" data-testid="button-become-partner">
+              <Button
+                size="lg"
+                className="bg-primary text-primary-foreground"
+                data-testid="button-become-partner"
+              >
                 Become a Partner
               </Button>
             </Link>

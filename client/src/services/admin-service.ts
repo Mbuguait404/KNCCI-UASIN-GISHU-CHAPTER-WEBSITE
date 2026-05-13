@@ -43,6 +43,7 @@ export interface MemberDoc {
         business_permit?: string;
         certificateUrl?: string;
         logoUrl?: string;
+        coverImageUrl?: string;
     };
 }
 
@@ -77,6 +78,7 @@ export interface SellerDoc {
     kraPin?: string;
     businessRegistrationNo?: string;
     logoUrl?: string;
+    coverImageUrl?: string;
     status: SellerStatus;
     rejectionReason?: string;
     adminNotes?: string;
@@ -374,6 +376,52 @@ export const adminService = {
     /** GET /admin/subscriptions/subscribers */
     async getSubscribers(params?: any): Promise<{ success: boolean; data: PaginatedSubscribers; message: string }> {
         const response = await api.get('/admin/subscriptions/subscribers', { params });
+        return response.data;
+    },
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // ── BULK BUSINESS IMPORT ────────────────────────────────────────────────
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    /** POST /admin/businesses/bulk-import (via website server) */
+    async bulkImportBusinesses(file: File): Promise<{ success: boolean; data: { imported: number; failed: number; errors: { row: number; message: string }[] }; message: string }> {
+        const formData = new FormData();
+        formData.append('file', file);
+        const baseUrl = import.meta.env.VITE_WEBSITE_API_URL || (typeof window !== 'undefined' ? window.location.origin + '/api' : '/api');
+        const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+        const response = await fetch(`${baseUrl}/admin/businesses/bulk-import`, {
+            method: 'POST',
+            headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+            body: formData,
+        });
+        return response.json();
+    },
+
+    /** GET /admin/businesses/import-template (via website server) */
+    async downloadImportTemplate(): Promise<void> {
+        const baseUrl = import.meta.env.VITE_WEBSITE_API_URL || (typeof window !== 'undefined' ? window.location.origin + '/api' : '/api');
+        const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+        const response = await fetch(`${baseUrl}/admin/businesses/import-template`, {
+            headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+        });
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', 'kncci_business_import_template.xlsx');
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+    },
+
+    /** POST /admin/members/:id/upload/cover-image */
+    async uploadCoverImage(id: string, file: File): Promise<{ success: boolean; data: any; message: string }> {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await api.post(`/admin/members/${id}/upload/cover-image`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
         return response.data;
     },
 };

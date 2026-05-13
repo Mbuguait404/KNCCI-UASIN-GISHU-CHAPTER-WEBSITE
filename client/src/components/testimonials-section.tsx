@@ -1,6 +1,5 @@
 import { staticTestimonials } from "@/data/static-data";
 import { Card } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Quote, Star } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -91,28 +90,9 @@ export function TestimonialsSection() {
                     ))}
                   </div>
 
-                  <blockquote className="text-foreground leading-relaxed mb-8 italic flex-grow">
+                  <blockquote className="text-foreground leading-relaxed italic flex-grow">
                     "{testimonial.quote}"
                   </blockquote>
-
-                  <div className="flex items-center gap-4 mt-auto pt-6 border-t border-border/50">
-                    <Avatar className="w-12 h-12 ring-2 ring-primary/10 group-hover:ring-primary/30 transition-all">
-                      <AvatarFallback className="bg-gradient-to-br from-primary to-primary-foreground text-white font-bold opacity-90 text-sm">
-                        {testimonial.name.split(" ").map((n) => n[0]).join("")}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="overflow-hidden">
-                      <p className="font-bold text-foreground truncate" data-testid="text-testimonial-name">
-                        {testimonial.name}
-                      </p>
-                      <p className="text-xs text-primary font-semibold uppercase tracking-wider mb-0.5 truncate" data-testid="text-testimonial-title">
-                        {testimonial.title}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground truncate" data-testid="text-testimonial-org">
-                        {testimonial.organization}
-                      </p>
-                    </div>
-                  </div>
                 </div>
               </Card>
             </motion.div>
@@ -127,7 +107,7 @@ export function TestimonialsSection() {
           className="mt-20 text-center"
         >
           <p className="text-muted-foreground mb-4">Are you a member with a success story to share?</p>
-          <a h-12 href="/contact" className="text-primary font-bold hover:underline inline-flex items-center gap-2">
+          <a href="/contact" className="text-primary font-bold hover:underline inline-flex items-center gap-2">
             Contact us and let your voice be heard
           </a>
         </motion.div>

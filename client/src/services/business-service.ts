@@ -18,6 +18,7 @@ export interface BusinessData {
     business_permit?: string;
     certificateUrl?: string;
     logoUrl?: string;
+    coverImageUrl?: string;
     // CMS Marketplace
     cms_tenant_id?: string;
     cms_org_slug?: string;
@@ -46,6 +47,17 @@ export const businessService = {
         const formData = new FormData();
         formData.append('file', file);
         const response = await api.post('/business/upload-logo', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    },
+
+    async uploadCoverImage(file: File) {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await api.post('/business/upload-cover-image', formData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
             },

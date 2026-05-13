@@ -1,8 +1,5 @@
 import axios from 'axios';
 
-const UNIFLOW_BASE_URL = 'https://smsapi.solby.io:8443';
-const UNIFLOW_API_KEY = 'nk_620355bdeed18eb27ad9160e268e1bc5c87b4d64bd1f309917cd88a434748f27';
-
 export interface NotificationPayload {
     to: string;
     type: 'sms' | 'email';
@@ -12,9 +9,7 @@ export interface NotificationPayload {
 
 export const notificationService = {
     async sendNotification(payload: NotificationPayload) {
-        const url = `${UNIFLOW_BASE_URL}/notifications/send?apikey=${UNIFLOW_API_KEY}`;
-        
-        const data: any = {
+        const data: Record<string, string | string[]> = {
             type: payload.type,
             to: payload.to,
             message: payload.message,
@@ -26,7 +21,7 @@ export const notificationService = {
         }
 
         try {
-            const response = await axios.post(url, data, {
+            const response = await axios.post('/api/notifications', data, {
                 headers: {
                     'Content-Type': 'application/json'
                 }

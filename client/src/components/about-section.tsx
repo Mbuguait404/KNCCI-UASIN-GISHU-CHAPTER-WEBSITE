@@ -1,7 +1,18 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Check, Download } from "lucide-react";
+import { Check } from "lucide-react";
 import { staticOrganization } from "@/data/static-data";
+import { Link } from "wouter";
+
+const benefits = [
+  "Networking Opportunities",
+  "Business Advocacy",
+  "Access to Information",
+  "Training and Workshops",
+  "Visibility and Branding",
+  "Business Services",
+  "Discounts and Deals",
+];
 
 export function AboutSection() {
   const org = staticOrganization;
@@ -23,28 +34,17 @@ export function AboutSection() {
           <p className="text-lg text-muted-foreground leading-relaxed" data-testid="text-about-description">
             {org.description}
           </p>
-          {/* <Button
-            variant="outline"
-            size="lg"
-            className="gap-2.5 mt-6 border-primary bg-primary/5 hover:border-primary/40 hover:bg-transparent transition-colors shadow-sm"
-            asChild
-          >
-            <a href="/KNCCI Concept Note.pdf" download="KNCCI Concept Note.pdf">
-              <Download className="w-4 h-4" />
-              Download Concept Note
-            </a>
-          </Button> */}
         </div>
 
         <div className="mt-16 max-w-4xl mx-auto">
           <Card className="p-8 bg-gradient-to-br from-card to-accent/30 border border-border">
-            <div className="grid md:grid-cols-2 gap-8 items-center">
+            <div className="grid md:grid-cols-2 gap-8 items-start">
               <div>
                 <h3 className="text-2xl font-bold text-foreground mb-4">
                   Why Join Us?
                 </h3>
                 <ul className="space-y-3">
-                  {org.highlights.map((highlight, index) => (
+                  {benefits.map((highlight, index) => (
                     <li key={index} className="flex items-center gap-3" data-testid={`reason-${index}`}>
                       <div className="flex-shrink-0 w-5 h-5 rounded-full bg-secondary flex items-center justify-center">
                         <Check className="w-3 h-3 text-secondary-foreground" />
@@ -85,6 +85,15 @@ export function AboutSection() {
                   </div>
                 </div>
               </div>
+            </div>
+            <div className="mt-8 bg-primary/5 border border-primary/20 rounded-lg p-5">
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Becoming a member of KNCCI Uasin Gishu Chapter unlocks unparalleled opportunities for your business. 
+                From direct access to government decision-makers and exclusive trade facilitation services, to high-value 
+                networking events and capacity-building programs — membership positions your business at the centre of 
+                Uasin Gishu's economic transformation. Join over 5,000 active members who are already benefiting from 
+                our advocacy, market access, and strategic partnerships.
+              </p>
             </div>
           </Card>
         </div>

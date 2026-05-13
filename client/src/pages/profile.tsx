@@ -12,6 +12,7 @@ import {
     LogOut,
     ExternalLink,
     ChevronRight,
+    Globe,
     Shield,
     BadgeCheck,
     BaggageClaim,
@@ -88,6 +89,9 @@ import {
 } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { MembershipCertificate } from "@/components/membership-certificate";
+import { BUSINESS_CATEGORIES, normalizeBusinessCategory } from "@shared/business-categories";
+
+const DIRECTORY_MODE = import.meta.env.VITE_DIRECTORY_MODE === 'true';
 
 export default function ProfilePage() {
     const [, setLocation] = useLocation();
@@ -97,6 +101,7 @@ export default function ProfilePage() {
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [isPersonalEditDialogOpen, setIsPersonalEditDialogOpen] = useState(false);
     const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+    const [isUploadingCover, setIsUploadingCover] = useState(false);
     const [showCertificate, setShowCertificate] = useState(false);
     const [isPasswordOpen, setIsPasswordOpen] = useState(false);
     const [passwordForm, setPasswordForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
@@ -161,7 +166,7 @@ export default function ProfilePage() {
                     setBusiness(response.data);
                     form.reset({
                         name: response.data.name || "",
-                        category: response.data.category || "",
+                        category: normalizeBusinessCategory(response.data.category),
                         email: response.data.email || "",
                         phone: response.data.phone || "",
                         location: response.data.location || "",
@@ -284,6 +289,49 @@ export default function ProfilePage() {
         }
     };
 
+    const handleCoverUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        if (!file.type.startsWith('image/')) {
+            toast({
+                title: "Invalid file type",
+                description: "Please upload an image file.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+            toast({
+                title: "File too large",
+                description: "Cover image size should be less than 5MB.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        try {
+            setIsUploadingCover(true);
+            const response = await businessService.uploadCoverImage(file);
+            if (response.success) {
+                setBusiness(response.data);
+                toast({
+                    title: "Success",
+                    description: "Cover image updated successfully.",
+                });
+            }
+        } catch (error: any) {
+            toast({
+                title: "Error",
+                description: error.response?.data?.message || "Failed to upload cover image.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsUploadingCover(false);
+        }
+    };
+
     const handlePasswordSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -344,7 +392,10 @@ export default function ProfilePage() {
     };
 
     const openMarketplace = async () => {
-        const marketplaceUrl = import.meta.env.VITE_MARKETPLACE_URL || 'http://localhost:3000';
+        let marketplaceUrl = import.meta.env.VITE_MARKETPLACE_URL || 'http://localhost:3000';
+        if (!marketplaceUrl.startsWith('http://') && !marketplaceUrl.startsWith('https://')) {
+            marketplaceUrl = `https://${marketplaceUrl}`;
+        }
         const token = localStorage.getItem('accessToken');
         if (!token) {
             window.open(marketplaceUrl, '_blank');
@@ -384,13 +435,14 @@ export default function ProfilePage() {
 
     if (!user) return null;
 
-    const sideNavItems = [
+    const allNavItems = [
         { key: "overview", label: "Dashboard", icon: <LayoutDashboard className="w-4 h-4" /> },
         { key: "business", label: "Business Profile", icon: <Briefcase className="w-4 h-4" /> },
-        { key: "finances", label: "Finances", icon: <PaymentIcon className="w-4 h-4" /> },
-        { key: "marketplace", label: "Marketplace", icon: <Store className="w-4 h-4" /> },
+        ...(DIRECTORY_MODE ? [] : [{ key: "finances", label: "Finances", icon: <PaymentIcon className="w-4 h-4" /> }]),
+        { key: "marketplace", label: DIRECTORY_MODE ? "Business Directory" : "Marketplace", icon: <Store className="w-4 h-4" /> },
         { key: "events", label: "Events & Trade", icon: <Activity className="w-4 h-4" /> },
     ];
+    const sideNavItems = allNavItems;
 
     const stats = [
         { title: "Membership Status", value: business?.plan || "Full", icon: <Shield className="w-5 h-5" />, color: "from-blue-500 to-indigo-600", bg: "bg-blue-500/10" },
@@ -692,6 +744,34 @@ export default function ProfilePage() {
                                         exit={{ opacity: 0, y: -10 }}
                                         className="space-y-6"
                                     >
+                                        {/* Cover Image */}
+                                        <Card className="rounded-[2.5rem] border-none shadow-2xl shadow-primary/5 overflow-hidden relative bg-white dark:bg-slate-900 border border-border/40">
+                                            <div className="relative w-full h-48 md:h-64 lg:h-80 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 group">
+                                                {business?.coverImageUrl ? (
+                                                    <img src={business.coverImageUrl} alt="Cover" className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center">
+                                                        <div className="text-center">
+                                                            <Camera className="w-10 h-10 mx-auto mb-2 text-muted-foreground/40" />
+                                                            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground/40">No cover image</p>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                <label className="absolute inset-0 flex items-center justify-center bg-black/40 text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                                                    <div className="flex flex-col items-center">
+                                                        <Upload className="w-8 h-8 mb-1" />
+                                                        <span className="text-xs font-bold uppercase tracking-wider">{business?.coverImageUrl ? "Change Cover" : "Upload Cover"}</span>
+                                                    </div>
+                                                    <input type="file" className="hidden" accept="image/*" onChange={handleCoverUpload} disabled={isUploadingCover} />
+                                                </label>
+                                                {isUploadingCover && (
+                                                    <div className="absolute inset-0 flex items-center justify-center bg-white/60 dark:bg-slate-900/60">
+                                                        <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </Card>
+
                                         <Card className="rounded-[2.5rem] border-none shadow-2xl shadow-primary/5 p-8 lg:p-12 bg-white dark:bg-slate-900 border border-border/40 overflow-hidden relative">
                                             <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -mr-32 -mt-32 blur-3xl opacity-50" />
 
@@ -943,12 +1023,11 @@ export default function ProfilePage() {
                                                     </SelectTrigger>
                                                 </FormControl>
                                                 <SelectContent className="rounded-xl">
-                                                    <SelectItem value="Agriculture">Agriculture & Food</SelectItem>
-                                                    <SelectItem value="Manufacturing">Manufacturing</SelectItem>
-                                                    <SelectItem value="Trade">Retail & Wholesale</SelectItem>
-                                                    <SelectItem value="Services">Professional Services</SelectItem>
-                                                    <SelectItem value="Construction">Construction</SelectItem>
-                                                    <SelectItem value="Technology">Technology & Innovation</SelectItem>
+                                                    {BUSINESS_CATEGORIES.map((category) => (
+                                                        <SelectItem key={category} value={category}>
+                                                            {category}
+                                                        </SelectItem>
+                                                    ))}
                                                 </SelectContent>
                                             </Select>
                                             <FormMessage />
@@ -1297,11 +1376,11 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
 
     // Sub-tab navigation
     const [subTab, setSubTab] = useState<'overview' | 'products' | 'categories' | 'orders'>('overview');
-    
+
     // Orders state
     const [orders, setOrders] = useState<CmsOrder[]>([]);
     const [loadingOrders, setLoadingOrders] = useState(false);
-    
+
     useEffect(() => {
         loadCmsData();
     }, [business]);
@@ -1386,7 +1465,10 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
     };
 
     const openMarketplace = async () => {
-        const marketplaceUrl = import.meta.env.VITE_MARKETPLACE_URL || 'http://localhost:3000';
+        let marketplaceUrl = import.meta.env.VITE_MARKETPLACE_URL || 'http://localhost:3000';
+        if (!marketplaceUrl.startsWith('http://') && !marketplaceUrl.startsWith('https://')) {
+            marketplaceUrl = `https://${marketplaceUrl}`;
+        }
         const token = localStorage.getItem('accessToken');
         if (!token) {
             window.open(marketplaceUrl, '_blank');
@@ -1643,13 +1725,13 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
                     phone: "+254 711 222333"
                 },
                 items: [
-                   { 
-                     productId: productId,
-                     name: productName, 
-                     quantity: 2, 
-                     basePrice: 500,
-                     totalPrice: 1000
-                   }
+                    {
+                        productId: productId,
+                        name: productName,
+                        quantity: 2,
+                        basePrice: 500,
+                        totalPrice: 1000
+                    }
                 ],
                 paymentInfo: {
                     method: 'mpesa',
@@ -1682,6 +1764,123 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
                     <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Loading marketplace...</p>
                 </div>
             </Card>
+        );
+    }
+
+    // ─── Directory Mode: Business Listing View ─────────────────────
+    if (DIRECTORY_MODE) {
+        const marketplaceUrl = import.meta.env.VITE_MARKETPLACE_URL || 'http://localhost:3002';
+        const storeSlug = business?.cms_org_slug || business?.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '') || '';
+        const storeUrl = `${marketplaceUrl}/stores/${storeSlug}`;
+
+        return (
+            <div className="space-y-8">
+                <Card className="rounded-[2.5rem] border-none shadow-2xl shadow-primary/5 p-10 lg:p-12 bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-950/20 dark:to-slate-900 overflow-hidden relative">
+                    <div className="absolute -top-20 -right-20 w-64 h-64 bg-emerald-500/10 rounded-full blur-[80px]" />
+                    <div className="relative z-10">
+                        <div className="flex items-center gap-4 mb-6">
+                            <div className="w-16 h-16 rounded-[1.5rem] bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center text-white shadow-lg shadow-emerald-500/20">
+                                <BadgeCheck className="w-8 h-8" />
+                            </div>
+                            <div>
+                                <h3 className="text-2xl lg:text-3xl font-extrabold tracking-tight">Your Business Is Listed</h3>
+                                <p className="text-sm text-muted-foreground font-bold uppercase tracking-widest mt-1">KNCCI Business Directory</p>
+                            </div>
+                        </div>
+                        <p className="text-muted-foreground max-w-2xl leading-relaxed font-medium">
+                            Your business is visible on the KNCCI Business Directory. Verified members and businesses search and connect through the platform.
+                        </p>
+                    </div>
+                </Card>
+
+                <div className="grid md:grid-cols-2 gap-8">
+                    <Card className="rounded-[2.5rem] border-none shadow-xl shadow-primary/5 p-8 bg-white dark:bg-slate-900">
+                        <h4 className="font-extrabold text-sm uppercase tracking-[0.2em] text-muted-foreground mb-6 flex items-center gap-2">
+                            <Store className="w-4 h-4 text-primary" /> Your Store Listing
+                        </h4>
+                        <div className="rounded-2xl border border-[#e6e8ed] bg-gray-50 p-6 space-y-4">
+                            <div className="flex items-center gap-4">
+                                <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-extrabold text-xl overflow-hidden">
+                                    {business?.logoUrl ? (
+                                        <img src={business.logoUrl} alt={business.name} className="w-full h-full object-cover" />
+                                    ) : (
+                                        (business?.name || 'B').slice(0, 2).toUpperCase()
+                                    )}
+                                </div>
+                                <div>
+                                    <p className="font-bold text-gray-900 text-base">{business?.name || 'Your Business'}</p>
+                                    <p className="text-xs text-gray-500">{business?.category || 'Category'}</p>
+                                </div>
+                            </div>
+                            <div className="flex flex-wrap gap-2 text-xs text-gray-600">
+                                {business?.location && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {business.location}</span>}
+                                {business?.phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3" /> {business.phone}</span>}
+                                {business?.email && <span className="flex items-center gap-1"><Mail className="w-3 h-3" /> {business.email}</span>}
+                            </div>
+                            <div className="flex items-center gap-2 text-xs font-medium text-emerald-600">
+                                <CheckCircle2 className="w-4 h-4" /> Verified KNCCI Member
+                            </div>
+                            <Button asChild className="w-full rounded-xl h-11 font-bold shadow-lg shadow-emerald-500/20 mt-2 bg-gradient-to-r from-emerald-600 to-emerald-700">
+                                <a href={storeUrl} target="_blank" rel="noopener noreferrer">
+                                    <ExternalLink className="w-4 h-4 mr-2" /> View Your Listing
+                                </a>
+                            </Button>
+                        </div>
+                    </Card>
+
+                    <Card className="rounded-[2.5rem] border-none shadow-xl shadow-primary/5 p-8 bg-white dark:bg-slate-900">
+                        <h4 className="font-extrabold text-sm uppercase tracking-[0.2em] text-muted-foreground mb-6 flex items-center gap-2">
+                            <Globe className="w-4 h-4 text-primary" /> Directory Details
+                        </h4>
+                        <div className="space-y-4">
+                            {[
+                                { label: "Store URL", value: storeUrl.replace(/^https?:\/\//, ''), ok: true },
+                                { label: "Business Name", value: business?.name || 'Not set', ok: !!business?.name },
+                                { label: "Category", value: business?.category || 'Not set', ok: !!business?.category },
+                                { label: "Location", value: business?.location || 'Not set', ok: !!business?.location },
+                                { label: "Contact", value: business?.phone || business?.email || 'Not set', ok: !!(business?.phone || business?.email) },
+                            ].map((item, i) => (
+                                <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                                    <div className="flex items-center gap-3">
+                                        {item.ok ? <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" /> : <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />}
+                                        <div>
+                                            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{item.label}</p>
+                                            <p className="text-xs font-extrabold truncate max-w-[200px]">{item.value}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                            <Button variant="outline" className="w-full rounded-xl h-11 font-bold border-primary/20 text-primary" onClick={onBusinessTabSwitch}>
+                                <Edit className="w-4 h-4 mr-2" /> Update Business Profile
+                            </Button>
+                        </div>
+                    </Card>
+                </div>
+
+                <Card className="rounded-[2.5rem] border-none shadow-xl shadow-primary/5 p-8 bg-white dark:bg-slate-900">
+                    <h4 className="font-extrabold text-sm uppercase tracking-[0.2em] text-muted-foreground mb-6 flex items-center gap-2">
+                        <Users className="w-4 h-4 text-primary" /> Quick Links
+                    </h4>
+                    <div className="grid sm:grid-cols-2 gap-4">
+                        <Button asChild variant="outline" className="rounded-2xl h-14 font-bold justify-start px-6 border-primary/10 hover:border-primary/30">
+                            <a href={storeUrl} target="_blank" rel="noopener noreferrer">
+                                <ExternalLink className="w-4 h-4 mr-3 text-primary" />
+                                <div className="text-left">
+                                    <p className="text-sm font-bold">View Store Page</p>
+                                    <p className="text-[10px] font-medium text-muted-foreground">See how customers view your listing</p>
+                                </div>
+                            </a>
+                        </Button>
+                        <Link href="/member-directory" className="rounded-2xl h-14 font-bold justify-start px-6 border border-primary/10 hover:border-primary/30 flex items-center bg-transparent">
+                            <Users className="w-4 h-4 mr-3 text-primary" />
+                            <div className="text-left">
+                                <p className="text-sm font-bold">Member Directory</p>
+                                <p className="text-[10px] font-medium text-muted-foreground">Connect with verified members</p>
+                            </div>
+                        </Link>
+                    </div>
+                </Card>
+            </div>
         );
     }
 
@@ -1908,10 +2107,10 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
                     )}
                 </div>
                 <div className="flex items-center gap-2">
-                     <div className="text-right">
-                         <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Store Slug</p>
-                         <p className="text-[11px] font-extrabold text-foreground truncate max-w-[150px]">{business?.cms_org_slug || 'active-store'}</p>
-                     </div>
+                    <div className="text-right">
+                        <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Store Slug</p>
+                        <p className="text-[11px] font-extrabold text-foreground truncate max-w-[150px]">{business?.cms_org_slug || 'active-store'}</p>
+                    </div>
                 </div>
             </div>
 
@@ -2005,191 +2204,191 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
                         {/* Products Card */}
                         <Card className="rounded-[2.5rem] border-none shadow-2xl shadow-primary/5 bg-white dark:bg-slate-900 overflow-hidden">
                             <CardHeader className="p-8 pb-4">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                        <div>
-                            <CardTitle className="text-xl font-extrabold">Your Products</CardTitle>
-                            <CardDescription className="font-medium">Manage your marketplace listings</CardDescription>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <Button
-                                variant="outline"
-                                className="rounded-xl font-bold text-xs uppercase tracking-widest border-primary/20 text-primary h-10 px-5"
-                                onClick={() => { openMarketplace(); }}
-                            >
-                                <ExternalLink className="w-3.5 h-3.5 mr-2" /> View Store
-                            </Button>
-                            <Button className="rounded-xl font-bold text-xs uppercase tracking-widest h-10 px-5 shadow-lg shadow-primary/20" onClick={() => {
-                                setShowAddForm(!showAddForm);
-                                if (!showAddForm) loadCategories();
-                            }}>
-                                <Plus className="w-4 h-4 mr-2" /> Add Product
-                            </Button>
-                        </div>
-
-                    </div>
-                </CardHeader>
-
-                {/* Add Product Form (inline) */}
-                <AnimatePresence>
-                    {showAddForm && (
-                        <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            className="overflow-hidden"
-                        >
-                            <div className="px-8 pb-6 pt-2 border-t border-border/20">
-                                <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary mb-4">New Product</p>
-                                <div className="grid sm:grid-cols-3 gap-4">
-                                    <Input placeholder="Product name *" value={newProduct.name} onChange={e => setNewProduct({ ...newProduct, name: e.target.value })} className="rounded-xl h-11" />
-                                    <Select onValueChange={val => setNewProduct({ ...newProduct, category: val })} value={newProduct.category}>
-                                        <SelectTrigger className="rounded-xl h-11"><SelectValue placeholder="Select category *" /></SelectTrigger>
-                                        <SelectContent className="rounded-xl">
-                                            {categories.length > 0 ? (
-                                                categories.map(c => <SelectItem key={c._id} value={c.name}>{c.name} ({c.categoryType})</SelectItem>)
-                                            ) : (
-                                                <SelectItem value="none" disabled>No categories found</SelectItem>
-                                            )}
-                                        </SelectContent>
-                                    </Select>
-                                    <Input placeholder="Price (KES) *" type="number" value={newProduct.price} onChange={e => setNewProduct({ ...newProduct, price: e.target.value })} className="rounded-xl h-11" />
-                                    <Input placeholder="Stock quantity" type="number" value={newProduct.stock} onChange={e => setNewProduct({ ...newProduct, stock: e.target.value })} className="rounded-xl h-11" />
-                                    <Input placeholder="Unit (e.g. Kg, Box, Hr)" value={newProduct.unit} onChange={e => setNewProduct({ ...newProduct, unit: e.target.value })} className="rounded-xl h-11" />
-                                </div>
-
-                                <Textarea placeholder="Product description *" value={newProduct.description} onChange={e => setNewProduct({ ...newProduct, description: e.target.value })} className="mt-4 rounded-xl min-h-[80px]" />
-                                <div className="mt-4 flex flex-col gap-4 rounded-2xl border border-border/30 bg-muted/20 p-4 sm:flex-row sm:items-center">
-                                    <div className="h-24 w-24 overflow-hidden rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center border border-border/20 shrink-0">
-                                        {newProduct.image ? (
-                                            <img src={newProduct.image} alt="New product" className="h-full w-full object-cover" />
-                                        ) : (
-                                            <Package className="w-8 h-8 text-muted-foreground/30" />
-                                        )}
+                                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                                    <div>
+                                        <CardTitle className="text-xl font-extrabold">Your Products</CardTitle>
+                                        <CardDescription className="font-medium">Manage your marketplace listings</CardDescription>
                                     </div>
-                                    <div className="flex-1 space-y-2">
-                                        <div>
-                                            <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">Product Image</p>
-                                            <p className="text-xs text-muted-foreground mt-1">Upload a cover image for this product.</p>
-                                        </div>
-                                        <div className="flex flex-wrap items-center gap-3">
-                                            <label className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/20 cursor-pointer">
-                                                {isUploadingProductImage ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                                                {newProduct.image ? "Replace Image" : "Upload Image"}
-                                                <input
-                                                    type="file"
-                                                    accept="image/*"
-                                                    className="hidden"
-                                                    onChange={handleNewProductImageChange}
-                                                    disabled={isUploadingProductImage}
-                                                />
-                                            </label>
-                                            {newProduct.image && (
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    className="rounded-xl font-bold"
-                                                    onClick={() => setNewProduct((prev) => ({ ...prev, image: "" }))}
-                                                >
-                                                    Remove Image
+                                    <div className="flex items-center gap-3">
+                                        <Button
+                                            variant="outline"
+                                            className="rounded-xl font-bold text-xs uppercase tracking-widest border-primary/20 text-primary h-10 px-5"
+                                            onClick={() => { openMarketplace(); }}
+                                        >
+                                            <ExternalLink className="w-3.5 h-3.5 mr-2" /> View Store
+                                        </Button>
+                                        <Button className="rounded-xl font-bold text-xs uppercase tracking-widest h-10 px-5 shadow-lg shadow-primary/20" onClick={() => {
+                                            setShowAddForm(!showAddForm);
+                                            if (!showAddForm) loadCategories();
+                                        }}>
+                                            <Plus className="w-4 h-4 mr-2" /> Add Product
+                                        </Button>
+                                    </div>
+
+                                </div>
+                            </CardHeader>
+
+                            {/* Add Product Form (inline) */}
+                            <AnimatePresence>
+                                {showAddForm && (
+                                    <motion.div
+                                        initial={{ height: 0, opacity: 0 }}
+                                        animate={{ height: "auto", opacity: 1 }}
+                                        exit={{ height: 0, opacity: 0 }}
+                                        className="overflow-hidden"
+                                    >
+                                        <div className="px-8 pb-6 pt-2 border-t border-border/20">
+                                            <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary mb-4">New Product</p>
+                                            <div className="grid sm:grid-cols-3 gap-4">
+                                                <Input placeholder="Product name *" value={newProduct.name} onChange={e => setNewProduct({ ...newProduct, name: e.target.value })} className="rounded-xl h-11" />
+                                                <Select onValueChange={val => setNewProduct({ ...newProduct, category: val })} value={newProduct.category}>
+                                                    <SelectTrigger className="rounded-xl h-11"><SelectValue placeholder="Select category *" /></SelectTrigger>
+                                                    <SelectContent className="rounded-xl">
+                                                        {categories.length > 0 ? (
+                                                            categories.map(c => <SelectItem key={c._id} value={c.name}>{c.name} ({c.categoryType})</SelectItem>)
+                                                        ) : (
+                                                            <SelectItem value="none" disabled>No categories found</SelectItem>
+                                                        )}
+                                                    </SelectContent>
+                                                </Select>
+                                                <Input placeholder="Price (KES) *" type="number" value={newProduct.price} onChange={e => setNewProduct({ ...newProduct, price: e.target.value })} className="rounded-xl h-11" />
+                                                <Input placeholder="Stock quantity" type="number" value={newProduct.stock} onChange={e => setNewProduct({ ...newProduct, stock: e.target.value })} className="rounded-xl h-11" />
+                                                <Input placeholder="Unit (e.g. Kg, Box, Hr)" value={newProduct.unit} onChange={e => setNewProduct({ ...newProduct, unit: e.target.value })} className="rounded-xl h-11" />
+                                            </div>
+
+                                            <Textarea placeholder="Product description *" value={newProduct.description} onChange={e => setNewProduct({ ...newProduct, description: e.target.value })} className="mt-4 rounded-xl min-h-[80px]" />
+                                            <div className="mt-4 flex flex-col gap-4 rounded-2xl border border-border/30 bg-muted/20 p-4 sm:flex-row sm:items-center">
+                                                <div className="h-24 w-24 overflow-hidden rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center border border-border/20 shrink-0">
+                                                    {newProduct.image ? (
+                                                        <img src={newProduct.image} alt="New product" className="h-full w-full object-cover" />
+                                                    ) : (
+                                                        <Package className="w-8 h-8 text-muted-foreground/30" />
+                                                    )}
+                                                </div>
+                                                <div className="flex-1 space-y-2">
+                                                    <div>
+                                                        <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">Product Image</p>
+                                                        <p className="text-xs text-muted-foreground mt-1">Upload a cover image for this product.</p>
+                                                    </div>
+                                                    <div className="flex flex-wrap items-center gap-3">
+                                                        <label className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/20 cursor-pointer">
+                                                            {isUploadingProductImage ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                                                            {newProduct.image ? "Replace Image" : "Upload Image"}
+                                                            <input
+                                                                type="file"
+                                                                accept="image/*"
+                                                                className="hidden"
+                                                                onChange={handleNewProductImageChange}
+                                                                disabled={isUploadingProductImage}
+                                                            />
+                                                        </label>
+                                                        {newProduct.image && (
+                                                            <Button
+                                                                type="button"
+                                                                variant="ghost"
+                                                                className="rounded-xl font-bold"
+                                                                onClick={() => setNewProduct((prev) => ({ ...prev, image: "" }))}
+                                                            >
+                                                                Remove Image
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="flex justify-end gap-3 mt-4">
+                                                <Button variant="ghost" className="rounded-xl font-bold" onClick={() => setShowAddForm(false)}>Cancel</Button>
+                                                <Button className="rounded-xl px-8 font-bold shadow-lg shadow-primary/20" onClick={handleAddProduct} disabled={addingProduct}>
+                                                    {addingProduct ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</> : "Save Product"}
                                                 </Button>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="flex justify-end gap-3 mt-4">
-                                    <Button variant="ghost" className="rounded-xl font-bold" onClick={() => setShowAddForm(false)}>Cancel</Button>
-                                    <Button className="rounded-xl px-8 font-bold shadow-lg shadow-primary/20" onClick={handleAddProduct} disabled={addingProduct}>
-                                        {addingProduct ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</> : "Save Product"}
-                                    </Button>
-                                </div>
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-
-                {/* Products List */}
-                <CardContent className="p-0">
-                    {products.length === 0 ? (
-                        <div className="p-12 text-center">
-                            <div className="w-20 h-20 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center mx-auto mb-6">
-                                <Package className="w-8 h-8 text-muted-foreground/30" />
-                            </div>
-                            <h4 className="font-extrabold text-lg mb-2">No Products Yet</h4>
-                            <p className="text-sm text-muted-foreground max-w-sm mx-auto font-medium">Start listing your products and services to reach the KNCCI trade network.</p>
-                            <Button className="mt-6 rounded-xl font-bold shadow-lg shadow-primary/20" onClick={() => setShowAddForm(true)}>
-                                <Plus className="w-4 h-4 mr-2" /> Add Your First Product
-                            </Button>
-                        </div>
-                    ) : (
-                        <div className="divide-y divide-border/20">
-                            {products.map((product, i) => (
-                                <motion.div
-                                    key={product._id || i}
-                                    initial={{ opacity: 0, x: -10 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: i * 0.05 }}
-                                    className="p-6 flex items-center justify-between gap-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all group cursor-pointer"
-                                    onClick={() => {
-                                        setSelectedProduct(product);
-                                        setIsEditingProduct(false);
-                                    }}
-
-                                >
-                                    <div className="flex items-center gap-4 min-w-0">
-                                        <div className="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0 overflow-hidden">
-                                            {product.image || product.images?.[0] ? (
-                                                <img src={product.image || product.images[0]} alt={product.name} className="w-full h-full object-cover" />
-                                            ) : (
-                                                <Package className="w-6 h-6 text-muted-foreground/40" />
-                                            )}
-                                        </div>
-                                        <div className="min-w-0">
-                                            <h4 className="font-extrabold text-sm truncate group-hover:text-primary transition-colors">{product.name}</h4>
-                                            <div className="flex items-center gap-3 mt-1">
-                                                <span className="text-xs font-bold text-primary">KES {((product.basePrice || product.price || 0) + (product.additions || 0)).toLocaleString()}</span>
-                                                <Badge variant="outline" className={`text-[9px] h-5 font-bold tracking-widest uppercase ${product.isActive !== false ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600' : 'border-red-500/30 bg-red-500/10 text-red-500'
-                                                    }`}>
-                                                    {product.isActive !== false ? "Active" : "Inactive"}
-                                                </Badge>
-                                                {product.category && <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{product.category}</span>}
-                                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">{product.stock || 0} {product.unit || 'Units'}</span>
                                             </div>
                                         </div>
-                                    </div>
-                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/5"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setSelectedProduct(product);
-                                                setIsEditingProduct(true);
-                                                loadCategories();
-                                            }}
-                                        >
-                                            <Edit className="w-4 h-4" />
-                                        </Button>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="rounded-xl text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleDeleteProduct(product._id, product.name);
-                                            }}
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </Button>
-                                    </div>
-                                </motion.div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
 
-                            ))}
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
-            </motion.div>
+                            {/* Products List */}
+                            <CardContent className="p-0">
+                                {products.length === 0 ? (
+                                    <div className="p-12 text-center">
+                                        <div className="w-20 h-20 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center mx-auto mb-6">
+                                            <Package className="w-8 h-8 text-muted-foreground/30" />
+                                        </div>
+                                        <h4 className="font-extrabold text-lg mb-2">No Products Yet</h4>
+                                        <p className="text-sm text-muted-foreground max-w-sm mx-auto font-medium">Start listing your products and services to reach the KNCCI trade network.</p>
+                                        <Button className="mt-6 rounded-xl font-bold shadow-lg shadow-primary/20" onClick={() => setShowAddForm(true)}>
+                                            <Plus className="w-4 h-4 mr-2" /> Add Your First Product
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <div className="divide-y divide-border/20">
+                                        {products.map((product, i) => (
+                                            <motion.div
+                                                key={product._id || i}
+                                                initial={{ opacity: 0, x: -10 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                transition={{ delay: i * 0.05 }}
+                                                className="p-6 flex items-center justify-between gap-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all group cursor-pointer"
+                                                onClick={() => {
+                                                    setSelectedProduct(product);
+                                                    setIsEditingProduct(false);
+                                                }}
+
+                                            >
+                                                <div className="flex items-center gap-4 min-w-0">
+                                                    <div className="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0 overflow-hidden">
+                                                        {product.image || product.images?.[0] ? (
+                                                            <img src={product.image || product.images[0]} alt={product.name} className="w-full h-full object-cover" />
+                                                        ) : (
+                                                            <Package className="w-6 h-6 text-muted-foreground/40" />
+                                                        )}
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <h4 className="font-extrabold text-sm truncate group-hover:text-primary transition-colors">{product.name}</h4>
+                                                        <div className="flex items-center gap-3 mt-1">
+                                                            <span className="text-xs font-bold text-primary">KES {((product.basePrice || product.price || 0) + (product.additions || 0)).toLocaleString()}</span>
+                                                            <Badge variant="outline" className={`text-[9px] h-5 font-bold tracking-widest uppercase ${product.isActive !== false ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600' : 'border-red-500/30 bg-red-500/10 text-red-500'
+                                                                }`}>
+                                                                {product.isActive !== false ? "Active" : "Inactive"}
+                                                            </Badge>
+                                                            {product.category && <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{product.category}</span>}
+                                                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">{product.stock || 0} {product.unit || 'Units'}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/5"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setSelectedProduct(product);
+                                                            setIsEditingProduct(true);
+                                                            loadCategories();
+                                                        }}
+                                                    >
+                                                        <Edit className="w-4 h-4" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="rounded-xl text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleDeleteProduct(product._id, product.name);
+                                                        }}
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </Button>
+                                                </div>
+                                            </motion.div>
+
+                                        ))}
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </motion.div>
                 )}
 
                 {subTab === 'categories' && (

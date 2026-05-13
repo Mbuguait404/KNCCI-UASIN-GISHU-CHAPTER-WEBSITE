@@ -67,7 +67,31 @@ export function ChairmanSection() {
                                 we are profoundly grateful. As the voice of the business community in Kenya, KNCCI will continue
                                 to advocate for your business needs and interests. We strongly encourage all businesses to
                                 register as members of the Kenya National Chamber of Commerce and Industry. Together, we can
-                                drive economic success and create a thriving business ecosystem."
+                                drive economic success, unlock new business opportunities, expand networks, and create a
+                                thriving business ecosystem for all stakeholders."
+                            </p>
+                            <p>
+                                "Eldoret continues to present immense opportunities in agro-processing, manufacturing,
+                                logistics, exports, ICT, sports economy, and real estate development. Ongoing developments
+                                such as the Eldoret Special Economic Zone, expansion of Eldoret International Airport, and
+                                the growth of industrial parks are opening doors for investors, SMEs, farmers, exporters,
+                                transporters, and young entrepreneurs. These developments continue to strengthen Eldoret's
+                                position as a key commercial and investment hub within Kenya and the East African region."
+                            </p>
+                            <p>
+                                "In line with this vision, KNCCI Uasin Gishu Chapter will host the Eldoret International
+                                Business Summit 2026 from 23rd-25th July 2026, bringing together business leaders, investors,
+                                innovators, policymakers, entrepreneurs, and development partners from across Kenya and beyond.
+                                The summit will provide a platform for networking, investment engagement, exhibitions, trade
+                                partnerships, and showcasing the economic potential of Eldoret and the wider North Rift region."
+                            </p>
+                            <p>
+                                "During the same period, the Chapter will also host the Innovation Challenge 2026, an initiative
+                                aimed at identifying, nurturing, and supporting innovative ideas and emerging enterprises with
+                                the potential to create jobs, solve local challenges, and drive sustainable economic growth.
+                                We warmly invite businesses, institutions, organizations, innovators, and individuals to
+                                participate, partner, exhibit, and support these transformative initiatives as we work together
+                                to build a stronger and more competitive business community."
                             </p>
                         </div>
 

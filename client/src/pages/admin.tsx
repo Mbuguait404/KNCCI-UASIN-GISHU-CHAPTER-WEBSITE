@@ -8,7 +8,7 @@ import {
     TrendingUp, Activity, LayoutDashboard, ChevronDown,
     AlertTriangle, Loader2, FileText, MessageSquare, Send,
     Plus, Pencil, Clock, CheckCircle2, XCircle, Smartphone,
-    AtSign, UserPlus, FileEdit, Upload,
+    AtSign, UserPlus, FileEdit, Upload, Download,
     User, Store,
     CreditCard
 } from "lucide-react";
@@ -38,8 +38,10 @@ import { adminService, DashboardStats, MemberDoc, PaginatedMembers, SellerDoc, P
 import { messagingService, MessageTemplate, MessageLogEntry, MessageChannel, MessagingStats, PaginatedLogs, MessagingSettings } from "@/services/messaging-service";
 import { notificationService } from "@/services/notification-service";
 import { useToast } from "@/hooks/use-toast";
+import { BUSINESS_CATEGORIES, normalizeBusinessCategory } from "@shared/business-categories";
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
+import { ContentManagementPanel } from "@/components/admin/content-management-panel";
 
 
 // ── Plan badge styling ──────────────────────────────────────────────────────
@@ -83,6 +85,134 @@ function RoleBadge({ role }: { role: string }) {
 }
 
 
+// ── Bulk Import Tab ─────────────────────────────────────────────────────────
+function BulkImportTab() {
+    const { toast } = useToast();
+    const [importing, setImporting] = useState(false);
+    const [importResult, setImportResult] = useState<{ imported: number; failed: number; errors: { row: number; message: string }[] } | null>(null);
+    const [dragOver, setDragOver] = useState(false);
+    const fileInputRef = useState<React.RefObject<HTMLInputElement | null>>({ current: null });
+
+    const handleDownloadTemplate = async () => {
+        try {
+            await adminService.downloadImportTemplate();
+            toast({ title: "Template Downloaded", description: "Fill in the spreadsheet and re-upload it." });
+        } catch {
+            toast({ title: "Download Failed", description: "Could not download the template. Try again.", variant: "destructive" });
+        }
+    };
+
+    const handleFileSelect = async (file: File) => {
+        if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
+            toast({ title: "Invalid Format", description: "Please upload an .xlsx or .xls file.", variant: "destructive" });
+            return;
+        }
+        setImporting(true);
+        setImportResult(null);
+        try {
+            const res = await adminService.bulkImportBusinesses(file);
+            if (res.success) {
+                setImportResult(res.data);
+                toast({
+                    title: "Import Complete",
+                    description: `${res.data.imported} businesses imported, ${res.data.failed} failed.`,
+                });
+            }
+        } catch (err: any) {
+            toast({ title: "Import Failed", description: err.response?.data?.message || "Bulk import failed.", variant: "destructive" });
+        } finally {
+            setImporting(false);
+        }
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        setDragOver(false);
+        const file = e.dataTransfer.files[0];
+        if (file) handleFileSelect(file);
+    };
+
+    return (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }} className="space-y-6">
+            <Card className="rounded-2xl border border-border/40 bg-white dark:bg-slate-900">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-3">
+                        <Upload className="w-5 h-5 text-primary" />
+                        Bulk Business Import
+                    </CardTitle>
+                    <p className="text-sm text-muted-foreground">Upload an Excel spreadsheet to import multiple businesses at once. Download the template first to ensure correct formatting.</p>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <Button variant="outline" className="rounded-xl font-bold" onClick={handleDownloadTemplate}>
+                        <Download className="w-4 h-4 mr-2" /> Download Excel Template
+                    </Button>
+
+                    <div
+                        className={`border-2 border-dashed rounded-2xl p-12 text-center transition-colors ${dragOver ? 'border-primary bg-primary/5' : 'border-border/40 hover:border-primary/50'}`}
+                        onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                        onDragLeave={() => setDragOver(false)}
+                        onDrop={handleDrop}
+                    >
+                        {importing ? (
+                            <div className="flex flex-col items-center gap-3">
+                                <Loader2 className="w-10 h-10 animate-spin text-primary" />
+                                <p className="font-bold">Importing businesses...</p>
+                                <p className="text-sm text-muted-foreground">This may take a moment for large files.</p>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col items-center gap-3">
+                                <Upload className="w-10 h-10 text-muted-foreground/40" />
+                                <p className="font-bold">Drop your Excel file here, or</p>
+                                <label className="cursor-pointer">
+                                    <span className="text-primary font-bold underline">browse files</span>
+                                    <input
+                                        type="file"
+                                        accept=".xlsx,.xls"
+                                        className="hidden"
+                                        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileSelect(f); }}
+                                    />
+                                </label>
+                                <p className="text-xs text-muted-foreground">.xlsx or .xls files only</p>
+                            </div>
+                        )}
+                    </div>
+
+                    {importResult && (
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-center">
+                                    <p className="text-2xl font-extrabold text-emerald-600">{importResult.imported}</p>
+                                    <p className="text-xs font-bold text-emerald-600/70 uppercase">Imported</p>
+                                </div>
+                                <div className={`p-4 rounded-xl border text-center ${importResult.failed > 0 ? 'bg-red-500/10 border-red-500/20' : 'bg-slate-50 dark:bg-slate-800 border-border/20'}`}>
+                                    <p className={`text-2xl font-extrabold ${importResult.failed > 0 ? 'text-red-600' : 'text-muted-foreground'}`}>{importResult.failed}</p>
+                                    <p className={`text-xs font-bold uppercase ${importResult.failed > 0 ? 'text-red-600/70' : 'text-muted-foreground/70'}`}>Failed</p>
+                                </div>
+                            </div>
+
+                            {importResult.errors.length > 0 && (
+                                <div className="rounded-xl border border-red-500/20 bg-red-500/5 overflow-hidden">
+                                    <div className="p-3 bg-red-500/10 border-b border-red-500/20">
+                                        <p className="text-xs font-bold text-red-600 uppercase">Import Errors</p>
+                                    </div>
+                                    <div className="max-h-64 overflow-y-auto p-3 space-y-1">
+                                        {importResult.errors.map((err, i) => (
+                                            <div key={i} className="flex gap-3 text-sm">
+                                                <span className="font-mono text-xs text-red-500/70 min-w-[60px]">Row {err.row}</span>
+                                                <span className="text-muted-foreground">{err.message}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+        </motion.div>
+    );
+}
+
 // ── Main Admin Dashboard ────────────────────────────────────────────────────
 export default function AdminDashboard() {
     const [, setLocation] = useLocation();
@@ -114,7 +244,7 @@ export default function AdminDashboard() {
     const [actionLoading, setActionLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [editForm, setEditForm] = useState<any>({});
-    const [fileUploading, setFileUploading] = useState<{ logo: boolean; certificate: boolean }>({ logo: false, certificate: false });
+    const [fileUploading, setFileUploading] = useState<{ logo: boolean; certificate: boolean; coverImage: boolean }>({ logo: false, certificate: false, coverImage: false });
 
     // Application Modals
     const [selectedApplication, setSelectedApplication] = useState<any>(null);
@@ -684,19 +814,28 @@ export default function AdminDashboard() {
         }
     };
 
-    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, type: 'logo' | 'certificate') => {
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, type: 'logo' | 'certificate' | 'coverImage') => {
         const file = e.target.files?.[0];
         if (!file || !selectedMember) return;
 
         setFileUploading(prev => ({ ...prev, [type]: true }));
         try {
-            const res = await adminService.uploadFile(selectedMember._id, type, file);
-            if (res.success) {
-                toast({ title: `${type === 'logo' ? 'Logo' : 'Certificate'} Uploaded` });
-                // Refresh member data
-                const updated = await adminService.getMember(selectedMember._id);
-                if (updated.success) setSelectedMember(updated.data);
-                fetchMembers();
+            if (type === 'coverImage') {
+                const res = await adminService.uploadCoverImage(selectedMember._id, file);
+                if (res.success) {
+                    toast({ title: 'Cover Image Uploaded' });
+                    const updated = await adminService.getMember(selectedMember._id);
+                    if (updated.success) setSelectedMember(updated.data);
+                    fetchMembers();
+                }
+            } else {
+                const res = await adminService.uploadFile(selectedMember._id, type, file);
+                if (res.success) {
+                    toast({ title: `${type === 'logo' ? 'Logo' : 'Certificate'} Uploaded` });
+                    const updated = await adminService.getMember(selectedMember._id);
+                    if (updated.success) setSelectedMember(updated.data);
+                    fetchMembers();
+                }
             }
         } catch (err: any) {
             toast({ title: "Upload Failed", description: err.response?.data?.message || "File upload failed", variant: "destructive" });
@@ -763,7 +902,7 @@ export default function AdminDashboard() {
                     phone: res.data.phone || "",
                     reg_no: res.data.reg_no,
                     name_biz: res.data.business?.name || "",
-                    category: res.data.business?.category || "",
+                    category: normalizeBusinessCategory(res.data.business?.category),
                     location: res.data.business?.location || "",
                     website: res.data.business?.website || "",
                     description: res.data.business?.description || "",
@@ -923,9 +1062,11 @@ export default function AdminDashboard() {
                             { key: "overview", label: "Dashboard", icon: <LayoutDashboard className="w-4 h-4" /> },
                             { key: "members", label: "Members", icon: <Users className="w-4 h-4" /> },
                             { key: "applications", label: "Applications", icon: <FileText className="w-4 h-4" /> },
+                            { key: "content", label: "Content", icon: <FileEdit className="w-4 h-4" /> },
                             { key: "sellers", label: "Sellers", icon: <Store className="w-4 h-4" /> },
                             { key: "orders", label: "Orders", icon: <CreditCard className="w-4 h-4" /> },
                             { key: "subscriptions", label: "Subscriptions", icon: <Crown className="w-4 h-4" /> },
+                            { key: "bulk-import", label: "Bulk Import", icon: <Upload className="w-4 h-4" /> },
                             { key: "messaging", label: "Messaging", icon: <MessageSquare className="w-4 h-4" /> },
                         ].map((item) => (
                             <button
@@ -991,6 +1132,7 @@ export default function AdminDashboard() {
                                 <TabsTrigger value="overview" className="text-xs px-3 h-7"><BarChart3 className="w-3.5 h-3.5" /></TabsTrigger>
                                 <TabsTrigger value="members" className="text-xs px-3 h-7"><Users className="w-3.5 h-3.5" /></TabsTrigger>
                                 <TabsTrigger value="applications" className="text-xs px-3 h-7"><FileText className="w-3.5 h-3.5" /></TabsTrigger>
+                                <TabsTrigger value="content" className="text-xs px-3 h-7"><FileEdit className="w-3.5 h-3.5" /></TabsTrigger>
                                 <TabsTrigger value="orders" className="text-xs px-3 h-7"><CreditCard className="w-3.5 h-3.5" /></TabsTrigger>
                                 <TabsTrigger value="messaging" className="text-xs px-3 h-7"><MessageSquare className="w-3.5 h-3.5" /></TabsTrigger>
                             </TabsList>
@@ -1018,12 +1160,15 @@ export default function AdminDashboard() {
                             {activeTab === "overview" ? "Dashboard Overview" : 
                              activeTab === "members" ? "Member Management" : 
                              activeTab === "applications" ? "Application Management" : 
+                             activeTab === "content" ? "Content Management" :
                              activeTab === "sellers" ? "Seller Marketplace" :
                              activeTab === "orders" ? "System Orders" :
                              activeTab === "subscriptions" ? "Subscription Plans" :
-                             "Messaging Center"}
+                              "Messaging Center"}
                         </h1>
                     </motion.div>
+
+                    {activeTab === "content" && <ContentManagementPanel />}
 
                     {/* ═══ OVERVIEW TAB ═══════════════════════════════════ */}
                     {activeTab === "overview" && (
@@ -2153,6 +2298,11 @@ export default function AdminDashboard() {
                         </motion.div>
                     )}
 
+                    {/* ═══ BULK IMPORT TAB ═══════════════════════════════════ */}
+                    {activeTab === "bulk-import" && (
+                        <BulkImportTab />
+                    )}
+
                     {/* ═══ MESSAGING TAB ═══════════════════════════════════ */}
                     {activeTab === "messaging" && (
                         <motion.div
@@ -2725,34 +2875,62 @@ export default function AdminDashboard() {
 
                                     <div className="p-6 rounded-2xl border border-border/40 bg-white dark:bg-slate-900 space-y-6">
                                         {/* Business Logo & Basic Info */}
-                                        <div className="flex flex-col sm:flex-row items-start gap-6">
-                                            <div className="flex flex-col items-center gap-3">
-                                                <div className="w-24 h-24 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-border/60 flex items-center justify-center overflow-hidden relative group">
-                                                    {selectedMember.business?.logoUrl ? (
-                                                        <img src={selectedMember.business.logoUrl} alt="Logo" className="w-full h-full object-contain" />
-                                                    ) : (
-                                                        <Building2 className="w-8 h-8 text-muted-foreground/40" />
-                                                    )}
+                                            <div className="flex flex-col sm:flex-row items-start gap-6">
+                                                <div className="flex flex-col items-center gap-3">
+                                                    <div className="w-24 h-24 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-border/60 flex items-center justify-center overflow-hidden relative group">
+                                                        {selectedMember.business?.logoUrl ? (
+                                                            <img src={selectedMember.business.logoUrl} alt="Logo" className="w-full h-full object-contain" />
+                                                        ) : (
+                                                            <Building2 className="w-8 h-8 text-muted-foreground/40" />
+                                                        )}
 
-                                                    {fileUploading.logo && (
-                                                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                                                            <Loader2 className="w-6 h-6 animate-spin text-white" />
-                                                        </div>
-                                                    )}
+                                                        {fileUploading.logo && (
+                                                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                                                                <Loader2 className="w-6 h-6 animate-spin text-white" />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div className="relative">
+                                                        <input
+                                                            type="file"
+                                                            accept="image/*"
+                                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                                            onChange={(e) => handleFileChange(e, 'logo')}
+                                                            disabled={fileUploading.logo}
+                                                        />
+                                                        <Button variant="outline" size="sm" className="text-[10px] font-bold h-7 rounded-lg">
+                                                            <Upload className="w-3 h-3 mr-1.5" /> {selectedMember.business?.logoUrl ? "Change Logo" : "Upload Logo"}
+                                                        </Button>
+                                                    </div>
                                                 </div>
-                                                <div className="relative">
-                                                    <input
-                                                        type="file"
-                                                        accept="image/*"
-                                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                                        onChange={(e) => handleFileChange(e, 'logo')}
-                                                        disabled={fileUploading.logo}
-                                                    />
-                                                    <Button variant="outline" size="sm" className="text-[10px] font-bold h-7 rounded-lg">
-                                                        <Upload className="w-3 h-3 mr-1.5" /> {selectedMember.business?.logoUrl ? "Change Logo" : "Upload Logo"}
-                                                    </Button>
+
+                                                <div className="flex flex-col items-center gap-3">
+                                                    <div className="w-24 h-24 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-border/60 flex items-center justify-center overflow-hidden relative group">
+                                                        {selectedMember.business?.coverImageUrl ? (
+                                                            <img src={selectedMember.business.coverImageUrl} alt="Cover" className="w-full h-full object-cover" />
+                                                        ) : (
+                                                            <Building2 className="w-8 h-8 text-muted-foreground/40" />
+                                                        )}
+
+                                                        {fileUploading.coverImage && (
+                                                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                                                                <Loader2 className="w-6 h-6 animate-spin text-white" />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div className="relative">
+                                                        <input
+                                                            type="file"
+                                                            accept="image/*"
+                                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                                            onChange={(e) => handleFileChange(e, 'coverImage')}
+                                                            disabled={fileUploading.coverImage}
+                                                        />
+                                                        <Button variant="outline" size="sm" className="text-[10px] font-bold h-7 rounded-lg">
+                                                            <Upload className="w-3 h-3 mr-1.5" /> {selectedMember.business?.coverImageUrl ? "Change Cover" : "Upload Cover"}
+                                                        </Button>
+                                                    </div>
                                                 </div>
-                                            </div>
 
                                             <div className="flex-1 grid grid-cols-1 gap-4 w-full">
                                                 <div className="space-y-1.5">
@@ -2770,11 +2948,21 @@ export default function AdminDashboard() {
                                                 <div className="space-y-1.5">
                                                     <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Industry / Category</label>
                                                     {isEditing ? (
-                                                        <Input
+                                                        <Select
                                                             value={editForm.category}
-                                                            onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
-                                                            className="h-11 rounded-xl bg-slate-50 dark:bg-slate-800 border-border/50"
-                                                        />
+                                                            onValueChange={(value) => setEditForm({ ...editForm, category: value })}
+                                                        >
+                                                            <SelectTrigger className="h-11 rounded-xl bg-slate-50 dark:bg-slate-800 border-border/50">
+                                                                <SelectValue placeholder="Select category" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                {BUSINESS_CATEGORIES.map((category) => (
+                                                                    <SelectItem key={category} value={category}>
+                                                                        {category}
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
                                                     ) : (
                                                         <Badge variant="secondary" className="font-bold text-[10px] px-3">{selectedMember.business?.category || "General"}</Badge>
                                                     )}
