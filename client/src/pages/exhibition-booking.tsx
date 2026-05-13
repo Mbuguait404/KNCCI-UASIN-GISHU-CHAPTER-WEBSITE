@@ -434,7 +434,7 @@ export default function ExhibitionBookingPage() {
     <>
       <SEOHead
         title="Exhibition Booking - Eldoret International Business Summit 2026"
-        description="Reserve your exhibition booth at the Eldoret International Business Summit 2026. Showcase your products and services to 1000+ business leaders."
+        description="Reserve your exhibition booth at the Eldoret International Business Summit 2026. Showcase your products and services to 5000+ business leaders."
         keywords={[
           "Exhibition Booking",
           "Trade Show Eldoret",

@@ -15,40 +15,64 @@ import {
 
 const objectives = [
   {
-    title: "Economic Diplomacy",
-    description: "We engage in economic diplomacy to foster international trade relations and create favorable business environments for our members.",
+    title: "Trade Facilitation Services",
+    description: "We streamline trade processes, reduce barriers, and provide essential documentation support for cross-border commerce.",
+  },
+  {
+    title: "Visibility and Credibility",
+    description: "We enhance the visibility and credibility of our members in both local and international markets.",
+  },
+  {
+    title: "Promotion of Foreign Direct Investments and Joint Ventures",
+    description: "We promote foreign direct investments and facilitate joint ventures to drive economic growth.",
+  },
+  {
+    title: "Promote Youth, Women and Persons with Disabilities Enterprise Development",
+    description: "We champion enterprise development among youth, women, and persons with disabilities through targeted programs.",
+  },
+  {
+    title: "Undertake Annual Budget and Tax Seminars",
+    description: "We organize annual budget and tax seminars to keep businesses informed on fiscal policies and compliance.",
+  },
+  {
+    title: "Informal Businesses Formalization",
+    description: "We support informal businesses in transitioning to formal status, unlocking access to finance and government services.",
+  },
+  {
+    title: "Trade and Industrial Policies Interventions",
+    description: "We advocate for trade and industrial policies that create a conducive environment for business growth.",
+  },
+  {
+    title: "Enterprise Development Support and Consulting Services",
+    description: "We provide enterprise development support and consulting services to build capacity and enhance competitiveness.",
+  },
+  {
+    title: "County Trade and Investment Services",
+    description: "We promote investment opportunities within Uasin Gishu County and attract both local and foreign investors.",
+  },
+  {
+    title: "Trade Disputes Settlement and Arbitration Services",
+    description: "We offer trade dispute settlement and arbitration services to resolve business conflicts efficiently.",
+  },
+  {
+    title: "Business Networking Services",
+    description: "We create networking opportunities to connect businesses and foster strategic collaborations.",
+  },
+  {
+    title: "Finance and Technical Support Services",
+    description: "We provide finance and technical support services to help businesses scale and innovate.",
+  },
+  {
+    title: "Trade and Investment Information Dissemination",
+    description: "We disseminate trade and investment information to keep members informed of market opportunities.",
   },
   {
     title: "Government Representation",
     description: "We represent business interests to county and national government bodies, ensuring policies support private sector growth.",
   },
   {
-    title: "Export Promotion Activities",
-    description: "We organize initiatives to help local businesses access international markets and expand their export capabilities.",
-  },
-  {
-    title: "Trade Facilitation",
-    description: "We streamline trade processes, reduce barriers, and provide essential documentation support for cross-border commerce.",
-  },
-  {
-    title: "County Trade Investment",
-    description: "We promote investment opportunities within Uasin Gishu County and attract both local and foreign investors.",
-  },
-  {
-    title: "Business Information Services",
-    description: "We provide timely market intelligence, industry reports, and business data to support informed decision-making.",
-  },
-  {
-    title: "Internal Trade Promotion",
-    description: "We champion local trade by connecting businesses within the county and promoting intra-regional commerce.",
-  },
-  {
-    title: "Training and Consultancy",
-    description: "We offer specialized training programs and consultancy services to build capacity and enhance business competitiveness.",
-  },
-  {
-    title: "Business Forums/Events",
-    description: "We host forums, exhibitions, and networking events to create platforms for business collaboration and knowledge sharing.",
+    title: "Issuing Certificates of Origin",
+    description: "We issue Certificates of Origin and other essential trade documentation to facilitate international trade.",
   },
 ];
 
