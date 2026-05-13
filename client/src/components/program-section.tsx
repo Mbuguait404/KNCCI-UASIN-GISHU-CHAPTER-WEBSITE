@@ -59,7 +59,7 @@ export function ProgramSection() {
   const schedule = staticSchedule;
 
   const days = [1, 2, 3];
-  const dayLabels = ["Day 1 - April 23", "Day 2 - April 24", "Day 3 - April 25"];
+  const dayLabels = ["Day 1 - July 23", "Day 2 - July 24", "Day 3 - July 25"];
 
   return (
     <section

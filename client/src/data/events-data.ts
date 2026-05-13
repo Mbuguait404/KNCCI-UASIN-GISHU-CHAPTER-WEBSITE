@@ -5,13 +5,13 @@ export const upcomingEvents: ChamberEvent[] = [
     {
         id: staticEvent.id,
         title: staticEvent.name,
-        date: "April 23-25, 2026",
+        date: "July 23-25, 2026",
         location: staticEvent.venue,
         image: "https://images.unsplash.com/photo-1540575861501-7ad05823c9f5?auto=format&fit=crop&q=80&w=2070",
         category: "Summit",
         description: staticEvent.subtitle,
         featured: true,
-        longDescription: "The 4th Edition of the Eldoret International Business Summit is the premier gathering for trade, innovation, and economic transformation in East Africa. Join 1000+ business leaders for a transformative three-day experience.",
+        longDescription: "The 4th Edition of the Eldoret International Business Summit is the premier gathering for trade, innovation, and economic transformation in East Africa. Join 5000+ business leaders for a transformative three-day experience.",
         content: `
             <p>The Eldoret International Business Summit (EIBS) has established itself as the most significant business gathering in the North Rift region. The 2026 edition promises to be even more impactful, focusing on Eldoret City as a strategic gateway for regional trade.</p>
             <h3>What to Expect</h3>

@@ -827,7 +827,7 @@ export function ContentManagementPanel() {
               </div>
               <div className="space-y-2">
                 <Label>Date label</Label>
-                <Input placeholder="April 23-25, 2026" value={eventForm.date} onChange={(event) => setEventForm((current) => ({ ...current, date: event.target.value }))} />
+                <Input placeholder="July 23-25, 2026" value={eventForm.date} onChange={(event) => setEventForm((current) => ({ ...current, date: event.target.value }))} />
               </div>
               <div className="space-y-2">
                 <Label>Location</Label>

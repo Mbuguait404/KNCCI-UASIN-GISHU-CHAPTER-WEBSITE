@@ -4,7 +4,7 @@ import { Check, Users, Calendar, Award, Ticket, ArrowRight, Sparkles } from "luc
 import { motion } from "framer-motion";
 
 const benefits = [
-  { icon: Users, text: "Network with 1000+ business leaders" },
+  { icon: Users, text: "Network with 5000+ business leaders" },
   { icon: Sparkles, text: "The Eldoret International Business Summit 2026 (4th Edition)" },
   { icon: Ticket, text: "Gala Dinner & Awards Ceremony Access" },
 ];
@@ -100,7 +100,7 @@ export function RegistrationSection() {
               <Card className="p-6 bg-white/5 border-white/10">
                 <div className="grid grid-cols-3 gap-4 text-center">
                   <div>
-                    <div className="text-3xl font-bold text-primary" data-testid="stat-attendees">1000+</div>
+                    <div className="text-3xl font-bold text-primary" data-testid="stat-attendees">5000+</div>
                     <div className="text-sm text-white/60">Delegates</div>
                   </div>
                   <div>
@@ -162,7 +162,7 @@ export function RegistrationSection() {
                 <div className="space-y-3 text-left bg-muted/50 rounded-lg p-4">
                   <div className="flex items-center gap-3">
                     <Sparkles className="w-4 h-4 text-primary" />
-                    <span className="text-sm text-foreground">April 23-25, 2026</span>
+                    <span className="text-sm text-foreground">July 23-25, 2026</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <Sparkles className="w-4 h-4 text-primary" />
