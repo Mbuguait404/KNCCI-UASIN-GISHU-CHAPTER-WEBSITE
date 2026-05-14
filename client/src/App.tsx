@@ -74,7 +74,7 @@ function App() {
                   <ScrollToTop />
                   <Toaster />
                   <Router />
-                  <WhatsAppFloat />
+                  <ConditionalWhatsApp />
                   <MembershipDialogWrapper />
                   <AdvertisementPopup />
                 </MembershipProvider>
@@ -99,6 +99,12 @@ function ScrollToTop() {
   }, [location]);
 
   return null;
+}
+
+function ConditionalWhatsApp() {
+  const [location] = useLocation();
+  if (location === "/profile" || location === "/admin") return null;
+  return <WhatsAppFloat />;
 }
 
 function MembershipDialogWrapper() {
