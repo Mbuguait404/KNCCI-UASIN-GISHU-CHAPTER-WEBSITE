@@ -5,6 +5,7 @@ import { X } from "lucide-react";
 import { advertisementService } from "@/services/advertisement-service";
 import type { Advertisement } from "@/types/advertisement";
 
+const AD_DISMISS_KEY = "kncci_ad_dismissed";
 const IS_DEV = import.meta.env.DEV;
 
 const DEV_FALLBACK_AD: Advertisement = {
@@ -33,22 +34,26 @@ export function AdvertisementPopup() {
 
   useEffect(() => {
     let popupTimer: ReturnType<typeof setTimeout> | undefined;
+    const dismissedId = localStorage.getItem(AD_DISMISS_KEY);
 
     advertisementService
       .getActivePopup()
       .then((data) => {
         if (IS_DEV) {
           console.log("[Advertisement] CMS response:", data);
+          console.log("[Advertisement] Dismissed ID:", dismissedId);
         }
 
-        if (data) {
+        if (data && data._id !== dismissedId) {
           setAd(data);
           popupTimer = setTimeout(() => setOpen(true), 1500);
         } else if (!data && IS_DEV) {
           // Dev fallback so designers can see the popup without CMS data
           console.log("[Advertisement] No active CMS ad found, using dev fallback.");
-          setAd(DEV_FALLBACK_AD);
-          popupTimer = setTimeout(() => setOpen(true), 1500);
+          if (DEV_FALLBACK_AD._id !== dismissedId) {
+            setAd(DEV_FALLBACK_AD);
+            popupTimer = setTimeout(() => setOpen(true), 1500);
+          }
         }
       })
       .catch((err) => {
@@ -56,8 +61,10 @@ export function AdvertisementPopup() {
           console.error("[Advertisement] Failed to fetch:", err);
           // Dev fallback when CMS is unreachable (CORS, network, etc.)
           console.log("[Advertisement] Using dev fallback due to error.");
-          setAd(DEV_FALLBACK_AD);
-          popupTimer = setTimeout(() => setOpen(true), 1500);
+          if (DEV_FALLBACK_AD._id !== dismissedId) {
+            setAd(DEV_FALLBACK_AD);
+            popupTimer = setTimeout(() => setOpen(true), 1500);
+          }
         }
       });
 
@@ -72,6 +79,13 @@ export function AdvertisementPopup() {
     setOpen(false);
   };
 
+  const handleDismiss = () => {
+    if (ad) {
+      localStorage.setItem(AD_DISMISS_KEY, ad._id);
+    }
+    setOpen(false);
+  };
+
   if (!ad) return null;
 
   return (
@@ -80,7 +94,7 @@ export function AdvertisementPopup() {
         <div className="relative grid max-h-[min(82vh,42rem)] grid-rows-[11rem_minmax(0,1fr)] md:max-h-none md:grid-cols-[1.15fr_0.85fr] md:grid-rows-none">
           {/* Dismiss button */}
           <button
-            onClick={handleClose}
+            onClick={handleDismiss}
             className="absolute right-3 top-3 z-20 flex h-8 w-8 items-center justify-center rounded-full border border-white/25 bg-slate-950/55 text-white backdrop-blur-md transition-colors hover:bg-slate-950/75 md:right-4 md:top-4 md:h-9 md:w-9"
             aria-label="Dismiss advertisement"
           >
@@ -128,7 +142,7 @@ export function AdvertisementPopup() {
                       href={ad.ctaUrl}
                       target={ad.openInNewTab ? "_blank" : "_self"}
                       rel={ad.openInNewTab ? "noopener noreferrer" : undefined}
-                      onClick={handleClose}
+                      onClick={handleDismiss}
                     >
                       {ad.ctaLabel || "Learn More"}
                     </a>
@@ -145,10 +159,10 @@ export function AdvertisementPopup() {
               )}
 
               <button
-                onClick={handleClose}
+                onClick={handleDismiss}
                 className="w-fit pt-0.5 text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:text-foreground md:pt-1 md:text-xs md:normal-case md:tracking-normal"
               >
-                Close
+                Don&apos;t show this again
               </button>
             </div>
           </div>
