@@ -9,7 +9,7 @@ import {
     AlertTriangle, Loader2, FileText, MessageSquare, Send,
     Plus, Pencil, Clock, CheckCircle2, XCircle, Smartphone,
     AtSign, UserPlus, FileEdit, Upload, Download,
-    User, Store,
+    User, Store, Menu,
     CreditCard
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,7 @@ import {
     AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { SEOHead } from "@/components/seo/seo-head";
 import { useAuth } from "@/services/auth-context";
 import { adminService, DashboardStats, MemberDoc, PaginatedMembers, SellerDoc, PaginatedSellers, OrderStats, SubscriptionPlan, SubscriptionStats, PaginatedOrders, PaginatedSubscribers } from "@/services/admin-service";
@@ -254,6 +255,7 @@ export default function AdminDashboard() {
 
     // Active sidebar item
     const [activeTab, setActiveTab] = useState("overview");
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     // ─── Sellers State ─────────────────────────────────────────────
     const [sellers, setSellers] = useState<PaginatedSellers | null>(null);
@@ -1124,27 +1126,94 @@ export default function AdminDashboard() {
                 <div className="lg:hidden flex items-center justify-between p-4 border-b border-border/40 bg-white dark:bg-slate-900 sticky top-0 z-10">
                     <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-white font-extrabold text-xs">K</div>
-                        <h2 className="font-extrabold text-sm">Admin Panel</h2>
+                        <div>
+                            <h2 className="font-extrabold text-sm leading-none">KNCCI Admin</h2>
+                            <p className="text-[10px] text-muted-foreground">
+                                {activeTab === "overview" ? "Dashboard" :
+                                    activeTab === "members" ? "Members" :
+                                        activeTab === "applications" ? "Applications" :
+                                            activeTab === "sellers" ? "Sellers" :
+                                                activeTab === "orders" ? "Orders" :
+                                                    activeTab === "subscriptions" ? "Subscriptions" :
+                                                        "Messaging"}
+                            </p>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <Tabs value={activeTab} onValueChange={setActiveTab}>
-                            <TabsList className="h-9">
-                                <TabsTrigger value="overview" className="text-xs px-3 h-7"><BarChart3 className="w-3.5 h-3.5" /></TabsTrigger>
-                                <TabsTrigger value="members" className="text-xs px-3 h-7"><Users className="w-3.5 h-3.5" /></TabsTrigger>
-                                <TabsTrigger value="applications" className="text-xs px-3 h-7"><FileText className="w-3.5 h-3.5" /></TabsTrigger>
-                                <TabsTrigger value="content" className="text-xs px-3 h-7"><FileEdit className="w-3.5 h-3.5" /></TabsTrigger>
-                                <TabsTrigger value="orders" className="text-xs px-3 h-7"><CreditCard className="w-3.5 h-3.5" /></TabsTrigger>
-                                <TabsTrigger value="messaging" className="text-xs px-3 h-7"><MessageSquare className="w-3.5 h-3.5" /></TabsTrigger>
-                            </TabsList>
-                        </Tabs>
-                        <Button variant="ghost" size="icon" onClick={() => setLocation('/')} title="Return to Home">
-                            <Home className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="text-red-500" onClick={logout}>
-                            <LogOut className="w-4 h-4" />
-                        </Button>
-                    </div>
+                    <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(true)}>
+                        <Menu className="w-5 h-5" />
+                    </Button>
                 </div>
+
+                {/* Mobile Slide-in Menu */}
+                <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+                    <SheetContent side="right" className="w-[280px] p-0 flex flex-col">
+                        <SheetHeader className="p-6 pb-4 border-b border-border/40">
+                            <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-white font-extrabold text-sm shadow-lg shadow-primary/20">
+                                    K
+                                </div>
+                                <div>
+                                    <SheetTitle className="font-extrabold text-sm tracking-tight">KNCCI Admin</SheetTitle>
+                                    <p className="text-[10px] text-muted-foreground font-medium">Uasin Gishu Chapter</p>
+                                </div>
+                            </div>
+                        </SheetHeader>
+
+                        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+                            {[
+                                { key: "overview", label: "Dashboard", icon: <LayoutDashboard className="w-4 h-4" /> },
+                                { key: "members", label: "Members", icon: <Users className="w-4 h-4" /> },
+                                { key: "applications", label: "Applications", icon: <FileText className="w-4 h-4" /> },
+                                { key: "sellers", label: "Sellers", icon: <Store className="w-4 h-4" /> },
+                                { key: "orders", label: "Orders", icon: <CreditCard className="w-4 h-4" /> },
+                                { key: "subscriptions", label: "Subscriptions", icon: <Crown className="w-4 h-4" /> },
+                                { key: "messaging", label: "Messaging", icon: <MessageSquare className="w-4 h-4" /> },
+                            ].map((item) => (
+                                <button
+                                    key={item.key}
+                                    onClick={() => { setActiveTab(item.key); setMobileMenuOpen(false); }}
+                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all duration-200 ${activeTab === item.key
+                                        ? "bg-primary/10 text-primary shadow-sm"
+                                        : "text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-foreground"
+                                        }`}
+                                >
+                                    {item.icon}
+                                    {item.label}
+                                </button>
+                            ))}
+                            <div className="pt-4 border-t border-border/30 mt-4">
+                                <Button
+                                    variant="ghost"
+                                    className="w-full justify-start text-sm font-bold text-muted-foreground hover:text-foreground hover:bg-slate-100 dark:hover:bg-slate-800"
+                                    onClick={() => { setMobileMenuOpen(false); setLocation('/'); }}
+                                >
+                                    <Home className="w-4 h-4 mr-3" /> Return to Home
+                                </Button>
+                            </div>
+                        </nav>
+
+                        <div className="p-4 border-t border-border/40 space-y-3">
+                            <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+                                <Avatar className="w-8 h-8">
+                                    <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs">
+                                        {user?.name?.split(" ").map((n: string) => n[0]).join("").slice(0, 2)}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-xs font-bold truncate">{user?.name}</p>
+                                    <p className="text-[10px] text-muted-foreground truncate">{user?.email}</p>
+                                </div>
+                            </div>
+                            <Button
+                                variant="ghost"
+                                className="w-full justify-start text-sm font-bold text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+                                onClick={() => { setMobileMenuOpen(false); logout(); }}
+                            >
+                                <LogOut className="w-4 h-4 mr-2" /> Log Out
+                            </Button>
+                        </div>
+                    </SheetContent>
+                </Sheet>
 
                 <div className="p-6 lg:p-10 max-w-7xl mx-auto space-y-8">
                     {/* ─── Header ───────────────────────────────────────── */}
@@ -1437,8 +1506,79 @@ export default function AdminDashboard() {
                                 </CardContent>
                             </Card>
 
-                            {/* Members Table */}
-                            <Card className="border-border/40 overflow-hidden">
+                            {/* Members — Mobile Cards */}
+                            <div className="block sm:hidden space-y-3">
+                                {loadingMembers ? (
+                                    <div className="flex items-center justify-center h-40">
+                                        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                                    </div>
+                                ) : !members?.members?.length ? (
+                                    <div className="text-center py-12 text-muted-foreground">
+                                        <Users className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                                        <p className="text-sm font-bold">No members found</p>
+                                    </div>
+                                ) : (
+                                    members.members.map((member) => (
+                                        <Card key={member._id} className="border-border/40">
+                                            <CardContent className="p-4">
+                                                <div className="flex items-start justify-between gap-3">
+                                                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                                                        <Avatar className="w-10 h-10 flex-shrink-0">
+                                                            <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs">
+                                                                {member.name?.split(" ").map((n) => n[0]).join("").slice(0, 2)}
+                                                            </AvatarFallback>
+                                                        </Avatar>
+                                                        <div className="min-w-0">
+                                                            <p className="font-bold text-sm truncate">{member.name}</p>
+                                                            <p className="text-xs text-muted-foreground truncate">{member.email}</p>
+                                                            <p className="text-[10px] font-mono text-muted-foreground">{member.reg_no}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+                                                        <RoleBadge role={member.role} />
+                                                        {member.business && <PlanBadge plan={member.business.plan} />}
+                                                    </div>
+                                                </div>
+                                                {member.business && (
+                                                    <p className="text-xs text-muted-foreground mt-2 pl-13">{member.business.name}</p>
+                                                )}
+                                                <div className="flex items-center gap-1 mt-3 pt-3 border-t border-border/30 justify-end">
+                                                    <Button variant="ghost" size="icon" className="w-8 h-8 text-blue-500 hover:bg-blue-50" onClick={() => openDetail(member)}>
+                                                        <Eye className="w-3.5 h-3.5" />
+                                                    </Button>
+                                                    <Button variant="ghost" size="icon" className="w-8 h-8 text-purple-500 hover:bg-purple-50" onClick={() => handleRoleToggle(member)} disabled={actionLoading}>
+                                                        <UserCog className="w-3.5 h-3.5" />
+                                                    </Button>
+                                                    <Button variant="ghost" size="icon" className="w-8 h-8 text-orange-500 hover:bg-orange-50" onClick={() => setResetPwTarget(member)}>
+                                                        <KeyRound className="w-3.5 h-3.5" />
+                                                    </Button>
+                                                    <Button variant="ghost" size="icon" className="w-8 h-8 text-red-500 hover:bg-red-50" onClick={() => setDeleteTarget(member)}>
+                                                        <Trash2 className="w-3.5 h-3.5" />
+                                                    </Button>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    ))
+                                )}
+                                {members && members.pagination.totalPages > 1 && (
+                                    <div className="flex items-center justify-between py-2">
+                                        <p className="text-xs text-muted-foreground">
+                                            {((currentPage - 1) * pageLimit) + 1}–{Math.min(currentPage * pageLimit, members.pagination.total)} of {members.pagination.total}
+                                        </p>
+                                        <div className="flex gap-2">
+                                            <Button variant="outline" size="sm" disabled={currentPage <= 1} onClick={() => setCurrentPage(p => p - 1)} className="h-8 px-3 rounded-lg">
+                                                <ChevronLeft className="w-4 h-4" />
+                                            </Button>
+                                            <Button variant="outline" size="sm" disabled={currentPage >= members.pagination.totalPages} onClick={() => setCurrentPage(p => p + 1)} className="h-8 px-3 rounded-lg">
+                                                <ChevronRight className="w-4 h-4" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Members Table — Desktop */}
+                            <Card className="hidden sm:block border-border/40 overflow-hidden">
                                 <div className="overflow-x-auto">
                                     <Table>
                                         <TableHeader>
@@ -1598,7 +1738,66 @@ export default function AdminDashboard() {
                             transition={{ duration: 0.3 }}
                             className="space-y-6"
                         >
-                            <Card className="border-border/40 overflow-hidden">
+                            {/* Applications — Mobile Cards */}
+                            <div className="block sm:hidden space-y-3">
+                                {loadingApplications ? (
+                                    <div className="flex items-center justify-center h-40"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
+                                ) : applications.length === 0 ? (
+                                    <div className="text-center py-12 text-muted-foreground">
+                                        <FileText className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                                        <p className="text-sm font-bold">No applications found</p>
+                                    </div>
+                                ) : (
+                                    applications.map((app) => (
+                                        <Card key={app._id} className="border-border/40">
+                                            <CardContent className="p-4">
+                                                <div className="flex items-start justify-between gap-2">
+                                                    <div className="min-w-0">
+                                                        <p className="font-bold text-sm">{app.name}</p>
+                                                        <p className="text-xs text-muted-foreground">{app.email}</p>
+                                                        <p className="text-xs text-muted-foreground">{app.businessName}</p>
+                                                        <p className="text-[11px] text-muted-foreground">{app.location}{app.subCounty ? `, ${app.subCounty}` : ''}</p>
+                                                    </div>
+                                                    <Badge variant={app.status === 'pending' ? 'outline' : app.status === 'approved' ? 'default' : 'destructive'} className="flex-shrink-0">
+                                                        {app.status}
+                                                    </Badge>
+                                                </div>
+                                                <div className="mt-2 flex items-center justify-between text-xs">
+                                                    <span className="text-muted-foreground">KES {app.amountToPay?.toLocaleString() || '0'}</span>
+                                                    <span className={app.amountPaid >= app.amountToPay && app.amountToPay > 0 ? "text-emerald-600 font-bold" : "text-muted-foreground"}>
+                                                        Paid: KES {app.amountPaid?.toLocaleString() || '0'}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center gap-1 mt-3 pt-3 border-t border-border/30 flex-wrap">
+                                                    <Button variant="ghost" size="icon" className="w-8 h-8 text-blue-500 hover:bg-blue-50" onClick={() => openAppDetail(app)}>
+                                                        <Eye className="w-3.5 h-3.5" />
+                                                    </Button>
+                                                    {app.status === 'pending' && (
+                                                        <Button variant="ghost" size="sm" className="h-8 text-emerald-600 hover:bg-emerald-50 text-xs font-bold" onClick={() => handleApplicationStatus(app._id, 'approved')} disabled={actionLoading}>
+                                                            Approve
+                                                        </Button>
+                                                    )}
+                                                    {app.status === 'pending' && (
+                                                        <Button variant="ghost" size="sm" className="h-8 text-amber-600 hover:bg-amber-50 text-xs font-bold" onClick={() => handleApplicationStatus(app._id, 'rejected')} disabled={actionLoading}>
+                                                            Reject
+                                                        </Button>
+                                                    )}
+                                                    {app.status === 'approved' && (
+                                                        <Button variant="ghost" size="icon" className="w-8 h-8 text-purple-500 hover:bg-purple-50" onClick={() => handleResendEmail(app._id, 'approval')} disabled={actionLoading}>
+                                                            <Mail className="w-3.5 h-3.5" />
+                                                        </Button>
+                                                    )}
+                                                    <Button variant="ghost" size="icon" className="w-8 h-8 text-red-500 hover:bg-red-50 ml-auto" onClick={() => handleApplicationDelete(app._id)}>
+                                                        <Trash2 className="w-3.5 h-3.5" />
+                                                    </Button>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    ))
+                                )}
+                            </div>
+
+                            <Card className="hidden sm:block border-border/40 overflow-hidden">
                                 <div className="overflow-x-auto">
                                     <Table>
                                         <TableHeader>
@@ -1768,7 +1967,64 @@ export default function AdminDashboard() {
                                 </CardContent>
                             </Card>
 
-                            <Card className="border-border/40 overflow-hidden shadow-sm shadow-slate-200/50 dark:shadow-none">
+                            {/* Sellers — Mobile Cards */}
+                            <div className="block sm:hidden space-y-3">
+                                {loadingSellers ? (
+                                    <div className="flex items-center justify-center h-40"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
+                                ) : sellers?.sellers.length === 0 ? (
+                                    <div className="text-center py-12 text-muted-foreground">
+                                        <Store className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                                        <p className="text-sm font-bold">No sellers found</p>
+                                    </div>
+                                ) : (
+                                    sellers?.sellers.map((seller) => (
+                                        <Card key={seller._id} className="border-border/40">
+                                            <CardContent className="p-4">
+                                                <div className="flex items-start justify-between gap-2">
+                                                    <div className="min-w-0">
+                                                        <p className="font-bold text-sm">{seller.firstName} {seller.lastName}</p>
+                                                        <p className="text-xs text-muted-foreground">{seller.email}</p>
+                                                        <p className="text-xs font-medium mt-1">{seller.businessName}</p>
+                                                        <p className="text-[11px] text-muted-foreground">{seller.businessCategory}</p>
+                                                    </div>
+                                                    <Badge variant={seller.status === 'pending' ? 'outline' : seller.status === 'approved' ? 'default' : 'destructive'} className="flex-shrink-0">
+                                                        {seller.status}
+                                                    </Badge>
+                                                </div>
+                                                <div className="flex items-center gap-1 mt-3 pt-3 border-t border-border/30">
+                                                    <Button variant="ghost" size="icon" className="w-8 h-8 text-blue-500 hover:bg-blue-50" onClick={() => openSellerDetail(seller)}>
+                                                        <Eye className="w-3.5 h-3.5" />
+                                                    </Button>
+                                                    {seller.status === 'pending' && (
+                                                        <Button variant="ghost" size="sm" className="h-8 text-emerald-600 hover:bg-emerald-50 text-xs font-bold" onClick={() => handleSellerStatusUpdate(seller._id, 'approved')} disabled={actionLoading}>
+                                                            Approve
+                                                        </Button>
+                                                    )}
+                                                    {(seller.status === 'approved' || seller.status === 'rejected') && (
+                                                        <Button variant="ghost" size="sm" className="h-8 text-orange-500 hover:bg-orange-50 text-xs font-bold" onClick={() => handleSellerStatusUpdate(seller._id, 'deactivated')} disabled={actionLoading}>
+                                                            Deactivate
+                                                        </Button>
+                                                    )}
+                                                    <Button variant="ghost" size="icon" className="w-8 h-8 text-red-500 hover:bg-red-50 ml-auto" onClick={() => handleDeleteSeller(seller._id)} disabled={actionLoading}>
+                                                        <Trash2 className="w-3.5 h-3.5" />
+                                                    </Button>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    ))
+                                )}
+                                {sellers && sellers.pagination.totalPages > 1 && (
+                                    <div className="flex items-center justify-between py-2">
+                                        <span className="text-xs text-muted-foreground">Page {sellerPage} of {sellers.pagination.totalPages}</span>
+                                        <div className="flex gap-2">
+                                            <Button variant="outline" size="sm" disabled={sellerPage <= 1} onClick={() => setSellerPage(p => p - 1)}><ChevronLeft className="w-4 h-4" /></Button>
+                                            <Button variant="outline" size="sm" disabled={sellerPage >= sellers.pagination.totalPages} onClick={() => setSellerPage(p => p + 1)}><ChevronRight className="w-4 h-4" /></Button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            <Card className="hidden sm:block border-border/40 overflow-hidden shadow-sm shadow-slate-200/50 dark:shadow-none">
                                 <div className="overflow-x-auto">
                                     <Table>
                                         <TableHeader className="bg-slate-50/80 dark:bg-slate-900/50">
@@ -1993,7 +2249,60 @@ export default function AdminDashboard() {
                                 </CardContent>
                             </Card>
 
-                            <Card className="border-border/40 overflow-hidden shadow-sm">
+                            {/* Orders — Mobile Cards */}
+                            <div className="block sm:hidden space-y-3">
+                                {loadingOrders ? (
+                                    <div className="flex items-center justify-center h-40"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
+                                ) : (orders?.orders.length ?? 0) === 0 ? (
+                                    <div className="text-center py-12 text-muted-foreground">
+                                        <CreditCard className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                                        <p className="text-sm font-bold">No orders found</p>
+                                    </div>
+                                ) : (
+                                    orders?.orders.map((order) => (
+                                        <Card key={order._id} className="border-border/40">
+                                            <CardContent className="p-4">
+                                                <div className="flex items-start justify-between gap-2">
+                                                    <div className="min-w-0">
+                                                        <p className="font-mono text-xs font-bold text-primary">{order._id.substring(0, 8).toUpperCase()}</p>
+                                                        <p className="font-bold text-sm mt-1">{order.buyerId?.name || 'Guest'}</p>
+                                                        <p className="text-xs text-muted-foreground">{order.buyerId?.email || 'No email'}</p>
+                                                        <p className="text-xs text-muted-foreground mt-1">Vendor: {order.vendorId?.name || 'Unknown'}</p>
+                                                    </div>
+                                                    <div className="text-right flex-shrink-0">
+                                                        <p className="font-black text-sm">KES {order.amount.toLocaleString()}</p>
+                                                        <Badge className="mt-1" variant={order.status === 'COMPLETED' ? 'default' : order.status === 'PAID_ESCROW' ? 'outline' : order.status === 'CANCELLED' ? 'destructive' : 'secondary'}>
+                                                            {order.status.replace('_', ' ')}
+                                                        </Badge>
+                                                    </div>
+                                                </div>
+                                                {order.status === 'PAID_ESCROW' && (
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        className="w-full mt-3 h-9 rounded-xl bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 font-bold text-xs"
+                                                        onClick={() => handleReleaseEscrow(order._id)}
+                                                        disabled={releasingOrders.has(order._id)}
+                                                    >
+                                                        <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" /> Release Escrow
+                                                    </Button>
+                                                )}
+                                            </CardContent>
+                                        </Card>
+                                    ))
+                                )}
+                                {orders && orders.pagination.totalPages > 1 && (
+                                    <div className="flex items-center justify-between py-2">
+                                        <span className="text-xs text-muted-foreground">Page {orderPage} of {orders.pagination.totalPages}</span>
+                                        <div className="flex gap-2">
+                                            <Button variant="outline" size="sm" disabled={orders.pagination.page === 1} onClick={() => setOrderPage(p => p - 1)}><ChevronLeft className="w-4 h-4" /></Button>
+                                            <Button variant="outline" size="sm" disabled={orders.pagination.page === orders.pagination.totalPages} onClick={() => setOrderPage(p => p + 1)}><ChevronRight className="w-4 h-4" /></Button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            <Card className="hidden sm:block border-border/40 overflow-hidden shadow-sm">
                                 <div className="overflow-x-auto">
                                     <Table>
                                         <TableHeader className="bg-slate-50/80 dark:bg-slate-900/50">
@@ -2227,7 +2536,49 @@ export default function AdminDashboard() {
                                         </CardContent>
                                     </Card>
 
-                                    <Card className="border-border/40 overflow-hidden">
+                                    {/* Subscribers — Mobile Cards */}
+                                    <div className="block sm:hidden space-y-3">
+                                        {loadingSubscribers ? (
+                                            <div className="flex items-center justify-center h-40"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
+                                        ) : subscribers?.subscribers.length === 0 ? (
+                                            <div className="text-center py-12 text-muted-foreground">
+                                                <Users className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                                                <p className="text-sm font-bold">No active subscribers found</p>
+                                            </div>
+                                        ) : (
+                                            subscribers?.subscribers.map((sub: any) => (
+                                                <Card key={sub._id} className="border-border/40">
+                                                    <CardContent className="p-4">
+                                                        <div className="flex items-start justify-between gap-2">
+                                                            <div className="min-w-0">
+                                                                <p className="font-bold text-sm truncate">{sub.name}</p>
+                                                                <p className="text-xs font-medium text-muted-foreground">{sub.userId?.name}</p>
+                                                                <p className="text-xs text-muted-foreground truncate">{sub.userId?.email}</p>
+                                                            </div>
+                                                            <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                                                                <Badge variant="outline" className="bg-primary/5 text-xs">{sub.subscriptionPlanId?.name}</Badge>
+                                                                <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-xs">Active</Badge>
+                                                            </div>
+                                                        </div>
+                                                        <p className="text-[11px] text-muted-foreground mt-2">
+                                                            Joined: {new Date(sub.createdAt).toLocaleDateString()}
+                                                        </p>
+                                                    </CardContent>
+                                                </Card>
+                                            ))
+                                        )}
+                                        {subscribers && subscribers.pagination.totalPages > 1 && (
+                                            <div className="flex items-center justify-between py-2">
+                                                <span className="text-xs text-muted-foreground">Page {subPage} of {subscribers.pagination.totalPages}</span>
+                                                <div className="flex gap-2">
+                                                    <Button variant="outline" size="sm" disabled={subPage === 1} onClick={() => setSubPage(p => p - 1)}><ChevronLeft className="w-4 h-4" /></Button>
+                                                    <Button variant="outline" size="sm" disabled={subPage === subscribers.pagination.totalPages} onClick={() => setSubPage(p => p + 1)}><ChevronRight className="w-4 h-4" /></Button>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <Card className="hidden sm:block border-border/40 overflow-hidden">
                                         <Table>
                                             <TableHeader className="bg-slate-50/80 dark:bg-slate-900/50">
                                                 <TableRow>
