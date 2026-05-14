@@ -184,6 +184,12 @@ export interface CreateBlogPayload {
 }
 
 export const cmsService = {
+    /** Pre-warm CMS session in background after portal login (fire-and-forget) */
+    async warmup(password?: string): Promise<{ success: boolean; data: any }> {
+        const response = await api.post('/cms/warmup', { password });
+        return response.data;
+    },
+
     /** Check if the member's business is connected to the CMS marketplace */
     async getStatus(): Promise<{ success: boolean; data: CmsStatus }> {
         const response = await api.get('/cms/status');
