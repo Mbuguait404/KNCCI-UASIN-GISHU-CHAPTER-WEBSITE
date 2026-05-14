@@ -91,7 +91,14 @@ import { MembershipCertificate } from "@/components/membership-certificate";
 
 export default function ProfilePage() {
     const [, setLocation] = useLocation();
-    const { user, logout, loading: authLoading, updateUser } = useAuth();
+    const {
+        user,
+        logout,
+        loading: authLoading,
+        updateUser,
+        temporaryPassword,
+        clearTemporaryPassword,
+    } = useAuth();
     const [business, setBusiness] = useState<BusinessData | null>(null);
     const [loading, setLoading] = useState(true);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -308,8 +315,21 @@ export default function ProfilePage() {
         try {
             setIsSubmittingPassword(true);
             const { authService } = await import('@/lib/auth-service');
+            const currentPassword = user?.requirePasswordChange
+                ? temporaryPassword
+                : passwordForm.currentPassword;
+
+            if (!currentPassword) {
+                toast({
+                    title: "Temporary password missing",
+                    description: "Please log out and sign in again with your temporary password before updating it.",
+                    variant: "destructive",
+                });
+                return;
+            }
+
             const response = await authService.changePassword({
-                currentPassword: passwordForm.currentPassword,
+                currentPassword,
                 newPassword: passwordForm.newPassword,
                 confirmPassword: passwordForm.confirmPassword
             });
@@ -323,6 +343,7 @@ export default function ProfilePage() {
                 if (user) {
                     updateUser({ ...user, requirePasswordChange: false });
                 }
+                clearTemporaryPassword();
                 setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
             }
         } catch (error: any) {
