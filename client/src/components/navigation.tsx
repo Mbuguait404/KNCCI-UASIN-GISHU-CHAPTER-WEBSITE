@@ -5,7 +5,7 @@ import { useTheme } from "@/components/theme-provider";
 import { useLocation, Link } from "wouter";
 import { useRegistration } from "@/contexts/registration-context";
 import { useMembership } from "@/contexts/membership-context";
-import { Menu, Moon, Sun, ChevronDown, User, LogOut } from "lucide-react";
+import { Menu, Moon, Sun, ChevronDown, User, LogOut, Home, Info, CalendarDays, ShoppingBag, Phone, ChevronRight, Building2 } from "lucide-react";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -22,19 +22,22 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useAuth } from "@/services/auth-context";
 
 
 interface NavItem {
   label: string;
   href?: string;
+  icon?: React.ReactNode;
   children?: { label: string; href: string; description?: string }[];
 }
 
 const navItems: NavItem[] = [
-  { label: "Home", href: "/" },
+  { label: "Home", href: "/", icon: <Home className="w-4 h-4" /> },
   {
     label: "About Us",
+    icon: <Building2 className="w-4 h-4" />,
     children: [
       { label: "About", href: "/about", description: "Learn about our mission and vision." },
       { label: "Who We Are", href: "/about#who-we-are", description: "Membership, Governance, and Partnerships." },
@@ -46,6 +49,7 @@ const navItems: NavItem[] = [
   },
   {
     label: "News & Events",
+    icon: <CalendarDays className="w-4 h-4" />,
     children: [
       { label: "Events", href: "/events", description: "Join our upcoming conferences and workshops." },
       { label: "Blog", href: "/blog", description: "Latest news and updates." },
@@ -54,11 +58,12 @@ const navItems: NavItem[] = [
   },
   {
     label: "Marketplace",
+    icon: <ShoppingBag className="w-4 h-4" />,
     children: [
       { label: "Marketplace", href: "/marketplace", description: "Discover local products and services." },
     ],
   },
-  { label: "Contact", href: "/contact" },
+  { label: "Contact", href: "/contact", icon: <Phone className="w-4 h-4" /> },
 ];
 
 export function Navigation() {
@@ -248,102 +253,145 @@ export function Navigation() {
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-[300px] sm:w-[400px] overflow-y-auto">
-              <div className="flex flex-col gap-4 mt-8">
+            <SheetContent side="right" className="w-[300px] sm:w-[360px] p-0 overflow-y-auto flex flex-col border-l-0 shadow-2xl">
+              {/* Branded Header */}
+              <div className="relative bg-primary px-5 py-5 flex items-center gap-3 flex-shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center flex-shrink-0 ring-1 ring-white/20">
+                  <img
+                    src="/UG_chapter_logo-removebg-preview.png"
+                    alt="KNCCI"
+                    className="h-7 w-auto object-contain brightness-0 invert"
+                  />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <SheetHeader className="p-0 text-left space-y-0">
+                    <SheetTitle className="text-white font-extrabold text-sm tracking-tight leading-none">KNCCI</SheetTitle>
+                  </SheetHeader>
+                  <p className="text-white/70 text-[11px] font-medium mt-0.5">Uasin Gishu Chapter</p>
+                </div>
+                {/* Decorative ring */}
+                <div className="absolute -bottom-3 left-5 right-5 h-px bg-gradient-to-r from-white/0 via-white/20 to-white/0" />
+              </div>
+
+              {/* Nav Items */}
+              <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
                 {navItems.map((item, index) => (
                   <div key={index}>
                     {item.children ? (
                       <Accordion type="single" collapsible className="w-full border-none">
                         <AccordionItem value={`item-${index}`} className="border-none">
-                          <AccordionTrigger className="py-2 text-lg font-medium hover:no-underline text-foreground">
+                          <AccordionTrigger className={cn(
+                            "flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold hover:no-underline transition-all duration-150",
+                            "hover:bg-primary/8 text-foreground data-[state=open]:bg-primary/10 data-[state=open]:text-primary",
+                            "[&>svg:last-child]:text-muted-foreground [&>svg:last-child]:w-4 [&>svg:last-child]:h-4"
+                          )}>
+                            <span className={cn(
+                              "w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors",
+                              "bg-muted text-muted-foreground group-data-[state=open]:bg-primary/10 group-data-[state=open]:text-primary"
+                            )}>
+                              {item.icon}
+                            </span>
                             {item.label}
                           </AccordionTrigger>
-                          <AccordionContent className="flex flex-col gap-2 pl-4">
-                            {item.children.map((child) => (
-                              <Link key={child.href} href={child.href}>
-                                <a
-                                  className="text-base text-muted-foreground hover:text-primary py-2 block transition-colors"
-                                  onClick={() => setMobileOpen(false)}
-                                >
-                                  {child.label}
-                                </a>
-                              </Link>
-                            ))}
+                          <AccordionContent className="pb-1 pt-0">
+                            <div className="ml-10 pl-3 border-l-2 border-primary/20 space-y-0.5">
+                              {item.children.map((child) => (
+                                <Link key={child.href} href={child.href}>
+                                  <a
+                                    className={cn(
+                                      "flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm transition-all duration-150",
+                                      location === child.href
+                                        ? "bg-primary/10 text-primary font-semibold"
+                                        : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                                    )}
+                                    onClick={() => setMobileOpen(false)}
+                                  >
+                                    <ChevronRight className="w-3 h-3 flex-shrink-0 opacity-50" />
+                                    {child.label}
+                                  </a>
+                                </Link>
+                              ))}
+                            </div>
                           </AccordionContent>
                         </AccordionItem>
                       </Accordion>
                     ) : (
                       <Link href={item.href!}>
                         <a
-                          className="block py-2 text-lg font-medium hover:text-primary transition-colors text-foreground"
+                          className={cn(
+                            "flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold transition-all duration-150",
+                            location === item.href
+                              ? "bg-primary/10 text-primary"
+                              : "text-foreground hover:bg-muted/60 hover:text-foreground"
+                          )}
                           onClick={() => setMobileOpen(false)}
                         >
+                          <span className={cn(
+                            "w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0",
+                            location === item.href
+                              ? "bg-primary/15 text-primary"
+                              : "bg-muted text-muted-foreground"
+                          )}>
+                            {item.icon}
+                          </span>
                           {item.label}
+                          {location === item.href && (
+                            <span className="ml-auto w-1.5 h-1.5 rounded-full bg-primary" />
+                          )}
                         </a>
                       </Link>
                     )}
                   </div>
                 ))}
+              </nav>
 
-                <div className="border-t border-border my-4" />
-
+              {/* Footer / Auth Section */}
+              <div className="flex-shrink-0 px-4 pb-6 pt-4 border-t border-border/40 bg-muted/30 space-y-3">
                 {isAuthenticated ? (
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3 px-3 py-4 bg-muted/50 rounded-2xl border border-border/50">
-                      <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-bold flex-shrink-0 shadow-sm">
+                  <>
+                    <div className="flex items-center gap-3 px-3 py-3 bg-background rounded-xl border border-border/50 shadow-sm">
+                      <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-white font-extrabold text-sm flex-shrink-0">
                         {user?.name?.[0]}
                       </div>
-                      <div className="flex flex-col min-w-0">
-                        <span className="font-bold text-foreground leading-tight truncate">{user?.name}</span>
-                        <span className="text-xs text-muted-foreground truncate">{user?.email}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-sm text-foreground leading-tight truncate">{user?.name}</p>
+                        <p className="text-[11px] text-muted-foreground truncate">{user?.email}</p>
                       </div>
                     </div>
-
                     <Link href="/profile">
                       <Button
-                        variant="outline"
-                        className="w-full justify-start gap-3 h-12 rounded-xl border-border"
+                        className="w-full h-11 rounded-xl font-bold bg-primary text-primary-foreground hover:bg-primary/90 gap-2"
                         onClick={() => setMobileOpen(false)}
                       >
-                        <User className="h-4 w-4 text-primary" />
-                        Account Profile
+                        <User className="h-4 w-4" />
+                        My Dashboard
                       </Button>
                     </Link>
-
-                    {/* <Button
-                      variant="ghost"
-                      className="w-full justify-start gap-3 h-12 rounded-xl text-destructive hover:text-destructive hover:bg-destructive/10"
-                      onClick={() => {
-                        logout();
-                        setMobileOpen(false);
-                      }}
-                    >
-                      <LogOut className="h-4 w-4" />
-                      Sign Out
-                    </Button> */}
-                  </div>
+                  </>
                 ) : (
-                  <div className="space-y-3">
+                  <>
+                    <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-1 pb-1">Get Started</p>
                     <Button
                       variant="outline"
-                      className="w-full justify-start h-12 rounded-xl border-border"
+                      className="w-full h-11 rounded-xl border-border font-semibold gap-2 justify-center"
                       onClick={() => {
                         setMobileOpen(false);
                         openMembership();
                       }}
                     >
-                      Be a Member
+                      <Building2 className="h-4 w-4 text-primary" />
+                      Become a Member
                     </Button>
-
                     <Link href="/login">
                       <Button
-                        className="w-full justify-start bg-primary text-primary-foreground h-12 rounded-xl font-bold"
+                        className="w-full h-11 rounded-xl bg-primary text-primary-foreground font-bold gap-2 justify-center"
                         onClick={() => setMobileOpen(false)}
                       >
+                        <User className="h-4 w-4" />
                         Sign In
                       </Button>
                     </Link>
-                  </div>
+                  </>
                 )}
               </div>
             </SheetContent>
