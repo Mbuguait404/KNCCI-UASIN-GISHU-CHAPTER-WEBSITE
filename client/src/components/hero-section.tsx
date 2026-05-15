@@ -1,6 +1,15 @@
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { ShoppingBag } from "lucide-react";
+import {
+  Users,
+  ShieldCheck,
+  Globe,
+  Award,
+  Store,
+  TrendingUp,
+} from "lucide-react";
+import { motion } from "framer-motion";
 import { staticEvent } from "@/data/static-data";
 import { Event } from "@shared/schema";
 import { useLocation } from "wouter";
@@ -56,13 +65,119 @@ interface HeroSectionProps {
   event?: Event;
 }
 
+const chamberBenefits = [
+  {
+    icon: Users,
+    title: "Elite Networking",
+    description: "Connect with 5,000+ business leaders",
+  },
+  {
+    icon: Award,
+    title: "Exclusive Events",
+    description: "Summit, gala & B2B matchmaking",
+  },
+  {
+    icon: Globe,
+    title: "Trade Facilitation",
+    description: "Certificate of Origin & advocacy",
+  },
+];
+
+const marketplaceBenefits = [
+  {
+    icon: Store,
+    title: "Digital Storefront",
+    description: "Showcase products & services",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Verified Trust",
+    description: "Trade with KNCCI-verified members",
+  },
+  {
+    icon: TrendingUp,
+    title: "Market Expansion",
+    description: "Reach local & global buyers",
+  },
+];
+
+function BenefitCard({
+  benefit,
+  accent,
+}: {
+  benefit: {
+    icon: React.ElementType;
+    title: string;
+    description: string;
+  };
+  accent: string;
+}) {
+  return (
+    <div className="group bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-lg p-2 sm:p-2.5 text-left transition-all duration-300 cursor-default flex-shrink-0 w-[150px] sm:w-[170px]">
+      <benefit.icon
+        className={`w-3.5 h-3.5 ${accent} mb-1 group-hover:scale-110 transition-transform duration-300`}
+      />
+      <p className="text-[11px] font-bold text-white/90 mb-0.5 leading-tight">
+        {benefit.title}
+      </p>
+      <p className="text-[9px] sm:text-[10px] text-white/60 leading-snug">
+        {benefit.description}
+      </p>
+    </div>
+  );
+}
+
+function ScrollingCardsPanel({
+  label,
+  accentBg,
+  accentText,
+  benefits,
+  direction = "left",
+  delay = 0,
+}: {
+  label: string;
+  accentBg: string;
+  accentText: string;
+  benefits: { icon: React.ElementType; title: string; description: string }[];
+  direction?: "left" | "right";
+  delay?: number;
+}) {
+  const items = [...benefits, ...benefits, ...benefits];
+  const trackClass =
+    direction === "left" ? "animate-marquee-left" : "animate-marquee-right";
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay }}
+      className="bg-black/30 backdrop-blur-md border border-white/10 rounded-xl sm:rounded-2xl p-2 sm:p-3 overflow-hidden"
+    >
+      <div className="flex items-center gap-1.5 mb-1.5 px-0.5">
+        <div className={`w-1.5 h-1.5 rounded-full ${accentBg}`} />
+        <span
+          className={`text-[9px] sm:text-[10px] font-bold ${accentText} uppercase tracking-widest`}
+        >
+          {label}
+        </span>
+      </div>
+      <div className="overflow-hidden">
+        <div className={`flex gap-2 ${trackClass}`}>
+          {items.map((benefit, index) => (
+            <BenefitCard key={index} benefit={benefit} accent={accentText} />
+          ))}
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 export function HeroSection({ event: propEvent }: HeroSectionProps) {
   const event = propEvent || staticEvent;
   const [, setLocation] = useLocation();
   const { openRegistration } = useRegistration();
   const { openMembership } = useMembership();
 
-  // Remove "4th Edition" and variations from event name for display
   const displayName = useMemo(() => {
     if (!event?.name) return "";
     return event.name
@@ -75,8 +190,6 @@ export function HeroSection({ event: propEvent }: HeroSectionProps) {
 
   const eventDate = useMemo(() => {
     if (!event?.date) return null;
-    // Parse date string and create date at 9 AM local time
-    // Handle both YYYY-MM-DD and ISO strings
     const dateStr = event.date.includes("T")
       ? event.date.split("T")[0]
       : event.date;
@@ -94,11 +207,9 @@ export function HeroSection({ event: propEvent }: HeroSectionProps) {
       return;
     }
 
-    // Calculate immediately
     const initialTimeLeft = calculateTimeLeft(eventDate);
     setTimeLeft(initialTimeLeft);
 
-    // Then update every second
     const timer = setInterval(() => {
       setTimeLeft(calculateTimeLeft(eventDate));
     }, 1000);
@@ -142,7 +253,7 @@ export function HeroSection({ event: propEvent }: HeroSectionProps) {
   return (
     <section
       id="home"
-      className="relative h-screen flex items-center justify-center overflow-hidden"
+      className="relative h-[100dvh] flex flex-col overflow-hidden"
       data-testid="section-hero"
     >
       {/* Static Background Image */}
@@ -158,7 +269,7 @@ export function HeroSection({ event: propEvent }: HeroSectionProps) {
         />
       </div>
 
-      {/* Vignette Overlay - darker at center, lighter towards edges for better text contrast */}
+      {/* Vignette Overlay */}
       <div
         className="absolute inset-0"
         style={{
@@ -167,59 +278,88 @@ export function HeroSection({ event: propEvent }: HeroSectionProps) {
         }}
       />
 
-      <div className="relative z-10 container mx-auto px-4 text-center h-full flex flex-col justify-center">
-        <div className="max-w-4xl mx-auto w-full space-y-6 sm:space-y-8 animate-fade-in-up">
-          <div className="space-y-4">
-            <div className="inline-flex items-center gap-2 bg-primary/20 backdrop-blur-md border border-primary/30 rounded-full px-4 py-1.5 text-primary-foreground text-xs sm:text-sm font-bold tracking-wider uppercase">
-              Uasin Gishu County Chapter
-            </div>
+      {/* Main Content - centered in available space */}
+      <div className="relative z-10 flex-1 min-h-0 flex flex-col items-center justify-center px-4">
+        <div className="max-w-3xl mx-auto w-full text-center space-y-4 sm:space-y-5">
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.2 }}
+            className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-white leading-[1.12] tracking-tight px-2 drop-shadow-2xl"
+            data-testid="text-event-name"
+          >
+            Kenya National Chamber of <br className="hidden sm:block" />
+            Commerce & Industry <br />
+            <span className="text-primary">Uasin Gishu Chapter</span>
+          </motion.h1>
 
-            <h1
-              className="text-4xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-white leading-[1.1] tracking-tight px-2 drop-shadow-2xl"
-              data-testid="text-event-name"
-            >
-              Kenya National Chamber of <br className="hidden md:block" />
-              Commerce & Industry <br />
-              <span className="text-primary">Uasin Gishu Chapter</span>
-            </h1>
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.35 }}
+            className="text-sm sm:text-base md:text-lg text-white/85 max-w-xl mx-auto leading-relaxed px-4 font-medium drop-shadow-md"
+            data-testid="text-event-subtitle"
+          >
+            Join us in building a vibrant and prosperous business community in
+            Kenya.
+          </motion.p>
 
-            <p
-              className="text-lg sm:text-xl md:text-2xl text-white/90 max-w-3xl mx-auto leading-relaxed px-4 font-medium drop-shadow-lg"
-              data-testid="text-event-subtitle"
-            >
-              Join us in building a vibrant and prosperous business community in
-              Kenya.
-            </p>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.5 }}
+            className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 pt-1"
+          >
             <Button
-              size="lg"
+              size="sm"
               onClick={openMembership}
-              className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground text-lg px-8 py-6 shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95"
+              className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground text-sm px-5 py-4 sm:px-6 sm:py-5 shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95"
               data-testid="button-register-hero"
             >
               Become a Member
             </Button>
             <Button
-              size="lg"
+              size="sm"
               variant="outline"
               onClick={() => setLocation("/marketplace")}
-              className="w-full sm:w-auto border-white/40 text-white bg-white/10 hover:bg-white/20 backdrop-blur-md text-lg px-8 py-6 transition-all hover:scale-105 active:scale-95 gap-2"
+              className="w-full sm:w-auto border-white/40 text-white bg-white/10 hover:bg-white/20 backdrop-blur-md text-sm px-5 py-4 sm:px-6 sm:py-5 transition-all hover:scale-105 active:scale-95 gap-2"
               data-testid="button-marketplace-hero"
             >
-              <ShoppingBag className="w-5 h-5" />
+              <ShoppingBag className="w-4 h-4" />
               Explore Marketplace
             </Button>
-          </div>
+          </motion.div>
         </div>
+      </div>
 
+      {/* Scrolling Benefits Panels */}
+      <div className="relative z-10 w-full max-w-4xl mx-auto px-3 sm:px-4 pb-2 sm:pb-3 space-y-2 flex-none">
+        <ScrollingCardsPanel
+          label="Chamber Membership"
+          accentBg="bg-primary"
+          accentText="text-primary"
+          benefits={chamberBenefits}
+          direction="left"
+          delay={0.7}
+        />
+        <ScrollingCardsPanel
+          label="Marketplace"
+          accentBg="bg-secondary"
+          accentText="text-secondary"
+          benefits={marketplaceBenefits}
+          direction="right"
+          delay={0.9}
+        />
+      </div>
+
+      {/* Scroll Indicator */}
+      <div className="relative z-10 flex justify-center py-2 flex-none">
         <div
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce cursor-pointer"
+          className="animate-bounce cursor-pointer"
           onClick={() => scrollToSection("#about")}
         >
-          <div className="w-6 h-10 border-2 border-white/30 rounded-full flex items-start justify-center p-1.5">
-            <div className="w-1.5 h-3 bg-white/60 rounded-full" />
+          <div className="w-5 h-8 border-2 border-white/30 rounded-full flex items-start justify-center p-1">
+            <div className="w-1 h-2 bg-white/60 rounded-full" />
           </div>
         </div>
       </div>

@@ -89,10 +89,10 @@ export function Navigation() {
     <nav
       data-testid="navigation-bar"
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled
-        ? "pt-4 pb-2 bg-background/80 backdrop-blur-xl border-b border-border/50 shadow-sm"
+        ? "pt-2 pb-1.5 bg-background/80 backdrop-blur-xl border-b border-border/50 shadow-sm"
         : isHomePage
-          ? "pt-6 pb-4 bg-black/40 backdrop-blur-md border-b border-white/10"
-          : "pt-6 pb-4 bg-transparent"
+          ? "pt-3 pb-2 bg-black/40 backdrop-blur-md border-b border-white/10"
+          : "pt-3 pb-2 bg-transparent"
         }`}
     >
       <div className="max-w-7xl mx-auto px-4 w-full flex items-center justify-between gap-4">
@@ -107,14 +107,14 @@ export function Navigation() {
             <img
               src="/UG_chapter_logo-removebg-preview.png"
               alt="KNCCI UG Chapter Logo"
-              className={`h-12 sm:h-16 w-auto object-contain transition-all duration-300 ${isScrolled || !isHomePage
+              className={`h-10 sm:h-12 w-auto object-contain transition-all duration-300 ${isScrolled || !isHomePage
                 ? "drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]"
                 : "drop-shadow-[0_0_2px_rgba(255,255,255,0.9)] drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]"
                 }`}
-              width={220}
-              height={64}
+              width={180}
+              height={48}
             />
-            <div className={`h-8 sm:h-10 w-px mx-1 transition-colors duration-300 ${isScrolled ? "bg-gray-400" : "bg-white/40"
+            <div className={`h-6 sm:h-7 w-px mx-1 transition-colors duration-300 ${isScrolled ? "bg-gray-400" : "bg-white/40"
               }`} />
           </a>
         </Link>
