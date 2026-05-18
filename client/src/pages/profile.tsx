@@ -132,6 +132,7 @@ export default function ProfilePage() {
     const [attachmentRequests, setAttachmentRequests] = useState<AttachReq[]>([]);
     const [attachmentsLoading, setAttachmentsLoading] = useState(false);
     const [respondingTo, setRespondingTo] = useState<string | null>(null);
+    const [respondNote, setRespondNote] = useState<Record<string, string>>({});
 
     const businessSchema = z.object({
         name: z.string().min(2, "Business name must be at least 2 characters"),
@@ -256,7 +257,7 @@ export default function ProfilePage() {
     }, [user]);
 
     useEffect(() => {
-        if (activeTab !== 'business' || !user) return;
+        if (activeTab !== 'student-attachment' || !user) return;
         setAttachmentsLoading(true);
         attachmentService.businessList()
             .then(setAttachmentRequests)
@@ -522,6 +523,7 @@ export default function ProfilePage() {
         ...(DIRECTORY_MODE ? [] : [{ key: "finances", label: "Finances", icon: <PaymentIcon className="w-4 h-4" /> }]),
         { key: "marketplace", label: DIRECTORY_MODE ? "Business Directory" : "Marketplace", icon: <Store className="w-4 h-4" /> },
         { key: "events", label: "Events & Trade", icon: <Activity className="w-4 h-4" /> },
+        ...(business ? [{ key: "student-attachment", label: "Student Attachment", icon: <GraduationCap className="w-4 h-4" /> }] : []),
     ];
     const sideNavItems = allNavItems;
 
@@ -532,6 +534,7 @@ export default function ProfilePage() {
         ...(DIRECTORY_MODE ? [] : [{ key: "finances", label: "Finances", icon: <PaymentIcon className="w-5 h-5" /> }]),
         { key: "marketplace",  label: DIRECTORY_MODE ? "Directory" : "Market", icon: <Store className="w-5 h-5" /> },
         { key: "events",       label: "Events",    icon: <Activity className="w-5 h-5" /> },
+        ...(business ? [{ key: "student-attachment", label: "Attachments", icon: <GraduationCap className="w-5 h-5" /> }] : []),
     ];
 
     const getActivityStyle = (type: string): { icon: React.ComponentType<{ className?: string }>; color: string; bg: string } => {
@@ -999,103 +1002,159 @@ export default function ProfilePage() {
                                                 </div>
                                             </div>
                                         </Card>
+                                    </motion.div>
+                                )}
 
-                                        {/* Attachment Requests */}
+                                {activeTab === "student-attachment" && (
+                                    <motion.div
+                                        key="student-attachment"
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -10 }}
+                                        className="space-y-6"
+                                    >
                                         <Card className="rounded-[2.5rem] border-none shadow-2xl shadow-primary/5 p-8 bg-white dark:bg-slate-900 border border-border/40">
-                                            <div className="flex items-center gap-3 mb-6">
-                                                <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center">
-                                                    <GraduationCap className="w-5 h-5 text-primary" />
+                                            <div className="flex items-center justify-between mb-6">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center">
+                                                        <GraduationCap className="w-5 h-5 text-primary" />
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="font-extrabold text-lg">Student Attachment Requests</h3>
+                                                        <p className="text-xs text-muted-foreground">Students matched with your business for internship placement</p>
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <h3 className="font-extrabold text-lg">Attachment Requests</h3>
-                                                    <p className="text-xs text-muted-foreground">Students requesting internship placement at your business</p>
-                                                </div>
+                                                <Button variant="outline" size="sm" className="rounded-xl gap-2" onClick={() => {
+                                                    setAttachmentsLoading(true);
+                                                    attachmentService.businessList()
+                                                        .then(setAttachmentRequests)
+                                                        .catch(() => { })
+                                                        .finally(() => setAttachmentsLoading(false));
+                                                }}>
+                                                    <RefreshCw className="w-3.5 h-3.5" /> Refresh
+                                                </Button>
                                             </div>
 
                                             {attachmentsLoading ? (
-                                                <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
+                                                <div className="flex justify-center py-12">
+                                                    <Loader2 className="w-7 h-7 animate-spin text-primary" />
+                                                </div>
                                             ) : attachmentRequests.length === 0 ? (
-                                                <div className="text-center py-8 text-muted-foreground">
-                                                    <GraduationCap className="w-10 h-10 mx-auto mb-2 opacity-30" />
-                                                    <p className="text-sm">No attachment requests yet</p>
+                                                <div className="text-center py-14">
+                                                    <div className="w-16 h-16 rounded-3xl bg-primary/5 flex items-center justify-center mx-auto mb-4">
+                                                        <GraduationCap className="w-8 h-8 text-primary/40" />
+                                                    </div>
+                                                    <p className="font-bold text-foreground">No attachment requests yet</p>
+                                                    <p className="text-sm text-muted-foreground mt-1">When KNCCI matches students with your business, they will appear here.</p>
                                                 </div>
                                             ) : (
-                                                <div className="space-y-4">
+                                                <div className="space-y-5">
                                                     {attachmentRequests.map(req => {
                                                         const myReq = req.myMatchRequest;
+                                                        const isPending = myReq?.status === 'pending';
+                                                        const note = respondNote[req._id] ?? '';
                                                         return (
-                                                            <div key={req._id} className="p-5 rounded-2xl border border-border/60 bg-muted/20 space-y-3">
-                                                                <div className="flex items-start justify-between gap-3">
-                                                                    <div>
-                                                                        <p className="font-bold">{req.studentName}</p>
-                                                                        <p className="text-sm text-muted-foreground">{req.institution} · {req.course}</p>
-                                                                        <p className="text-xs text-muted-foreground mt-0.5">
-                                                                            {new Date(req.attachmentStartDate).toLocaleDateString('en-KE', { month: 'short', year: 'numeric' })} –{' '}
-                                                                            {new Date(req.attachmentEndDate).toLocaleDateString('en-KE', { month: 'short', year: 'numeric' })}
+                                                            <div key={req._id} className="rounded-2xl border border-border/60 bg-slate-50 dark:bg-slate-800/30 overflow-hidden">
+                                                                <div className="p-5 pb-4 flex flex-col sm:flex-row sm:items-start gap-4">
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <div className="flex items-center gap-2 flex-wrap">
+                                                                            <p className="font-extrabold text-base leading-tight">{req.studentName}</p>
+                                                                            {myReq && (
+                                                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
+                                                                                    myReq.status === 'accepted'
+                                                                                        ? 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20'
+                                                                                        : myReq.status === 'declined'
+                                                                                            ? 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20'
+                                                                                            : 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20'
+                                                                                }`}>
+                                                                                    {myReq.status === 'accepted' ? '✓ Accepted' : myReq.status === 'declined' ? '✕ Declined' : '⏳ Awaiting Response'}
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+                                                                        <p className="text-sm text-muted-foreground mt-0.5">{req.institution} · {req.course}</p>
+                                                                        <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                                                                            <Calendar className="w-3 h-3 inline" />
+                                                                            {' '}{new Date(req.attachmentStartDate).toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' })} –{' '}
+                                                                            {new Date(req.attachmentEndDate).toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' })}
                                                                         </p>
                                                                     </div>
-                                                                    {myReq && (
-                                                                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border flex-shrink-0 ${myReq.status === 'accepted'
-                                                                            ? 'bg-green-500/10 text-green-700 border-green-500/20'
-                                                                            : myReq.status === 'declined'
-                                                                                ? 'bg-red-500/10 text-red-700 border-red-500/20'
-                                                                                : 'bg-amber-500/10 text-amber-700 border-amber-500/20'
-                                                                            }`}>
-                                                                            {myReq.status === 'accepted' ? 'Accepted' : myReq.status === 'declined' ? 'Declined' : 'Pending Response'}
-                                                                        </span>
-                                                                    )}
                                                                 </div>
-                                                                <div className="flex items-center gap-2 flex-wrap">
-                                                                    <a href={`mailto:${req.studentEmail}`} className="text-xs text-primary underline">{req.studentEmail}</a>
-                                                                    <span className="text-xs text-muted-foreground">{req.studentPhone}</span>
+
+                                                                <div className="px-5 pb-4 flex items-center gap-4 flex-wrap">
+                                                                    <a href={`mailto:${req.studentEmail}`} className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline font-medium">
+                                                                        <Mail className="w-3 h-3" /> {req.studentEmail}
+                                                                    </a>
+                                                                    <a href={`tel:${req.studentPhone}`} className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground font-medium">
+                                                                        <Phone className="w-3 h-3" /> {req.studentPhone}
+                                                                    </a>
                                                                 </div>
-                                                                {req.documents.length > 0 && (
-                                                                    <div className="flex gap-2 flex-wrap">
+
+                                                                {req.documents && req.documents.length > 0 && (
+                                                                    <div className="px-5 pb-4 flex gap-2 flex-wrap">
                                                                         {req.documents.map((url, i) => (
                                                                             <a key={i} href={url} target="_blank" rel="noopener noreferrer"
-                                                                                className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-xl bg-primary/5 text-primary border border-primary/20 hover:bg-primary/10 transition-colors">
+                                                                                className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-xl bg-primary/5 text-primary border border-primary/20 hover:bg-primary/10 transition-colors font-medium">
                                                                                 <FileText className="w-3 h-3" /> Document {i + 1}
                                                                             </a>
                                                                         ))}
                                                                     </div>
                                                                 )}
-                                                                {myReq?.status === 'pending' && (
-                                                                    <div className="flex gap-2 pt-1">
-                                                                        <Button size="sm" className="rounded-xl font-bold" disabled={respondingTo === req._id}
-                                                                            onClick={async () => {
-                                                                                setRespondingTo(req._id);
-                                                                                try {
-                                                                                    await attachmentService.businessRespond(req._id, true);
-                                                                                    setAttachmentRequests(prev => prev.map(r => r._id === req._id ? { ...r, myMatchRequest: { ...r.myMatchRequest!, status: 'accepted' } } : r));
-                                                                                    toast({ title: 'Attachment request accepted!' });
-                                                                                } catch {
-                                                                                    toast({ title: 'Failed to respond', variant: 'destructive' });
-                                                                                } finally {
-                                                                                    setRespondingTo(null);
-                                                                                }
-                                                                            }}>
-                                                                            {respondingTo === req._id ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <CheckCircle2 className="w-3 h-3 mr-1" />}
-                                                                            Accept
-                                                                        </Button>
-                                                                        <Button size="sm" variant="outline" className="rounded-xl font-bold border-red-200 text-red-600 hover:bg-red-50" disabled={respondingTo === req._id}
-                                                                            onClick={async () => {
-                                                                                setRespondingTo(req._id);
-                                                                                try {
-                                                                                    await attachmentService.businessRespond(req._id, false);
-                                                                                    setAttachmentRequests(prev => prev.map(r => r._id === req._id ? { ...r, myMatchRequest: { ...r.myMatchRequest!, status: 'declined' } } : r));
-                                                                                    toast({ title: 'Request declined' });
-                                                                                } catch {
-                                                                                    toast({ title: 'Failed to respond', variant: 'destructive' });
-                                                                                } finally {
-                                                                                    setRespondingTo(null);
-                                                                                }
-                                                                            }}>
-                                                                            <XCircle className="w-3 h-3 mr-1" /> Decline
-                                                                        </Button>
+
+                                                                {myReq?.businessNote && (
+                                                                    <div className="px-5 pb-4">
+                                                                        <p className="text-xs text-muted-foreground bg-muted/50 rounded-xl px-3 py-2 italic">
+                                                                            <span className="font-semibold not-italic">Your note:</span> "{myReq.businessNote}"
+                                                                        </p>
                                                                     </div>
                                                                 )}
-                                                                {myReq?.businessNote && (
-                                                                    <p className="text-xs text-muted-foreground italic">"{myReq.businessNote}"</p>
+
+                                                                {isPending && (
+                                                                    <div className="border-t border-border/50 bg-white dark:bg-slate-900 px-5 py-4 space-y-3">
+                                                                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Your Response</p>
+                                                                        <Textarea
+                                                                            placeholder="Add an optional message to the student (e.g. next steps, contact person, start date)..."
+                                                                            className="rounded-xl text-sm min-h-[80px] resize-none"
+                                                                            value={note}
+                                                                            onChange={e => setRespondNote(prev => ({ ...prev, [req._id]: e.target.value }))}
+                                                                        />
+                                                                        <div className="flex gap-2">
+                                                                            <Button size="sm" className="rounded-xl font-bold gap-1.5 flex-1 sm:flex-none" disabled={respondingTo === req._id}
+                                                                                onClick={async () => {
+                                                                                    setRespondingTo(req._id);
+                                                                                    try {
+                                                                                        await attachmentService.businessRespond(req._id, true, note || undefined);
+                                                                                        setAttachmentRequests(prev => prev.map(r => r._id === req._id
+                                                                                            ? { ...r, myMatchRequest: { ...r.myMatchRequest!, status: 'accepted', businessNote: note || undefined } }
+                                                                                            : r));
+                                                                                        toast({ title: '✓ Attachment request accepted', description: 'The student will be notified by email and SMS.' });
+                                                                                    } catch {
+                                                                                        toast({ title: 'Failed to respond', variant: 'destructive' });
+                                                                                    } finally {
+                                                                                        setRespondingTo(null);
+                                                                                    }
+                                                                                }}>
+                                                                                {respondingTo === req._id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+                                                                                Accept
+                                                                            </Button>
+                                                                            <Button size="sm" variant="outline" className="rounded-xl font-bold gap-1.5 border-red-200 text-red-600 hover:bg-red-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-900/20 flex-1 sm:flex-none" disabled={respondingTo === req._id}
+                                                                                onClick={async () => {
+                                                                                    setRespondingTo(req._id);
+                                                                                    try {
+                                                                                        await attachmentService.businessRespond(req._id, false, note || undefined);
+                                                                                        setAttachmentRequests(prev => prev.map(r => r._id === req._id
+                                                                                            ? { ...r, myMatchRequest: { ...r.myMatchRequest!, status: 'declined', businessNote: note || undefined } }
+                                                                                            : r));
+                                                                                        toast({ title: 'Request declined', description: 'The student will be notified.' });
+                                                                                    } catch {
+                                                                                        toast({ title: 'Failed to respond', variant: 'destructive' });
+                                                                                    } finally {
+                                                                                        setRespondingTo(null);
+                                                                                    }
+                                                                                }}>
+                                                                                <XCircle className="w-3.5 h-3.5" /> Decline
+                                                                            </Button>
+                                                                        </div>
+                                                                    </div>
                                                                 )}
                                                             </div>
                                                         );
