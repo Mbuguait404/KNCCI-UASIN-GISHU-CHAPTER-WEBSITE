@@ -2510,28 +2510,31 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
     ];
     const requiredComplete = checks.filter(c => !c.optional).every(c => c.ok);
 
+    // ─── Pending approval — check BEFORE connected gate ──────────
+    // connectToCms runs immediately on activation (sets cms_tenant_id),
+    // so connected=true even while seller.status is still 'pending'.
+    // We must catch this state before allowing access to the full dashboard.
+    if (cmsStatus?.sellerStatus === 'pending') {
+        return (
+            <Card className="rounded-[2.5rem] border-none shadow-2xl shadow-primary/5 p-12 bg-white dark:bg-slate-900 min-h-[500px] flex flex-col items-center justify-center text-center">
+                <div className="w-24 h-24 rounded-full bg-amber-500/10 flex items-center justify-center mb-8">
+                    <Store className="w-10 h-10 text-amber-500" />
+                </div>
+                <h3 className="text-3xl font-extrabold mb-4 tracking-tight">Application Under Review</h3>
+                <p className="text-muted-foreground max-w-md font-medium leading-relaxed mb-8">
+                    Your marketplace activation request has been submitted and is awaiting admin verification.
+                    You will be notified via email and SMS once your payment has been verified and your seller account is approved.
+                </p>
+                <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-amber-500/10 border border-amber-500/20">
+                    <Loader2 className="w-4 h-4 text-amber-500 animate-spin" />
+                    <span className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-widest">Pending Admin Approval</span>
+                </div>
+            </Card>
+        );
+    }
+
     // ─── Not connected: Activation flow ──────────────────────────
     if (!cmsStatus?.connected) {
-        // ─── Pending approval ─────────────────────────────────────
-        if (cmsStatus?.sellerStatus === 'pending') {
-            return (
-                <Card className="rounded-[2.5rem] border-none shadow-2xl shadow-primary/5 p-12 bg-white dark:bg-slate-900 min-h-[500px] flex flex-col items-center justify-center text-center">
-                    <div className="w-24 h-24 rounded-full bg-amber-500/10 flex items-center justify-center mb-8">
-                        <Store className="w-10 h-10 text-amber-500" />
-                    </div>
-                    <h3 className="text-3xl font-extrabold mb-4 tracking-tight">Application Under Review</h3>
-                    <p className="text-muted-foreground max-w-md font-medium leading-relaxed mb-8">
-                        Your marketplace activation request has been submitted and is awaiting admin verification.
-                        You will be notified via email and SMS once your payment has been verified and your seller account is approved.
-                    </p>
-                    <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-amber-500/10 border border-amber-500/20">
-                        <Loader2 className="w-4 h-4 text-amber-500 animate-spin" />
-                        <span className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-widest">Pending Admin Approval</span>
-                    </div>
-                </Card>
-            );
-        }
-
         return (
             <div className="space-y-8">
                 {/* Hero */}
