@@ -82,10 +82,8 @@ export default function Home() {
                     </p>
                   </div>
                 </div>
-                <Link href="/attachment">
-                  <a className="inline-flex items-center gap-2 bg-primary text-primary-foreground font-bold px-8 py-4 rounded-2xl shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all hover:scale-105 whitespace-nowrap flex-shrink-0">
-                    Apply Now <ArrowRight className="w-4 h-4" />
-                  </a>
+                <Link href="/attachment" className="inline-flex items-center gap-2 bg-primary text-primary-foreground font-bold px-8 py-4 rounded-2xl shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all hover:scale-105 whitespace-nowrap flex-shrink-0">
+                  Apply Now <ArrowRight className="w-4 h-4" />
                 </Link>
               </div>
             </div>
