@@ -48,7 +48,8 @@ import {
     Receipt,
     Clock,
     RefreshCw,
-    ArrowUpRight
+    ArrowUpRight,
+    GraduationCap
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -62,6 +63,8 @@ import { useAuth } from "@/services/auth-context";
 import { businessService, BusinessData } from "@/services/business-service";
 import { cmsService, CmsStatus, CmsDashboard, CmsProduct, CmsCategory, CmsOrder } from "@/services/cms-service";
 import { memberService, MemberDashboardStats, FinancialsData } from "@/services/member-service";
+import { attachmentService } from "@/services/attachment-service";
+import type { AttachmentRequest as AttachReq } from "@/services/attachment-service";
 import { websiteContentService } from "@/services/website-content-service";
 import type { WebsiteEventContent } from "@/types/content";
 import { useForm } from "react-hook-form";
@@ -126,6 +129,9 @@ export default function ProfilePage() {
     const [statsLoading, setStatsLoading] = useState(true);
     const [upcomingEventsData, setUpcomingEventsData] = useState<WebsiteEventContent[]>([]);
     const [eventsLoading, setEventsLoading] = useState(false);
+    const [attachmentRequests, setAttachmentRequests] = useState<AttachReq[]>([]);
+    const [attachmentsLoading, setAttachmentsLoading] = useState(false);
+    const [respondingTo, setRespondingTo] = useState<string | null>(null);
 
     const businessSchema = z.object({
         name: z.string().min(2, "Business name must be at least 2 characters"),
@@ -248,6 +254,15 @@ export default function ProfilePage() {
         };
         fetchEvents();
     }, [user]);
+
+    useEffect(() => {
+        if (activeTab !== 'business' || !user) return;
+        setAttachmentsLoading(true);
+        attachmentService.businessList()
+            .then(setAttachmentRequests)
+            .catch(() => { })
+            .finally(() => setAttachmentsLoading(false));
+    }, [activeTab, user]);
 
     const onSubmit = async (data: z.infer<typeof businessSchema>) => {
         try {
@@ -983,6 +998,110 @@ export default function ProfilePage() {
                                                     </div>
                                                 </div>
                                             </div>
+                                        </Card>
+
+                                        {/* Attachment Requests */}
+                                        <Card className="rounded-[2.5rem] border-none shadow-2xl shadow-primary/5 p-8 bg-white dark:bg-slate-900 border border-border/40">
+                                            <div className="flex items-center gap-3 mb-6">
+                                                <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center">
+                                                    <GraduationCap className="w-5 h-5 text-primary" />
+                                                </div>
+                                                <div>
+                                                    <h3 className="font-extrabold text-lg">Attachment Requests</h3>
+                                                    <p className="text-xs text-muted-foreground">Students requesting internship placement at your business</p>
+                                                </div>
+                                            </div>
+
+                                            {attachmentsLoading ? (
+                                                <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
+                                            ) : attachmentRequests.length === 0 ? (
+                                                <div className="text-center py-8 text-muted-foreground">
+                                                    <GraduationCap className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                                                    <p className="text-sm">No attachment requests yet</p>
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-4">
+                                                    {attachmentRequests.map(req => {
+                                                        const myReq = req.myMatchRequest;
+                                                        return (
+                                                            <div key={req._id} className="p-5 rounded-2xl border border-border/60 bg-muted/20 space-y-3">
+                                                                <div className="flex items-start justify-between gap-3">
+                                                                    <div>
+                                                                        <p className="font-bold">{req.studentName}</p>
+                                                                        <p className="text-sm text-muted-foreground">{req.institution} · {req.course}</p>
+                                                                        <p className="text-xs text-muted-foreground mt-0.5">
+                                                                            {new Date(req.attachmentStartDate).toLocaleDateString('en-KE', { month: 'short', year: 'numeric' })} –{' '}
+                                                                            {new Date(req.attachmentEndDate).toLocaleDateString('en-KE', { month: 'short', year: 'numeric' })}
+                                                                        </p>
+                                                                    </div>
+                                                                    {myReq && (
+                                                                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border flex-shrink-0 ${myReq.status === 'accepted'
+                                                                            ? 'bg-green-500/10 text-green-700 border-green-500/20'
+                                                                            : myReq.status === 'declined'
+                                                                                ? 'bg-red-500/10 text-red-700 border-red-500/20'
+                                                                                : 'bg-amber-500/10 text-amber-700 border-amber-500/20'
+                                                                            }`}>
+                                                                            {myReq.status === 'accepted' ? 'Accepted' : myReq.status === 'declined' ? 'Declined' : 'Pending Response'}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                                <div className="flex items-center gap-2 flex-wrap">
+                                                                    <a href={`mailto:${req.studentEmail}`} className="text-xs text-primary underline">{req.studentEmail}</a>
+                                                                    <span className="text-xs text-muted-foreground">{req.studentPhone}</span>
+                                                                </div>
+                                                                {req.documents.length > 0 && (
+                                                                    <div className="flex gap-2 flex-wrap">
+                                                                        {req.documents.map((url, i) => (
+                                                                            <a key={i} href={url} target="_blank" rel="noopener noreferrer"
+                                                                                className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-xl bg-primary/5 text-primary border border-primary/20 hover:bg-primary/10 transition-colors">
+                                                                                <FileText className="w-3 h-3" /> Document {i + 1}
+                                                                            </a>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
+                                                                {myReq?.status === 'pending' && (
+                                                                    <div className="flex gap-2 pt-1">
+                                                                        <Button size="sm" className="rounded-xl font-bold" disabled={respondingTo === req._id}
+                                                                            onClick={async () => {
+                                                                                setRespondingTo(req._id);
+                                                                                try {
+                                                                                    await attachmentService.businessRespond(req._id, true);
+                                                                                    setAttachmentRequests(prev => prev.map(r => r._id === req._id ? { ...r, myMatchRequest: { ...r.myMatchRequest!, status: 'accepted' } } : r));
+                                                                                    toast({ title: 'Attachment request accepted!' });
+                                                                                } catch {
+                                                                                    toast({ title: 'Failed to respond', variant: 'destructive' });
+                                                                                } finally {
+                                                                                    setRespondingTo(null);
+                                                                                }
+                                                                            }}>
+                                                                            {respondingTo === req._id ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <CheckCircle2 className="w-3 h-3 mr-1" />}
+                                                                            Accept
+                                                                        </Button>
+                                                                        <Button size="sm" variant="outline" className="rounded-xl font-bold border-red-200 text-red-600 hover:bg-red-50" disabled={respondingTo === req._id}
+                                                                            onClick={async () => {
+                                                                                setRespondingTo(req._id);
+                                                                                try {
+                                                                                    await attachmentService.businessRespond(req._id, false);
+                                                                                    setAttachmentRequests(prev => prev.map(r => r._id === req._id ? { ...r, myMatchRequest: { ...r.myMatchRequest!, status: 'declined' } } : r));
+                                                                                    toast({ title: 'Request declined' });
+                                                                                } catch {
+                                                                                    toast({ title: 'Failed to respond', variant: 'destructive' });
+                                                                                } finally {
+                                                                                    setRespondingTo(null);
+                                                                                }
+                                                                            }}>
+                                                                            <XCircle className="w-3 h-3 mr-1" /> Decline
+                                                                        </Button>
+                                                                    </div>
+                                                                )}
+                                                                {myReq?.businessNote && (
+                                                                    <p className="text-xs text-muted-foreground italic">"{myReq.businessNote}"</p>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
                                         </Card>
                                     </motion.div>
                                 )}

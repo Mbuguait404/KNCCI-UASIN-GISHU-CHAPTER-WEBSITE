@@ -10,7 +10,7 @@ import {
     Plus, Pencil, Clock, CheckCircle2, XCircle, Smartphone,
     AtSign, UserPlus, FileEdit, Upload, Download,
     User, Store, Menu,
-    CreditCard
+    CreditCard, GraduationCap
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +40,7 @@ import { SEOHead } from "@/components/seo/seo-head";
 import { useAuth } from "@/services/auth-context";
 import { adminService, DashboardStats, MemberDoc, PaginatedMembers, SellerDoc, PaginatedSellers, SellerStats, OrderStats, SubscriptionPlan, SubscriptionStats, PaginatedOrders, PaginatedSubscribers } from "@/services/admin-service";
 import { messagingService, MessageTemplate, MessageLogEntry, MessageChannel, MessagingStats, PaginatedLogs, MessagingSettings } from "@/services/messaging-service";
+import { attachmentService, AttachmentRequest } from "@/services/attachment-service";
 import { notificationService } from "@/services/notification-service";
 import { useToast } from "@/hooks/use-toast";
 import { BUSINESS_CATEGORIES, normalizeBusinessCategory } from "@shared/business-categories";
@@ -101,6 +102,18 @@ function PaymentStatusBadge({ status }: { status?: string }) {
             <CreditCard className="w-3 h-3" /> {status || "pending"}
         </span>
     );
+}
+
+function AttachmentStatusBadge({ status }: { status: string }) {
+    const configs: Record<string, { color: string; bg: string; label: string }> = {
+        pending: { color: 'text-amber-700', bg: 'bg-amber-500/10 border-amber-500/20', label: 'Pending' },
+        matchmaking: { color: 'text-blue-700', bg: 'bg-blue-500/10 border-blue-500/20', label: 'Matchmaking' },
+        placed: { color: 'text-green-700', bg: 'bg-green-500/10 border-green-500/20', label: 'Placed' },
+        rejected: { color: 'text-red-700', bg: 'bg-red-500/10 border-red-500/20', label: 'Rejected' },
+        completed: { color: 'text-purple-700', bg: 'bg-purple-500/10 border-purple-500/20', label: 'Completed' },
+    };
+    const cfg = configs[status] || configs.pending;
+    return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${cfg.bg} ${cfg.color}`}>{cfg.label}</span>;
 }
 
 
@@ -348,6 +361,14 @@ export default function AdminDashboard() {
     const [loadingSubscribers, setLoadingSubscribers] = useState(false);
     const [subPage, setSubPage] = useState(1);
     const [subSearch, setSubSearch] = useState("");
+    const [attachments, setAttachments] = useState<AttachmentRequest[]>([]);
+    const [attachmentPagination, setAttachmentPagination] = useState({ total: 0, page: 1, totalPages: 1 });
+    const [attachmentsLoading, setAttachmentsLoading] = useState(false);
+    const [selectedAttachment, setSelectedAttachment] = useState<AttachmentRequest | null>(null);
+    const [matchmakeOpen, setMatchmakeOpen] = useState(false);
+    const [matchmakeBusinessIds, setMatchmakeBusinessIds] = useState<string[]>([]);
+    const [matchmakeLoading, setMatchmakeLoading] = useState(false);
+    const [attachmentStatusFilter, setAttachmentStatusFilter] = useState('');
 
     // ─── Auth guard ────────────────────────────────────────────────────
     useEffect(() => {
@@ -491,12 +512,29 @@ export default function AdminDashboard() {
         }
     }, [toast]);
 
+    const fetchAttachments = useCallback(async () => {
+        setAttachmentsLoading(true);
+        try {
+            const result = await attachmentService.adminList({ status: attachmentStatusFilter || undefined });
+            setAttachments(result.data);
+            setAttachmentPagination(result.pagination);
+        } catch {
+            toast({ title: "Failed to load attachment requests", variant: "destructive" });
+        } finally {
+            setAttachmentsLoading(false);
+        }
+    }, [attachmentStatusFilter, toast]);
+
     useEffect(() => {
         if (activeTab === "overview") { fetchOrderStats(); fetchSubscriptionStats(); }
         if (activeTab === "sellers") { fetchSellers(); fetchSellerStats(); }
         if (activeTab === "orders") { fetchOrders(); fetchOrderStats(); }
         if (activeTab === "subscriptions") { fetchPlans(); fetchSubscriptionStats(); fetchSubscribers(); }
-    }, [fetchSellers, fetchSellerStats, fetchOrders, fetchOrderStats, fetchPlans, fetchSubscriptionStats, fetchSubscribers, activeTab]);
+        if (activeTab === "attachments") {
+            if (!members?.members?.length) fetchMembers();
+            fetchAttachments();
+        }
+    }, [fetchSellers, fetchSellerStats, fetchOrders, fetchOrderStats, fetchPlans, fetchSubscriptionStats, fetchSubscribers, activeTab, fetchAttachments, members, fetchMembers]);
 
     // ─── Messaging data fetchers ────────────────────────────────────
     const fetchMsgTemplates = useCallback(async () => {
@@ -1147,6 +1185,7 @@ export default function AdminDashboard() {
                             { key: "sellers", label: "Sellers", icon: <Store className="w-4 h-4" /> },
                             { key: "orders", label: "Orders", icon: <CreditCard className="w-4 h-4" /> },
                             { key: "subscriptions", label: "Subscriptions", icon: <Crown className="w-4 h-4" /> },
+                            { key: "attachments", label: "Attachments", icon: <GraduationCap className="w-4 h-4" /> },
                             { key: "bulk-import", label: "Bulk Import", icon: <Upload className="w-4 h-4" /> },
                             { key: "messaging", label: "Messaging", icon: <MessageSquare className="w-4 h-4" /> },
                         ].map((item) => (
@@ -1214,6 +1253,7 @@ export default function AdminDashboard() {
                                             activeTab === "sellers" ? "Sellers" :
                                                 activeTab === "orders" ? "Orders" :
                                                     activeTab === "subscriptions" ? "Subscriptions" :
+                                                    activeTab === "attachments" ? "Attachments" :
                                                         "Messaging"}
                             </p>
                         </div>
@@ -1246,6 +1286,7 @@ export default function AdminDashboard() {
                                 { key: "sellers", label: "Sellers", icon: <Store className="w-4 h-4" /> },
                                 { key: "orders", label: "Orders", icon: <CreditCard className="w-4 h-4" /> },
                                 { key: "subscriptions", label: "Subscriptions", icon: <Crown className="w-4 h-4" /> },
+                                { key: "attachments", label: "Attachments", icon: <GraduationCap className="w-4 h-4" /> },
                                 { key: "messaging", label: "Messaging", icon: <MessageSquare className="w-4 h-4" /> },
                             ].map((item) => (
                                 <button
@@ -1312,6 +1353,7 @@ export default function AdminDashboard() {
                              activeTab === "sellers" ? "Seller Marketplace" :
                              activeTab === "orders" ? "System Orders" :
                              activeTab === "subscriptions" ? "Subscription Plans" :
+                             activeTab === "attachments" ? "Attachment Requests" :
                               "Messaging Center"}
                         </h1>
                     </motion.div>
@@ -3301,6 +3343,144 @@ export default function AdminDashboard() {
                                 </div>
                             )}
                         </motion.div>
+                    )}
+
+                    {activeTab === "attachments" && (
+                        <div>
+                            <div className="flex items-center justify-between mb-6">
+                                <div>
+                                    <h2 className="text-2xl font-black">Student Attachment Requests</h2>
+                                    <p className="text-muted-foreground text-sm mt-1">{attachmentPagination.total} total requests</p>
+                                </div>
+                                <Select value={attachmentStatusFilter} onValueChange={(v) => setAttachmentStatusFilter(v === 'all' ? '' : v)}>
+                                    <SelectTrigger className="w-44"><SelectValue placeholder="All Statuses" /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Statuses</SelectItem>
+                                        <SelectItem value="pending">Pending</SelectItem>
+                                        <SelectItem value="matchmaking">Matchmaking</SelectItem>
+                                        <SelectItem value="placed">Placed</SelectItem>
+                                        <SelectItem value="rejected">Rejected</SelectItem>
+                                        <SelectItem value="completed">Completed</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            {attachmentsLoading ? (
+                                <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
+                            ) : attachments.length === 0 ? (
+                                <div className="text-center py-16 text-muted-foreground">No attachment requests found</div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {attachments.map(req => (
+                                        <Card key={req._id} className="rounded-2xl border border-border/60">
+                                            <CardContent className="p-6">
+                                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                                    <div className="space-y-1">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="font-bold text-lg">{req.studentName}</span>
+                                                            <AttachmentStatusBadge status={req.status} />
+                                                        </div>
+                                                        <p className="text-sm text-muted-foreground">{req.institution} · {req.course}</p>
+                                                        <p className="text-xs text-muted-foreground">{req.studentEmail} · {req.studentPhone}</p>
+                                                        <p className="text-xs text-muted-foreground">
+                                                            {new Date(req.attachmentStartDate).toLocaleDateString()} – {new Date(req.attachmentEndDate).toLocaleDateString()}
+                                                            {req.matchRequests.length > 0 && ` · ${req.matchRequests.length} business${req.matchRequests.length > 1 ? 'es' : ''} contacted`}
+                                                        </p>
+                                                    </div>
+                                                    <div className="flex gap-2 flex-wrap">
+                                                        {req.documents.length > 0 && (
+                                                            <Button size="sm" variant="outline" className="rounded-xl" asChild>
+                                                                <a href={req.documents[0]} target="_blank" rel="noopener noreferrer">
+                                                                    <FileText className="w-4 h-4 mr-1" /> Documents ({req.documents.length})
+                                                                </a>
+                                                            </Button>
+                                                        )}
+                                                        <Button size="sm" variant="outline" className="rounded-xl" onClick={() => { setSelectedAttachment(req); setMatchmakeBusinessIds([]); setMatchmakeOpen(true); }}>
+                                                            <Users className="w-4 h-4 mr-1" /> Matchmake
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                                {req.matchRequests.length > 0 && (
+                                                    <div className="mt-4 pt-4 border-t border-border/60">
+                                                        <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">Match Requests</p>
+                                                        <div className="flex flex-wrap gap-2">
+                                                            {req.matchRequests.map(m => (
+                                                                <span key={m._id} className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${m.status === 'accepted'
+                                                                    ? 'bg-green-500/10 text-green-700 border-green-500/20'
+                                                                    : m.status === 'declined'
+                                                                        ? 'bg-red-500/10 text-red-700 border-red-500/20'
+                                                                        : 'bg-amber-500/10 text-amber-700 border-amber-500/20'
+                                                                    }`}>
+                                                                    {m.businessName} · {m.status}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </CardContent>
+                                        </Card>
+                                    ))}
+                                </div>
+                            )}
+
+                            <Dialog open={matchmakeOpen} onOpenChange={setMatchmakeOpen}>
+                                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                                    <DialogHeader>
+                                        <DialogTitle>Matchmake: {selectedAttachment?.studentName}</DialogTitle>
+                                        <DialogDescription>
+                                            Select businesses to send this attachment request to. Selected businesses will see this request in their dashboard.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                                        {(members?.members || []).filter(m => m.business && m.role !== 'admin').map(member => {
+                                            const bizId = member.business?._id;
+                                            if (!bizId) return null;
+                                            const selected = matchmakeBusinessIds.includes(bizId);
+                                            const alreadySent = selectedAttachment?.matchRequests.some(r => r.businessId === bizId);
+                                            return (
+                                                <div key={member._id} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${selected ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40'} ${alreadySent ? 'opacity-50 pointer-events-none' : ''}`}
+                                                    onClick={() => {
+                                                        if (alreadySent) return;
+                                                        setMatchmakeBusinessIds(prev =>
+                                                            prev.includes(bizId) ? prev.filter(id => id !== bizId) : [...prev, bizId]
+                                                        );
+                                                    }}>
+                                                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${selected ? 'bg-primary border-primary' : 'border-muted-foreground'}`}>
+                                                        {(selected || alreadySent) && <CheckCircle2 className="w-3 h-3 text-white" />}
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="font-bold text-sm truncate">{member.business?.name || member.name}</p>
+                                                        <p className="text-xs text-muted-foreground truncate">{member.business?.category} · {member.email}</p>
+                                                    </div>
+                                                    {alreadySent && <Badge variant="secondary" className="text-xs">Already sent</Badge>}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                    <DialogFooter>
+                                        <Button variant="outline" onClick={() => { setMatchmakeOpen(false); setMatchmakeBusinessIds([]); }}>Cancel</Button>
+                                        <Button disabled={matchmakeBusinessIds.length === 0 || matchmakeLoading} onClick={async () => {
+                                            if (!selectedAttachment) return;
+                                            setMatchmakeLoading(true);
+                                            try {
+                                                await attachmentService.adminMatchmake(selectedAttachment._id, matchmakeBusinessIds);
+                                                toast({ title: `Sent to ${matchmakeBusinessIds.length} business(es)` });
+                                                setMatchmakeOpen(false);
+                                                setMatchmakeBusinessIds([]);
+                                                fetchAttachments();
+                                            } catch {
+                                                toast({ title: 'Matchmaking failed', variant: 'destructive' });
+                                            } finally {
+                                                setMatchmakeLoading(false);
+                                            }
+                                        }}>
+                                            {matchmakeLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                                            Send to {matchmakeBusinessIds.length} Business{matchmakeBusinessIds.length !== 1 ? 'es' : ''}
+                                        </Button>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
+                        </div>
                     )}
                 </div>
             </main>
