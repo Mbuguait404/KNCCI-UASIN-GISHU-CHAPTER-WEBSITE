@@ -57,7 +57,13 @@ export const attachmentService = {
 
   async adminList(params?: { page?: number; limit?: number; status?: string }) {
     const res = await api.get('/attachment/admin', { params });
-    return res.data?.data as { data: AttachmentRequest[]; pagination: any };
+    // ResponseInterceptor spreads { data, pagination } so response is { success, data: [...], pagination: {...} }
+    return {
+      data: (res.data?.data ?? []) as AttachmentRequest[],
+      pagination: (res.data?.pagination ?? { total: 0, page: 1, limit: 20, totalPages: 1 }) as {
+        total: number; page: number; limit: number; totalPages: number;
+      },
+    };
   },
 
   async adminGetOne(id: string): Promise<AttachmentRequest> {

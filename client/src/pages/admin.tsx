@@ -1185,7 +1185,7 @@ export default function AdminDashboard() {
                             { key: "sellers", label: "Sellers", icon: <Store className="w-4 h-4" /> },
                             { key: "orders", label: "Orders", icon: <CreditCard className="w-4 h-4" /> },
                             { key: "subscriptions", label: "Subscriptions", icon: <Crown className="w-4 h-4" /> },
-                            { key: "attachments", label: "Attachments", icon: <GraduationCap className="w-4 h-4" /> },
+                            { key: "attachments", label: "Student Attachment", icon: <GraduationCap className="w-4 h-4" /> },
                             { key: "bulk-import", label: "Bulk Import", icon: <Upload className="w-4 h-4" /> },
                             { key: "messaging", label: "Messaging", icon: <MessageSquare className="w-4 h-4" /> },
                         ].map((item) => (
@@ -1253,7 +1253,7 @@ export default function AdminDashboard() {
                                             activeTab === "sellers" ? "Sellers" :
                                                 activeTab === "orders" ? "Orders" :
                                                     activeTab === "subscriptions" ? "Subscriptions" :
-                                                    activeTab === "attachments" ? "Attachments" :
+                                                    activeTab === "attachments" ? "Student Attachment" :
                                                         "Messaging"}
                             </p>
                         </div>
@@ -1286,7 +1286,7 @@ export default function AdminDashboard() {
                                 { key: "sellers", label: "Sellers", icon: <Store className="w-4 h-4" /> },
                                 { key: "orders", label: "Orders", icon: <CreditCard className="w-4 h-4" /> },
                                 { key: "subscriptions", label: "Subscriptions", icon: <Crown className="w-4 h-4" /> },
-                                { key: "attachments", label: "Attachments", icon: <GraduationCap className="w-4 h-4" /> },
+                                { key: "attachments", label: "Student Attachment", icon: <GraduationCap className="w-4 h-4" /> },
                                 { key: "messaging", label: "Messaging", icon: <MessageSquare className="w-4 h-4" /> },
                             ].map((item) => (
                                 <button
@@ -1353,7 +1353,7 @@ export default function AdminDashboard() {
                              activeTab === "sellers" ? "Seller Marketplace" :
                              activeTab === "orders" ? "System Orders" :
                              activeTab === "subscriptions" ? "Subscription Plans" :
-                             activeTab === "attachments" ? "Attachment Requests" :
+                             activeTab === "attachments" ? "Student Attachment Requests" :
                               "Messaging Center"}
                         </h1>
                     </motion.div>
