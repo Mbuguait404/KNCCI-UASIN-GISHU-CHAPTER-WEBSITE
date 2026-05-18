@@ -18,6 +18,8 @@ import { staticEvent, staticSpeakers, staticVenue, staticTestimonials } from "@/
 import { Event } from "@shared/schema";
 import { RegistrationDialog } from "@/components/registration-dialog";
 import { useRegistration } from "@/contexts/registration-context";
+import { Link } from "wouter";
+import { GraduationCap, ArrowRight } from "lucide-react";
 
 export default function Home() {
   const { isOpen, closeRegistration } = useRegistration();
@@ -64,6 +66,31 @@ export default function Home() {
         <ProgramSection /> */}
           {/* <VenueSection /> */}
           <ServicesSection />
+
+          {/* Student Attachment CTA */}
+          <section className="py-16 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-y border-primary/10">
+            <div className="container mx-auto px-4">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-8 max-w-5xl mx-auto">
+                <div className="flex items-start gap-5">
+                  <div className="w-14 h-14 rounded-2xl bg-primary/15 flex items-center justify-center flex-shrink-0 border border-primary/20">
+                    <GraduationCap className="w-7 h-7 text-primary" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-extrabold tracking-tight">Student Attachment Programme</h2>
+                    <p className="text-muted-foreground mt-1 max-w-lg">
+                      University students can apply for industrial attachment with verified KNCCI member businesses in Uasin Gishu County.
+                    </p>
+                  </div>
+                </div>
+                <Link href="/attachment">
+                  <a className="inline-flex items-center gap-2 bg-primary text-primary-foreground font-bold px-8 py-4 rounded-2xl shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all hover:scale-105 whitespace-nowrap flex-shrink-0">
+                    Apply Now <ArrowRight className="w-4 h-4" />
+                  </a>
+                </Link>
+              </div>
+            </div>
+          </section>
+
           <RegistrationSection />
           <LocationSection />
           <GallerySection />

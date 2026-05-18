@@ -45,6 +45,7 @@ const navItems: NavItem[] = [
       { label: "Chairman's Word", href: "/about#chairman-message", description: "A message from Willy K. Kenei." },
       { label: "Board of Directors", href: "/board", description: "Meet our leadership team." },
       { label: "Membership", href: "/membership", description: "Join our membership program." },
+      { label: "Student Attachment", href: "/attachment", description: "Apply for an internship with a KNCCI member business." },
     ],
   },
   {
