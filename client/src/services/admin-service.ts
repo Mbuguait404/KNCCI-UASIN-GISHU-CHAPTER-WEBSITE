@@ -18,6 +18,7 @@ export interface MemberListParams {
     search?: string;
     role?: 'member' | 'admin';
     plan?: 'Bronze' | 'Silver' | 'Gold';
+    memberType?: 'director' | 'member';
 }
 
 export interface MemberDoc {
@@ -26,6 +27,7 @@ export interface MemberDoc {
     email: string;
     reg_no: string;
     role: string;
+    memberType?: 'director' | 'member';
     phone?: string;
     business?: {
         _id: string;
@@ -233,8 +235,8 @@ export const adminService = {
     },
 
     /** PATCH /membership-applications/admin/:id/status */
-    async updateApplicationStatus(id: string, status: string): Promise<{ success: boolean; data: { application: any; password?: string }; message: string }> {
-        const response = await api.patch(`/membership-applications/admin/${id}/status`, { status });
+    async updateApplicationStatus(id: string, status: string, memberType?: 'director' | 'member'): Promise<{ success: boolean; data: { application: any; password?: string }; message: string }> {
+        const response = await api.patch(`/membership-applications/admin/${id}/status`, { status, ...(memberType ? { memberType } : {}) });
         return response.data;
     },
 
@@ -318,6 +320,19 @@ export const adminService = {
     /** DELETE /admin/sellers/:id */
     async deleteSeller(id: string): Promise<{ success: boolean; message: string }> {
         const response = await api.delete(`/admin/sellers/${id}`);
+        return response.data;
+    },
+
+    /** PATCH /admin/sellers/:id/payment */
+    async updateSellerPayment(id: string, data: {
+        amountPaid?: number;
+        paymentMethod?: string;
+        paymentStatus?: 'pending' | 'partial' | 'paid' | 'verified';
+        transactionReference?: string;
+        paymentDate?: string;
+        paymentNotes?: string;
+    }): Promise<{ success: boolean; data: SellerDoc; message: string }> {
+        const response = await api.patch(`/admin/sellers/${id}/payment`, data);
         return response.data;
     },
 
