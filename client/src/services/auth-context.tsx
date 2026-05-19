@@ -81,9 +81,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const login = async (credentials: any): Promise<User | OtpPendingState> => {
         try {
             const response = await authService.login(credentials);
-            // OTP flow: backend signals two-factor is required
-            if (response.requiresOTP) {
-                return response as OtpPendingState;
+            // OTP flow: backend wraps in { success, data: { requiresOTP, ... } }
+            const payload = response?.data ?? response;
+            if (payload.requiresOTP) {
+                return payload as OtpPendingState;
             }
             if (response.success) {
                 localStorage.setItem('accessToken', response.data.accessToken);
