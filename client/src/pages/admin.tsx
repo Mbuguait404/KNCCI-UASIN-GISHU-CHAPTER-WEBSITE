@@ -918,11 +918,17 @@ export default function AdminDashboard() {
         }
         setSavingMeeting(true);
         try {
+            const toISO = (val: string) => val ? new Date(val).toISOString() : val;
+            const payload = {
+                ...meetingForm,
+                startDateTime: toISO(meetingForm.startDateTime),
+                endDateTime: meetingForm.endDateTime ? toISO(meetingForm.endDateTime) : undefined,
+            };
             if (editingMeeting) {
-                await meetingService.updateMeeting(editingMeeting._id, meetingForm);
+                await meetingService.updateMeeting(editingMeeting._id, payload);
                 toast({ title: "Meeting Updated" });
             } else {
-                await meetingService.createMeeting(meetingForm);
+                await meetingService.createMeeting(payload);
                 toast({ title: "Meeting Created" });
             }
             setMeetingModalOpen(false);
