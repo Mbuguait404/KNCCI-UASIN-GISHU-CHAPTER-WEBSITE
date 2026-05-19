@@ -322,6 +322,7 @@ export default function AdminDashboard() {
         title: '',
         description: '',
         location: '',
+        meetingLink: '',
         startDateTime: '',
         endDateTime: '',
         targetGroup: 'all' as MeetingTargetGroup,
@@ -893,7 +894,7 @@ export default function AdminDashboard() {
 
     const openCreateMeeting = () => {
         setEditingMeeting(null);
-        setMeetingForm({ title: '', description: '', location: '', startDateTime: '', endDateTime: '', targetGroup: 'all', status: 'scheduled' });
+        setMeetingForm({ title: '', description: '', location: '', meetingLink: '', startDateTime: '', endDateTime: '', targetGroup: 'all', status: 'scheduled' });
         setMeetingModalOpen(true);
     };
 
@@ -903,6 +904,7 @@ export default function AdminDashboard() {
             title: m.title,
             description: m.description || '',
             location: m.location || '',
+            meetingLink: (m as any).meetingLink || '',
             startDateTime: m.startDateTime ? m.startDateTime.slice(0, 16) : '',
             endDateTime: m.endDateTime ? m.endDateTime.slice(0, 16) : '',
             targetGroup: m.targetGroup,
@@ -4475,6 +4477,19 @@ export default function AdminDashboard() {
                         <div className="space-y-1.5">
                             <label className="text-xs font-bold uppercase text-muted-foreground">Location</label>
                             <Input value={meetingForm.location} onChange={(e) => setMeetingForm(f => ({ ...f, location: e.target.value }))} placeholder="e.g. KNCCI Boardroom, Eldoret" className="h-11 rounded-xl" />
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5">
+                                Virtual Meeting Link
+                                <span className="text-[10px] font-normal text-muted-foreground normal-case">(Google Meet or Zoom — optional)</span>
+                            </label>
+                            <Input
+                                value={meetingForm.meetingLink}
+                                onChange={(e) => setMeetingForm(f => ({ ...f, meetingLink: e.target.value }))}
+                                placeholder="https://meet.google.com/xxx or https://zoom.us/j/xxx"
+                                className="h-11 rounded-xl"
+                                type="url"
+                            />
                         </div>
                         <div className="space-y-1.5">
                             <label className="text-xs font-bold uppercase text-muted-foreground">Invite</label>
