@@ -30,7 +30,12 @@ export const authService = {
     async changePassword(data: any) {
         const response = await api.patch('/auth/change-password', data);
         return response.data;
-    }
+    },
+
+    async verifyOtp(otpToken: string, code: string, options?: { password?: string }) {
+        const response = await api.post('/auth/verify-otp', { otpToken, code, ...options });
+        return response.data;
+    },
 };
 
 export { api };

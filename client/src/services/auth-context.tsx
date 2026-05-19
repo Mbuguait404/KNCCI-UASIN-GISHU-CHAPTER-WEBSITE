@@ -12,10 +12,20 @@ interface User {
     requirePasswordChange?: boolean;
 }
 
+export interface OtpPendingState {
+    requiresOTP: true;
+    otpToken: string;
+    email?: string;
+    maskedEmail?: string;
+    maskedPhone?: string;
+    message?: string;
+}
+
 interface AuthContextType {
     user: User | null;
     loading: boolean;
-    login: (credentials: any) => Promise<User>;
+    login: (credentials: any) => Promise<User | OtpPendingState>;
+    verifyOtp: (otpToken: string, code: string, options?: { password?: string }) => Promise<User>;
     logout: () => void;
     updateUser: (userData: Partial<User>) => void;
     temporaryPassword: string | null;
@@ -68,9 +78,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         initAuth();
     }, []);
 
-    const login = async (credentials: any): Promise<User> => {
+    const login = async (credentials: any): Promise<User | OtpPendingState> => {
         try {
             const response = await authService.login(credentials);
+            // OTP flow: backend signals two-factor is required
+            if (response.requiresOTP) {
+                return response as OtpPendingState;
+            }
             if (response.success) {
                 localStorage.setItem('accessToken', response.data.accessToken);
                 setUser(response.data.user);
@@ -93,6 +107,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             throw new Error('Login failed');
         } catch (error) {
             console.error("Login failed:", error);
+            throw error;
+        }
+    };
+
+    const verifyOtp = async (otpToken: string, code: string, options?: { password?: string }): Promise<User> => {
+        try {
+            const response = await authService.verifyOtp(otpToken, code, options);
+            if (response.success) {
+                localStorage.setItem('accessToken', response.data.accessToken);
+                setUser(response.data.user);
+
+                const shouldKeepTemporaryPassword =
+                    response.data.user?.requirePasswordChange &&
+                    typeof options?.password === 'string' &&
+                    options.password.length > 0;
+
+                if (shouldKeepTemporaryPassword) {
+                    setTemporaryPassword(options!.password!);
+                    sessionStorage.setItem(TEMP_PASSWORD_STORAGE_KEY, options!.password!);
+                } else {
+                    setTemporaryPassword(null);
+                    sessionStorage.removeItem(TEMP_PASSWORD_STORAGE_KEY);
+                }
+
+                return response.data.user;
+            }
+            throw new Error('OTP verification failed');
+        } catch (error) {
+            console.error("OTP verification failed:", error);
             throw error;
         }
     };
@@ -122,6 +165,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 user,
                 loading,
                 login,
+                verifyOtp,
                 logout,
                 updateUser,
                 temporaryPassword,

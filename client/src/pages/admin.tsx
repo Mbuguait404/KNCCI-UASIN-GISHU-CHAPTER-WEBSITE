@@ -9,8 +9,8 @@ import {
     AlertTriangle, Loader2, FileText, MessageSquare, Send,
     Plus, Pencil, Clock, CheckCircle2, XCircle, Smartphone,
     AtSign, UserPlus, FileEdit, Upload, Download,
-    User, Store,
-    CreditCard
+    User, Store, Menu,
+    CreditCard, GraduationCap, Calendar, CalendarDays, Bell, Star
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +32,7 @@ import {
     AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { SEOHead } from "@/components/seo/seo-head";
 import { useAuth } from "@/services/auth-context";
 import { adminService, DashboardStats, MemberDoc, PaginatedMembers, SellerDoc, PaginatedSellers, OrderStats, SubscriptionPlan, SubscriptionStats, PaginatedOrders, PaginatedSubscribers } from "@/services/admin-service";
@@ -42,6 +43,13 @@ import { BUSINESS_CATEGORIES, normalizeBusinessCategory } from "@shared/business
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { ContentManagementPanel } from "@/components/admin/content-management-panel";
+import { meetingService, MeetingDoc, MeetingTargetGroup, MeetingStatus } from "@/services/meeting-service";
+import { attachmentService, AttachmentRequest, AttachmentPagination } from "@/services/attachment-service";
+import { Calendar as BigCalendar, momentLocalizer, Views } from 'react-big-calendar';
+import moment from 'moment';
+import 'react-big-calendar/lib/css/react-big-calendar.css';
+
+const localizer = momentLocalizer(moment);
 
 
 // ── Plan badge styling ──────────────────────────────────────────────────────
@@ -82,6 +90,48 @@ function RoleBadge({ role }: { role: string }) {
             <Users className="w-3 h-3" /> Member
         </span>
     );
+}
+
+function MemberTypeBadge({ memberType }: { memberType?: string }) {
+    if (!memberType || memberType === 'member') {
+        return (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-sky-500/10 border border-sky-500/20 text-sky-600 dark:text-sky-400">
+                <Users className="w-3 h-3" /> Member
+            </span>
+        );
+    }
+    return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400">
+            <Star className="w-3 h-3" /> Director
+        </span>
+    );
+}
+
+function PaymentStatusBadge({ status }: { status?: string }) {
+    const config: Record<string, { color: string; bg: string; border: string }> = {
+        pending: { color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-500/10", border: "border-amber-500/20" },
+        partial: { color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-500/10", border: "border-blue-500/20" },
+        paid: { color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/20" },
+        verified: { color: "text-green-700 dark:text-green-400", bg: "bg-green-500/10", border: "border-green-500/20" },
+    };
+    const cfg = config[status || "pending"] || config.pending;
+    return (
+        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${cfg.bg} ${cfg.border} ${cfg.color}`}>
+            <CreditCard className="w-3 h-3" /> {status || "pending"}
+        </span>
+    );
+}
+
+function AttachmentStatusBadge({ status }: { status: string }) {
+    const configs: Record<string, { color: string; bg: string; label: string }> = {
+        pending: { color: 'text-amber-700', bg: 'bg-amber-500/10 border-amber-500/20', label: 'Pending' },
+        matchmaking: { color: 'text-blue-700', bg: 'bg-blue-500/10 border-blue-500/20', label: 'Matchmaking' },
+        placed: { color: 'text-green-700', bg: 'bg-green-500/10 border-green-500/20', label: 'Placed' },
+        rejected: { color: 'text-red-700', bg: 'bg-red-500/10 border-red-500/20', label: 'Rejected' },
+        completed: { color: 'text-purple-700', bg: 'bg-purple-500/10 border-purple-500/20', label: 'Completed' },
+    };
+    const cfg = configs[status] || configs.pending;
+    return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${cfg.bg} ${cfg.color}`}>{cfg.label}</span>;
 }
 
 
@@ -254,6 +304,32 @@ export default function AdminDashboard() {
 
     // Active sidebar item
     const [activeTab, setActiveTab] = useState("overview");
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    // memberType filter for members tab
+    const [memberTypeFilter, setMemberTypeFilter] = useState<string>("all");
+
+    // Approval dialog with memberType
+    const [approveDialogOpen, setApproveDialogOpen] = useState(false);
+    const [pendingApproveId, setPendingApproveId] = useState<string>("");
+    const [pendingApproveMemberType, setPendingApproveMemberType] = useState<'director' | 'member'>('member');
+
+    // Meetings state
+    const [meetings, setMeetings] = useState<MeetingDoc[]>([]);
+    const [loadingMeetings, setLoadingMeetings] = useState(false);
+    const [meetingModalOpen, setMeetingModalOpen] = useState(false);
+    const [editingMeeting, setEditingMeeting] = useState<MeetingDoc | null>(null);
+    const [meetingForm, setMeetingForm] = useState({
+        title: '',
+        description: '',
+        location: '',
+        startDateTime: '',
+        endDateTime: '',
+        targetGroup: 'all' as MeetingTargetGroup,
+        status: 'scheduled' as MeetingStatus,
+    });
+    const [savingMeeting, setSavingMeeting] = useState(false);
+    const [sendingNotification, setSendingNotification] = useState<string | null>(null);
+    const [calendarView, setCalendarView] = useState<string>(Views.MONTH);
 
     // ─── Sellers State ─────────────────────────────────────────────
     const [sellers, setSellers] = useState<PaginatedSellers | null>(null);
@@ -266,6 +342,15 @@ export default function AdminDashboard() {
     const [selectedSeller, setSelectedSeller] = useState<SellerDoc | null>(null);
     const [sellerDetailOpen, setSellerDetailOpen] = useState(false);
     const [sellerRejectionReason, setSellerRejectionReason] = useState("");
+    const [verifyPaymentOpen, setVerifyPaymentOpen] = useState(false);
+    const [verifyPaymentForm, setVerifyPaymentForm] = useState({
+        amountPaid: 0,
+        paymentMethod: "",
+        paymentStatus: "pending" as "pending" | "partial" | "paid" | "verified",
+        transactionReference: "",
+        paymentDate: "",
+        paymentNotes: "",
+    });
 
     // ─── Messaging state ────────────────────────────────────────────
     const [msgSubTab, setMsgSubTab] = useState<"compose" | "templates" | "logs" | "settings">("compose");
@@ -318,6 +403,16 @@ export default function AdminDashboard() {
     const [subPage, setSubPage] = useState(1);
     const [subSearch, setSubSearch] = useState("");
 
+    // ─── Attachments State ────────────────────────────────────────
+    const [attachments, setAttachments] = useState<AttachmentRequest[]>([]);
+    const [attachmentsLoading, setAttachmentsLoading] = useState(false);
+    const [attachmentPagination, setAttachmentPagination] = useState<AttachmentPagination>({ total: 0, page: 1, limit: 10 });
+    const [attachmentStatusFilter, setAttachmentStatusFilter] = useState("");
+    const [selectedAttachment, setSelectedAttachment] = useState<AttachmentRequest | null>(null);
+    const [matchmakeOpen, setMatchmakeOpen] = useState(false);
+    const [matchmakeBusinessIds, setMatchmakeBusinessIds] = useState<string[]>([]);
+    const [matchmakeLoading, setMatchmakeLoading] = useState(false);
+
     // ─── Auth guard ────────────────────────────────────────────────────
     useEffect(() => {
         if (!authLoading && (!isAuthenticated || user?.role !== "admin")) {
@@ -346,6 +441,7 @@ export default function AdminDashboard() {
             if (searchQuery) params.search = searchQuery;
             if (roleFilter !== "all") params.role = roleFilter;
             if (planFilter !== "all") params.plan = planFilter;
+            if (memberTypeFilter !== "all") params.memberType = memberTypeFilter;
             const res = await adminService.getMembers(params);
             if (res.success) setMembers(res.data);
         } catch (err: any) {
@@ -353,7 +449,7 @@ export default function AdminDashboard() {
         } finally {
             setLoadingMembers(false);
         }
-    }, [currentPage, searchQuery, roleFilter, planFilter, toast]);
+    }, [currentPage, searchQuery, roleFilter, planFilter, memberTypeFilter, toast]);
 
     useEffect(() => { fetchStats(); }, [fetchStats]);
     useEffect(() => { fetchMembers(); }, [fetchMembers]);
@@ -368,6 +464,18 @@ export default function AdminDashboard() {
             toast({ title: "Error", description: err.response?.data?.message || "Failed to load applications", variant: "destructive" });
         } finally {
             setLoadingApplications(false);
+        }
+    }, [toast]);
+
+    const fetchMeetings = useCallback(async () => {
+        try {
+            setLoadingMeetings(true);
+            const res = await meetingService.getMeetings();
+            if (res.success) setMeetings(res.data);
+        } catch {
+            toast({ title: "Error", description: "Failed to load meetings", variant: "destructive" });
+        } finally {
+            setLoadingMeetings(false);
         }
     }, [toast]);
 
@@ -433,6 +541,7 @@ export default function AdminDashboard() {
     }, [subPage, subSearch, toast]);
 
     useEffect(() => { fetchApplications(); }, [fetchApplications]);
+    useEffect(() => { if (activeTab === 'meetings') fetchMeetings(); }, [activeTab, fetchMeetings]);
 
     // ─── Fetch sellers ────────────────────────────────────────────────
     const fetchSellers = useCallback(async () => {
@@ -450,12 +559,28 @@ export default function AdminDashboard() {
         }
     }, [sellerPage, sellerSearch, sellerStatusFilter, toast]);
 
+    const fetchAttachments = useCallback(async () => {
+        try {
+            setAttachmentsLoading(true);
+            const params: any = {};
+            if (attachmentStatusFilter) params.status = attachmentStatusFilter;
+            const result = await attachmentService.adminList(params);
+            setAttachments(result.data);
+            setAttachmentPagination(result.pagination);
+        } catch (err: any) {
+            toast({ title: "Error", description: err.response?.data?.message || "Failed to load attachments", variant: "destructive" });
+        } finally {
+            setAttachmentsLoading(false);
+        }
+    }, [attachmentStatusFilter, toast]);
+
     useEffect(() => {
         if (activeTab === "overview") { fetchOrderStats(); fetchSubscriptionStats(); }
         if (activeTab === "sellers") fetchSellers();
         if (activeTab === "orders") { fetchOrders(); fetchOrderStats(); }
         if (activeTab === "subscriptions") { fetchPlans(); fetchSubscriptionStats(); fetchSubscribers(); }
-    }, [fetchSellers, fetchOrders, fetchOrderStats, fetchPlans, fetchSubscriptionStats, fetchSubscribers, activeTab]);
+        if (activeTab === "attachments") fetchAttachments();
+    }, [fetchSellers, fetchOrders, fetchOrderStats, fetchPlans, fetchSubscriptionStats, fetchSubscribers, fetchAttachments, activeTab]);
 
     // ─── Messaging data fetchers ────────────────────────────────────
     const fetchMsgTemplates = useCallback(async () => {
@@ -668,10 +793,10 @@ export default function AdminDashboard() {
         }
     };
 
-    const handleApplicationStatus = async (id: string, status: string) => {
+    const handleApplicationStatus = async (id: string, status: string, memberType?: 'director' | 'member') => {
         setActionLoading(true);
         try {
-            const res = await adminService.updateApplicationStatus(id, status);
+            const res = await adminService.updateApplicationStatus(id, status, memberType);
             toast({ title: "Status Updated", description: `Application is now ${status}.` });
 
             // Always send approval notification when approving — password may be undefined for
@@ -763,6 +888,72 @@ export default function AdminDashboard() {
             toast({ title: "Error", description: err.response?.data?.message || "Failed to delete application", variant: "destructive" });
         } finally {
             setActionLoading(false);
+        }
+    };
+
+    const openCreateMeeting = () => {
+        setEditingMeeting(null);
+        setMeetingForm({ title: '', description: '', location: '', startDateTime: '', endDateTime: '', targetGroup: 'all', status: 'scheduled' });
+        setMeetingModalOpen(true);
+    };
+
+    const openEditMeeting = (m: MeetingDoc) => {
+        setEditingMeeting(m);
+        setMeetingForm({
+            title: m.title,
+            description: m.description || '',
+            location: m.location || '',
+            startDateTime: m.startDateTime ? m.startDateTime.slice(0, 16) : '',
+            endDateTime: m.endDateTime ? m.endDateTime.slice(0, 16) : '',
+            targetGroup: m.targetGroup,
+            status: m.status,
+        });
+        setMeetingModalOpen(true);
+    };
+
+    const handleSaveMeeting = async () => {
+        if (!meetingForm.title || !meetingForm.startDateTime) {
+            toast({ title: "Missing fields", description: "Title and start date/time are required.", variant: "destructive" });
+            return;
+        }
+        setSavingMeeting(true);
+        try {
+            if (editingMeeting) {
+                await meetingService.updateMeeting(editingMeeting._id, meetingForm);
+                toast({ title: "Meeting Updated" });
+            } else {
+                await meetingService.createMeeting(meetingForm);
+                toast({ title: "Meeting Created" });
+            }
+            setMeetingModalOpen(false);
+            fetchMeetings();
+        } catch (err: any) {
+            toast({ title: "Error", description: err.response?.data?.message || "Failed to save meeting", variant: "destructive" });
+        } finally {
+            setSavingMeeting(false);
+        }
+    };
+
+    const handleCancelMeeting = async (id: string) => {
+        try {
+            await meetingService.deleteMeeting(id);
+            toast({ title: "Meeting Cancelled" });
+            fetchMeetings();
+        } catch {
+            toast({ title: "Error", description: "Failed to cancel meeting", variant: "destructive" });
+        }
+    };
+
+    const handleSendNotifications = async (id: string) => {
+        setSendingNotification(id);
+        try {
+            const res = await meetingService.sendNotifications(id);
+            toast({ title: "Notifications Sent", description: res.message || "Notifications dispatched successfully." });
+            fetchMeetings();
+        } catch (err: any) {
+            toast({ title: "Error", description: err.response?.data?.message || "Failed to send notifications", variant: "destructive" });
+        } finally {
+            setSendingNotification(null);
         }
     };
 
@@ -876,6 +1067,44 @@ export default function AdminDashboard() {
             setActionLoading(false);
         }
     };
+
+    const handleVerifyPayment = async (id: string) => {
+        setActionLoading(true);
+        try {
+            const res = await adminService.updateSellerPayment(id, {
+                amountPaid: Number(verifyPaymentForm.amountPaid) || 0,
+                paymentMethod: verifyPaymentForm.paymentMethod,
+                paymentStatus: verifyPaymentForm.paymentStatus,
+                transactionReference: verifyPaymentForm.transactionReference || undefined,
+                paymentDate: verifyPaymentForm.paymentDate || undefined,
+                paymentNotes: verifyPaymentForm.paymentNotes || undefined,
+            });
+            if (res.success) {
+                toast({ title: "Payment Updated", description: `Payment status set to ${verifyPaymentForm.paymentStatus}.` });
+                setVerifyPaymentOpen(false);
+                fetchSellers();
+                if (selectedSeller && selectedSeller._id === id) setSelectedSeller(res.data);
+            }
+        } catch (err: any) {
+            toast({ title: "Error", description: err.response?.data?.message || "Failed to update payment", variant: "destructive" });
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const openVerifyPayment = (seller: SellerDoc) => {
+        setSelectedSeller(seller);
+        setVerifyPaymentForm({
+            amountPaid: (seller as any).amountPaid ?? 0,
+            paymentMethod: (seller as any).paymentMethod ?? "",
+            paymentStatus: (seller as any).paymentStatus ?? "pending",
+            transactionReference: (seller as any).transactionReference ?? "",
+            paymentDate: (seller as any).paymentDate ? (seller as any).paymentDate.slice(0, 10) : "",
+            paymentNotes: "",
+        });
+        setVerifyPaymentOpen(true);
+    };
+
 
     const openSellerDetail = async (seller: SellerDoc) => {
         try {
@@ -1066,6 +1295,8 @@ export default function AdminDashboard() {
                             { key: "sellers", label: "Sellers", icon: <Store className="w-4 h-4" /> },
                             { key: "orders", label: "Orders", icon: <CreditCard className="w-4 h-4" /> },
                             { key: "subscriptions", label: "Subscriptions", icon: <Crown className="w-4 h-4" /> },
+                            { key: "attachments", label: "Student Attachment", icon: <GraduationCap className="w-4 h-4" /> },
+                            { key: "meetings", label: "Meetings", icon: <Calendar className="w-4 h-4" /> },
                             { key: "bulk-import", label: "Bulk Import", icon: <Upload className="w-4 h-4" /> },
                             { key: "messaging", label: "Messaging", icon: <MessageSquare className="w-4 h-4" /> },
                         ].map((item) => (
@@ -1124,27 +1355,95 @@ export default function AdminDashboard() {
                 <div className="lg:hidden flex items-center justify-between p-4 border-b border-border/40 bg-white dark:bg-slate-900 sticky top-0 z-10">
                     <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-white font-extrabold text-xs">K</div>
-                        <h2 className="font-extrabold text-sm">Admin Panel</h2>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <Tabs value={activeTab} onValueChange={setActiveTab}>
-                            <TabsList className="h-9">
-                                <TabsTrigger value="overview" className="text-xs px-3 h-7"><BarChart3 className="w-3.5 h-3.5" /></TabsTrigger>
-                                <TabsTrigger value="members" className="text-xs px-3 h-7"><Users className="w-3.5 h-3.5" /></TabsTrigger>
-                                <TabsTrigger value="applications" className="text-xs px-3 h-7"><FileText className="w-3.5 h-3.5" /></TabsTrigger>
-                                <TabsTrigger value="content" className="text-xs px-3 h-7"><FileEdit className="w-3.5 h-3.5" /></TabsTrigger>
-                                <TabsTrigger value="orders" className="text-xs px-3 h-7"><CreditCard className="w-3.5 h-3.5" /></TabsTrigger>
-                                <TabsTrigger value="messaging" className="text-xs px-3 h-7"><MessageSquare className="w-3.5 h-3.5" /></TabsTrigger>
-                            </TabsList>
-                        </Tabs>
-                        <Button variant="ghost" size="icon" onClick={() => setLocation('/')} title="Return to Home">
-                            <Home className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="text-red-500" onClick={logout}>
-                            <LogOut className="w-4 h-4" />
-                        </Button>
+                        <div>
+                            <h2 className="font-extrabold text-sm leading-none">KNCCI Admin</h2>
+                            <p className="text-[10px] text-muted-foreground">
+                                {activeTab === "overview" ? "Dashboard" :
+                                    activeTab === "members" ? "Members" :
+                                        activeTab === "applications" ? "Applications" :
+                                            activeTab === "sellers" ? "Sellers" :
+                                                activeTab === "orders" ? "Orders" :
+                                                    activeTab === "subscriptions" ? "Subscriptions" :
+                                                    activeTab === "attachments" ? "Student Attachment" :
+                                                    activeTab === "meetings" ? "Meetings" :
+                                                        "Messaging"}
+                            </p>
+                        </div>
                     </div>
                 </div>
+
+                {/* Mobile Slide-in Menu */}
+                <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+                    <SheetContent side="right" className="w-[280px] p-0 flex flex-col">
+                        <SheetHeader className="p-6 pb-4 border-b border-border/40">
+                            <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-white font-extrabold text-sm shadow-lg shadow-primary/20">
+                                    K
+                                </div>
+                                <div>
+                                    <SheetTitle className="font-extrabold text-sm tracking-tight">KNCCI Admin</SheetTitle>
+                                    <p className="text-[10px] text-muted-foreground font-medium">Uasin Gishu Chapter</p>
+                                </div>
+                            </div>
+                        </SheetHeader>
+
+                        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+                            {[
+                                { key: "overview", label: "Dashboard", icon: <LayoutDashboard className="w-4 h-4" /> },
+                                { key: "members", label: "Members", icon: <Users className="w-4 h-4" /> },
+                                { key: "applications", label: "Applications", icon: <FileText className="w-4 h-4" /> },
+                                { key: "sellers", label: "Sellers", icon: <Store className="w-4 h-4" /> },
+                                { key: "orders", label: "Orders", icon: <CreditCard className="w-4 h-4" /> },
+                                { key: "subscriptions", label: "Subscriptions", icon: <Crown className="w-4 h-4" /> },
+                                { key: "attachments", label: "Student Attachment", icon: <GraduationCap className="w-4 h-4" /> },
+                                { key: "meetings", label: "Meetings", icon: <Calendar className="w-4 h-4" /> },
+                                { key: "messaging", label: "Messaging", icon: <MessageSquare className="w-4 h-4" /> },
+                            ].map((item) => (
+                                <button
+                                    key={item.key}
+                                    onClick={() => { setActiveTab(item.key); setMobileMenuOpen(false); }}
+                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all duration-200 ${activeTab === item.key
+                                        ? "bg-primary/10 text-primary shadow-sm"
+                                        : "text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-foreground"
+                                        }`}
+                                >
+                                    {item.icon}
+                                    {item.label}
+                                </button>
+                            ))}
+                            <div className="pt-4 border-t border-border/30 mt-4">
+                                <Button
+                                    variant="ghost"
+                                    className="w-full justify-start text-sm font-bold text-muted-foreground hover:text-foreground hover:bg-slate-100 dark:hover:bg-slate-800"
+                                    onClick={() => { setMobileMenuOpen(false); setLocation('/'); }}
+                                >
+                                    <Home className="w-4 h-4 mr-3" /> Return to Home
+                                </Button>
+                            </div>
+                        </nav>
+
+                        <div className="p-4 border-t border-border/40 space-y-3">
+                            <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+                                <Avatar className="w-8 h-8">
+                                    <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs">
+                                        {user?.name?.split(" ").map((n: string) => n[0]).join("").slice(0, 2)}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-xs font-bold truncate">{user?.name}</p>
+                                    <p className="text-[10px] text-muted-foreground truncate">{user?.email}</p>
+                                </div>
+                            </div>
+                            <Button
+                                variant="ghost"
+                                className="w-full justify-start text-sm font-bold text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+                                onClick={() => { setMobileMenuOpen(false); logout(); }}
+                            >
+                                <LogOut className="w-4 h-4 mr-2" /> Log Out
+                            </Button>
+                        </div>
+                    </SheetContent>
+                </Sheet>
 
                 <div className="p-6 lg:p-10 max-w-7xl mx-auto space-y-8">
                     {/* ─── Header ───────────────────────────────────────── */}
@@ -1164,6 +1463,8 @@ export default function AdminDashboard() {
                              activeTab === "sellers" ? "Seller Marketplace" :
                              activeTab === "orders" ? "System Orders" :
                              activeTab === "subscriptions" ? "Subscription Plans" :
+                             activeTab === "attachments" ? "Student Attachment Requests" :
+                             activeTab === "meetings" ? "Meeting Calendar" :
                               "Messaging Center"}
                         </h1>
                     </motion.div>
@@ -1433,12 +1734,94 @@ export default function AdminDashboard() {
                                                 <SelectItem value="Bronze">Bronze</SelectItem>
                                             </SelectContent>
                                         </Select>
+                                        <Select value={memberTypeFilter} onValueChange={(v) => { setMemberTypeFilter(v); setCurrentPage(1); }}>
+                                            <SelectTrigger className="w-full sm:w-44 h-11 rounded-xl border-border/50">
+                                                <SelectValue placeholder="Member Type" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">All Types</SelectItem>
+                                                <SelectItem value="director">Directors</SelectItem>
+                                                <SelectItem value="member">Members</SelectItem>
+                                            </SelectContent>
+                                        </Select>
                                     </div>
                                 </CardContent>
                             </Card>
 
-                            {/* Members Table */}
-                            <Card className="border-border/40 overflow-hidden">
+                            {/* Members — Mobile Cards */}
+                            <div className="block sm:hidden space-y-3">
+                                {loadingMembers ? (
+                                    <div className="flex items-center justify-center h-40">
+                                        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                                    </div>
+                                ) : !members?.members?.length ? (
+                                    <div className="text-center py-12 text-muted-foreground">
+                                        <Users className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                                        <p className="text-sm font-bold">No members found</p>
+                                    </div>
+                                ) : (
+                                    members.members.map((member) => (
+                                        <Card key={member._id} className="border-border/40">
+                                            <CardContent className="p-4">
+                                                <div className="flex items-start justify-between gap-3">
+                                                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                                                        <Avatar className="w-10 h-10 flex-shrink-0">
+                                                            <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs">
+                                                                {member.name?.split(" ").map((n) => n[0]).join("").slice(0, 2)}
+                                                            </AvatarFallback>
+                                                        </Avatar>
+                                                        <div className="min-w-0">
+                                                            <p className="font-bold text-sm truncate">{member.name}</p>
+                                                            <p className="text-xs text-muted-foreground truncate">{member.email}</p>
+                                                            <p className="text-[10px] font-mono text-muted-foreground">{member.reg_no}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+                                                        <RoleBadge role={member.role} />
+                                                        <MemberTypeBadge memberType={member.memberType} />
+                                                        {member.business && <PlanBadge plan={member.business.plan} />}
+                                                    </div>
+                                                </div>
+                                                {member.business && (
+                                                    <p className="text-xs text-muted-foreground mt-2 pl-13">{member.business.name}</p>
+                                                )}
+                                                <div className="flex items-center gap-1 mt-3 pt-3 border-t border-border/30 justify-end">
+                                                    <Button variant="ghost" size="icon" className="w-8 h-8 text-blue-500 hover:bg-blue-50" onClick={() => openDetail(member)}>
+                                                        <Eye className="w-3.5 h-3.5" />
+                                                    </Button>
+                                                    <Button variant="ghost" size="icon" className="w-8 h-8 text-purple-500 hover:bg-purple-50" onClick={() => handleRoleToggle(member)} disabled={actionLoading}>
+                                                        <UserCog className="w-3.5 h-3.5" />
+                                                    </Button>
+                                                    <Button variant="ghost" size="icon" className="w-8 h-8 text-orange-500 hover:bg-orange-50" onClick={() => setResetPwTarget(member)}>
+                                                        <KeyRound className="w-3.5 h-3.5" />
+                                                    </Button>
+                                                    <Button variant="ghost" size="icon" className="w-8 h-8 text-red-500 hover:bg-red-50" onClick={() => setDeleteTarget(member)}>
+                                                        <Trash2 className="w-3.5 h-3.5" />
+                                                    </Button>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    ))
+                                )}
+                                {members && members.pagination.totalPages > 1 && (
+                                    <div className="flex items-center justify-between py-2">
+                                        <p className="text-xs text-muted-foreground">
+                                            {((currentPage - 1) * pageLimit) + 1}–{Math.min(currentPage * pageLimit, members.pagination.total)} of {members.pagination.total}
+                                        </p>
+                                        <div className="flex gap-2">
+                                            <Button variant="outline" size="sm" disabled={currentPage <= 1} onClick={() => setCurrentPage(p => p - 1)} className="h-8 px-3 rounded-lg">
+                                                <ChevronLeft className="w-4 h-4" />
+                                            </Button>
+                                            <Button variant="outline" size="sm" disabled={currentPage >= members.pagination.totalPages} onClick={() => setCurrentPage(p => p + 1)} className="h-8 px-3 rounded-lg">
+                                                <ChevronRight className="w-4 h-4" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Members Table — Desktop */}
+                            <Card className="hidden sm:block border-border/40 overflow-hidden">
                                 <div className="overflow-x-auto">
                                     <Table>
                                         <TableHeader>
@@ -1492,7 +1875,12 @@ export default function AdminDashboard() {
                                                         <TableCell>
                                                             <span className="text-xs font-mono font-bold text-muted-foreground">{member.reg_no}</span>
                                                         </TableCell>
-                                                        <TableCell><RoleBadge role={member.role} /></TableCell>
+                                                        <TableCell>
+                                                            <div className="flex flex-col gap-1">
+                                                                <RoleBadge role={member.role} />
+                                                                <MemberTypeBadge memberType={member.memberType} />
+                                                            </div>
+                                                        </TableCell>
                                                         <TableCell>
                                                             {member.business ? (
                                                                 <span className="text-sm font-medium">{member.business.name}</span>
@@ -1598,7 +1986,66 @@ export default function AdminDashboard() {
                             transition={{ duration: 0.3 }}
                             className="space-y-6"
                         >
-                            <Card className="border-border/40 overflow-hidden">
+                            {/* Applications — Mobile Cards */}
+                            <div className="block sm:hidden space-y-3">
+                                {loadingApplications ? (
+                                    <div className="flex items-center justify-center h-40"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
+                                ) : applications.length === 0 ? (
+                                    <div className="text-center py-12 text-muted-foreground">
+                                        <FileText className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                                        <p className="text-sm font-bold">No applications found</p>
+                                    </div>
+                                ) : (
+                                    applications.map((app) => (
+                                        <Card key={app._id} className="border-border/40">
+                                            <CardContent className="p-4">
+                                                <div className="flex items-start justify-between gap-2">
+                                                    <div className="min-w-0">
+                                                        <p className="font-bold text-sm">{app.name}</p>
+                                                        <p className="text-xs text-muted-foreground">{app.email}</p>
+                                                        <p className="text-xs text-muted-foreground">{app.businessName}</p>
+                                                        <p className="text-[11px] text-muted-foreground">{app.location}{app.subCounty ? `, ${app.subCounty}` : ''}</p>
+                                                    </div>
+                                                    <Badge variant={app.status === 'pending' ? 'outline' : app.status === 'approved' ? 'default' : 'destructive'} className="flex-shrink-0">
+                                                        {app.status}
+                                                    </Badge>
+                                                </div>
+                                                <div className="mt-2 flex items-center justify-between text-xs">
+                                                    <span className="text-muted-foreground">KES {app.amountToPay?.toLocaleString() || '0'}</span>
+                                                    <span className={app.amountPaid >= app.amountToPay && app.amountToPay > 0 ? "text-emerald-600 font-bold" : "text-muted-foreground"}>
+                                                        Paid: KES {app.amountPaid?.toLocaleString() || '0'}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center gap-1 mt-3 pt-3 border-t border-border/30 flex-wrap">
+                                                    <Button variant="ghost" size="icon" className="w-8 h-8 text-blue-500 hover:bg-blue-50" onClick={() => openAppDetail(app)}>
+                                                        <Eye className="w-3.5 h-3.5" />
+                                                    </Button>
+                                                    {app.status === 'pending' && (
+                                                        <Button variant="ghost" size="sm" className="h-8 text-emerald-600 hover:bg-emerald-50 text-xs font-bold" onClick={() => { setPendingApproveId(app._id); setPendingApproveMemberType('member'); setApproveDialogOpen(true); }} disabled={actionLoading}>
+                                                            Approve
+                                                        </Button>
+                                                    )}
+                                                    {app.status === 'pending' && (
+                                                        <Button variant="ghost" size="sm" className="h-8 text-amber-600 hover:bg-amber-50 text-xs font-bold" onClick={() => handleApplicationStatus(app._id, 'rejected')} disabled={actionLoading}>
+                                                            Reject
+                                                        </Button>
+                                                    )}
+                                                    {app.status === 'approved' && (
+                                                        <Button variant="ghost" size="icon" className="w-8 h-8 text-purple-500 hover:bg-purple-50" onClick={() => handleResendEmail(app._id, 'approval')} disabled={actionLoading}>
+                                                            <Mail className="w-3.5 h-3.5" />
+                                                        </Button>
+                                                    )}
+                                                    <Button variant="ghost" size="icon" className="w-8 h-8 text-red-500 hover:bg-red-50 ml-auto" onClick={() => handleApplicationDelete(app._id)}>
+                                                        <Trash2 className="w-3.5 h-3.5" />
+                                                    </Button>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    ))
+                                )}
+                            </div>
+
+                            <Card className="hidden sm:block border-border/40 overflow-hidden">
                                 <div className="overflow-x-auto">
                                     <Table>
                                         <TableHeader>
@@ -1698,7 +2145,7 @@ export default function AdminDashboard() {
                                                                     variant="ghost"
                                                                     size="sm"
                                                                     className="text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50"
-                                                                    onClick={() => handleApplicationStatus(app._id, 'approved')}
+                                                                    onClick={() => { setPendingApproveId(app._id); setPendingApproveMemberType('member'); setApproveDialogOpen(true); }}
                                                                     disabled={actionLoading || app.status === 'approved'}
                                                                 >
                                                                     Approve
@@ -2750,6 +3197,289 @@ export default function AdminDashboard() {
                             )}
                         </motion.div>
                     )}
+
+                    {activeTab === "attachments" && (
+                        <div>
+                            <div className="flex items-center justify-between mb-6">
+                                <div>
+                                    <h2 className="text-2xl font-black">Student Attachment Requests</h2>
+                                    <p className="text-muted-foreground text-sm mt-1">{attachmentPagination.total} total requests</p>
+                                </div>
+                                <Select value={attachmentStatusFilter} onValueChange={(v) => setAttachmentStatusFilter(v === 'all' ? '' : v)}>
+                                    <SelectTrigger className="w-44"><SelectValue placeholder="All Statuses" /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Statuses</SelectItem>
+                                        <SelectItem value="pending">Pending</SelectItem>
+                                        <SelectItem value="matchmaking">Matchmaking</SelectItem>
+                                        <SelectItem value="placed">Placed</SelectItem>
+                                        <SelectItem value="rejected">Rejected</SelectItem>
+                                        <SelectItem value="completed">Completed</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            {attachmentsLoading ? (
+                                <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
+                            ) : attachments.length === 0 ? (
+                                <div className="text-center py-16 text-muted-foreground">No attachment requests found</div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {attachments.map(req => (
+                                        <Card key={req._id} className="rounded-2xl border border-border/60">
+                                            <CardContent className="p-6">
+                                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                                    <div className="space-y-1">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="font-bold text-lg">{req.studentName}</span>
+                                                            <AttachmentStatusBadge status={req.status} />
+                                                        </div>
+                                                        <p className="text-sm text-muted-foreground">{req.institution} · {req.course}</p>
+                                                        <p className="text-xs text-muted-foreground">{req.studentEmail} · {req.studentPhone}</p>
+                                                        <p className="text-xs text-muted-foreground">
+                                                            {new Date(req.attachmentStartDate).toLocaleDateString()} – {new Date(req.attachmentEndDate).toLocaleDateString()}
+                                                            {req.matchRequests.length > 0 && ` · ${req.matchRequests.length} business${req.matchRequests.length > 1 ? 'es' : ''} contacted`}
+                                                        </p>
+                                                    </div>
+                                                    <div className="flex gap-2 flex-wrap">
+                                                        {req.documents.length > 0 && (
+                                                            <Button size="sm" variant="outline" className="rounded-xl" asChild>
+                                                                <a href={req.documents[0]} target="_blank" rel="noopener noreferrer">
+                                                                    <FileText className="w-4 h-4 mr-1" /> Documents ({req.documents.length})
+                                                                </a>
+                                                            </Button>
+                                                        )}
+                                                        <Button size="sm" variant="outline" className="rounded-xl" onClick={() => { setSelectedAttachment(req); setMatchmakeBusinessIds([]); setMatchmakeOpen(true); }}>
+                                                            <Users className="w-4 h-4 mr-1" /> Matchmake
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                                {req.matchRequests.length > 0 && (
+                                                    <div className="mt-4 pt-4 border-t border-border/60">
+                                                        <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">Match Requests</p>
+                                                        <div className="flex flex-wrap gap-2">
+                                                            {req.matchRequests.map(m => (
+                                                                <span key={m._id} className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${m.status === 'accepted'
+                                                                    ? 'bg-green-500/10 text-green-700 border-green-500/20'
+                                                                    : m.status === 'declined'
+                                                                        ? 'bg-red-500/10 text-red-700 border-red-500/20'
+                                                                        : 'bg-amber-500/10 text-amber-700 border-amber-500/20'
+                                                                    }`}>
+                                                                    {m.businessName} · {m.status}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </CardContent>
+                                        </Card>
+                                    ))}
+                                </div>
+                            )}
+
+                            <Dialog open={matchmakeOpen} onOpenChange={setMatchmakeOpen}>
+                                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                                    <DialogHeader>
+                                        <DialogTitle>Matchmake: {selectedAttachment?.studentName}</DialogTitle>
+                                        <DialogDescription>
+                                            Select businesses to send this attachment request to. Selected businesses will see this request in their dashboard.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                                        {(members?.members || []).filter(m => m.business && m.role !== 'admin').map(member => {
+                                            const bizId = member.business?._id;
+                                            if (!bizId) return null;
+                                            const selected = matchmakeBusinessIds.includes(bizId);
+                                            const alreadySent = selectedAttachment?.matchRequests.some(r => r.businessId === bizId);
+                                            return (
+                                                <div key={member._id} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${selected ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40'} ${alreadySent ? 'opacity-50 pointer-events-none' : ''}`}
+                                                    onClick={() => {
+                                                        if (alreadySent) return;
+                                                        setMatchmakeBusinessIds(prev =>
+                                                            prev.includes(bizId) ? prev.filter(id => id !== bizId) : [...prev, bizId]
+                                                        );
+                                                    }}>
+                                                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${selected ? 'bg-primary border-primary' : 'border-muted-foreground'}`}>
+                                                        {(selected || alreadySent) && <CheckCircle2 className="w-3 h-3 text-white" />}
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="font-bold text-sm truncate">{member.business?.name || member.name}</p>
+                                                        <p className="text-xs text-muted-foreground truncate">{member.business?.category} · {member.email}</p>
+                                                    </div>
+                                                    {alreadySent && <Badge variant="secondary" className="text-xs">Already sent</Badge>}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                    <DialogFooter>
+                                        <Button variant="outline" onClick={() => { setMatchmakeOpen(false); setMatchmakeBusinessIds([]); }}>Cancel</Button>
+                                        <Button disabled={matchmakeBusinessIds.length === 0 || matchmakeLoading} onClick={async () => {
+                                            if (!selectedAttachment) return;
+                                            setMatchmakeLoading(true);
+                                            try {
+                                                await attachmentService.adminMatchmake(selectedAttachment._id, matchmakeBusinessIds);
+                                                toast({ title: `Sent to ${matchmakeBusinessIds.length} business(es)` });
+                                                setMatchmakeOpen(false);
+                                                setMatchmakeBusinessIds([]);
+                                                fetchAttachments();
+                                            } catch {
+                                                toast({ title: 'Matchmaking failed', variant: 'destructive' });
+                                            } finally {
+                                                setMatchmakeLoading(false);
+                                            }
+                                        }}>
+                                            {matchmakeLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                                            Send to {matchmakeBusinessIds.length} Business{matchmakeBusinessIds.length !== 1 ? 'es' : ''}
+                                        </Button>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
+                        </div>
+                    )}
+                    {/* ═══ MEETINGS TAB ════════════════════════════════════ */}
+                    {activeTab === "meetings" && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.3 }}
+                            className="space-y-6"
+                        >
+                            {/* Toolbar */}
+                            <div className="flex items-center justify-between gap-4 flex-wrap">
+                                <div className="flex gap-2">
+                                    {(['month', 'week', 'day'] as const).map(v => (
+                                        <Button
+                                            key={v}
+                                            variant={calendarView === v ? 'default' : 'outline'}
+                                            size="sm"
+                                            className="rounded-xl font-bold capitalize"
+                                            onClick={() => setCalendarView(v)}
+                                        >
+                                            {v}
+                                        </Button>
+                                    ))}
+                                </div>
+                                <Button className="rounded-xl font-bold" onClick={openCreateMeeting}>
+                                    <Plus className="w-4 h-4 mr-2" /> New Meeting
+                                </Button>
+                            </div>
+
+                            {/* react-big-calendar */}
+                            <Card className="border-border/40 overflow-hidden">
+                                <CardContent className="p-4">
+                                    {loadingMeetings ? (
+                                        <div className="flex items-center justify-center h-64">
+                                            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                                        </div>
+                                    ) : (
+                                        <div style={{ height: 600 }}>
+                                            <BigCalendar
+                                                localizer={localizer}
+                                                events={meetings
+                                                    .filter(m => m.status !== 'cancelled')
+                                                    .map(m => ({
+                                                        id: m._id,
+                                                        title: `${m.targetGroup === 'directors' ? '★ ' : ''}${m.title}`,
+                                                        start: new Date(m.startDateTime),
+                                                        end: m.endDateTime ? new Date(m.endDateTime) : new Date(new Date(m.startDateTime).getTime() + 60 * 60 * 1000),
+                                                        resource: m,
+                                                    }))}
+                                                view={calendarView as any}
+                                                onView={(v) => setCalendarView(v)}
+                                                onSelectEvent={(event: any) => openEditMeeting(event.resource)}
+                                                style={{ height: '100%' }}
+                                                eventPropGetter={(event: any) => ({
+                                                    style: {
+                                                        backgroundColor: event.resource.targetGroup === 'directors' ? '#d97706' : '#2563eb',
+                                                        borderRadius: '8px',
+                                                        border: 'none',
+                                                        fontWeight: 'bold',
+                                                        fontSize: '12px',
+                                                    }
+                                                })}
+                                            />
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+
+                            {/* Meetings List */}
+                            <Card className="border-border/40">
+                                <CardHeader className="pb-3">
+                                    <CardTitle className="text-base font-extrabold flex items-center gap-2">
+                                        <CalendarDays className="w-4 h-4 text-primary" /> All Meetings
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-3">
+                                    {meetings.length === 0 ? (
+                                        <div className="text-center py-8 text-muted-foreground">
+                                            <Calendar className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                                            <p className="text-sm font-bold">No meetings scheduled</p>
+                                            <p className="text-xs">Click "New Meeting" to get started.</p>
+                                        </div>
+                                    ) : (
+                                        meetings.map(m => (
+                                            <div key={m._id} className={`flex items-start justify-between gap-4 p-4 rounded-xl border transition-colors ${m.status === 'cancelled' ? 'opacity-50 bg-slate-50/50 dark:bg-slate-900/20 border-border/20' : 'bg-white dark:bg-slate-900 border-border/40 hover:border-primary/20'}`}>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                                                        <p className="font-bold text-sm">{m.title}</p>
+                                                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${m.targetGroup === 'directors' ? 'bg-amber-500/10 border-amber-500/20 text-amber-600' : 'bg-blue-500/10 border-blue-500/20 text-blue-600'}`}>
+                                                            {m.targetGroup === 'directors' ? <Star className="w-2.5 h-2.5" /> : <Users className="w-2.5 h-2.5" />}
+                                                            {m.targetGroup === 'directors' ? 'Directors Only' : 'Everyone'}
+                                                        </span>
+                                                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${m.status === 'scheduled' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600' : m.status === 'cancelled' ? 'bg-red-500/10 border-red-500/20 text-red-600' : 'bg-slate-500/10 border-slate-500/20 text-slate-600'}`}>
+                                                            {m.status}
+                                                        </span>
+                                                        {m.notificationsSent && (
+                                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border bg-green-500/10 border-green-500/20 text-green-600">
+                                                                <Bell className="w-2.5 h-2.5" /> Notified
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {new Date(m.startDateTime).toLocaleString('en-KE', { dateStyle: 'medium', timeStyle: 'short' })}
+                                                        {m.endDateTime && ` – ${new Date(m.endDateTime).toLocaleTimeString('en-KE', { timeStyle: 'short' })}`}
+                                                    </p>
+                                                    {m.location && <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5"><MapPin className="w-3 h-3" /> {m.location}</p>}
+                                                    {m.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{m.description}</p>}
+                                                </div>
+                                                {m.status !== 'cancelled' && (
+                                                    <div className="flex items-center gap-1 flex-shrink-0">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="text-xs font-bold h-8 rounded-xl text-blue-600 hover:bg-blue-50"
+                                                            onClick={() => openEditMeeting(m)}
+                                                        >
+                                                            <Pencil className="w-3 h-3 mr-1" /> Edit
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className={`text-xs font-bold h-8 rounded-xl ${m.notificationsSent ? 'text-muted-foreground' : 'text-emerald-600 hover:bg-emerald-50'}`}
+                                                            onClick={() => handleSendNotifications(m._id)}
+                                                            disabled={!!sendingNotification}
+                                                        >
+                                                            {sendingNotification === m._id ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Bell className="w-3 h-3 mr-1" />}
+                                                            {m.notificationsSent ? 'Resend' : 'Notify'}
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="w-8 h-8 text-red-500 hover:bg-red-50"
+                                                            onClick={() => handleCancelMeeting(m._id)}
+                                                            title="Cancel Meeting"
+                                                        >
+                                                            <XCircle className="w-4 h-4" />
+                                                        </Button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </motion.div>
+                    )}
                 </div>
             </main>
 
@@ -3661,6 +4391,213 @@ export default function AdminDashboard() {
                             )}
                         </div>
                     )}
+                </DialogContent>
+            </Dialog>
+
+            {/* ─── Verify Payment Dialog ───────────────────────────────────  */}
+            {/* ─── Approve Application Dialog ──────────────────────────────  */}
+            <Dialog open={approveDialogOpen} onOpenChange={setApproveDialogOpen}>
+                <DialogContent className="max-w-md rounded-2xl">
+                    <DialogHeader>
+                        <DialogTitle className="font-extrabold">Approve Application</DialogTitle>
+                        <DialogDescription>
+                            Before approving, assign this person's member type. This determines which meetings and features they can access.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-2">
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold uppercase text-muted-foreground">Member Type</label>
+                            <Select value={pendingApproveMemberType} onValueChange={(v) => setPendingApproveMemberType(v as 'director' | 'member')}>
+                                <SelectTrigger className="h-11 rounded-xl border-border/50">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="member">Member — Regular member access</SelectItem>
+                                    <SelectItem value="director">Director — Senior member, invited to director meetings</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className={`p-3 rounded-xl border ${pendingApproveMemberType === 'director' ? 'bg-amber-500/10 border-amber-500/20' : 'bg-sky-500/10 border-sky-500/20'}`}>
+                            <p className="text-xs font-bold text-muted-foreground">
+                                {pendingApproveMemberType === 'director'
+                                    ? '★ Directors receive invitations to Director-only meetings as well as All-member meetings.'
+                                    : 'Members receive invitations to All-member meetings only.'}
+                            </p>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" className="rounded-xl" onClick={() => setApproveDialogOpen(false)}>Cancel</Button>
+                        <Button
+                            className="rounded-xl font-bold"
+                            disabled={actionLoading}
+                            onClick={() => {
+                                setApproveDialogOpen(false);
+                                handleApplicationStatus(pendingApproveId, 'approved', pendingApproveMemberType);
+                            }}
+                        >
+                            {actionLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
+                            Confirm Approval
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* ─── Create / Edit Meeting Dialog ────────────────────────────  */}
+            <Dialog open={meetingModalOpen} onOpenChange={setMeetingModalOpen}>
+                <DialogContent className="max-w-lg rounded-2xl">
+                    <DialogHeader>
+                        <DialogTitle className="font-extrabold">{editingMeeting ? 'Edit Meeting' : 'Create Meeting'}</DialogTitle>
+                        <DialogDescription>
+                            {editingMeeting ? 'Update the meeting details or reschedule.' : 'Schedule a new meeting for directors, members or everyone.'}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-2">
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-bold uppercase text-muted-foreground">Title *</label>
+                            <Input value={meetingForm.title} onChange={(e) => setMeetingForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g. Q1 Board Meeting" className="h-11 rounded-xl" />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold uppercase text-muted-foreground">Start Date & Time *</label>
+                                <Input type="datetime-local" value={meetingForm.startDateTime} onChange={(e) => setMeetingForm(f => ({ ...f, startDateTime: e.target.value }))} className="h-11 rounded-xl" />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold uppercase text-muted-foreground">End Date & Time</label>
+                                <Input type="datetime-local" value={meetingForm.endDateTime} onChange={(e) => setMeetingForm(f => ({ ...f, endDateTime: e.target.value }))} className="h-11 rounded-xl" />
+                            </div>
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-bold uppercase text-muted-foreground">Location</label>
+                            <Input value={meetingForm.location} onChange={(e) => setMeetingForm(f => ({ ...f, location: e.target.value }))} placeholder="e.g. KNCCI Boardroom, Eldoret" className="h-11 rounded-xl" />
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-bold uppercase text-muted-foreground">Invite</label>
+                            <Select value={meetingForm.targetGroup} onValueChange={(v) => setMeetingForm(f => ({ ...f, targetGroup: v as MeetingTargetGroup }))}>
+                                <SelectTrigger className="h-11 rounded-xl">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">Everyone (Directors + Members)</SelectItem>
+                                    <SelectItem value="directors">Directors Only</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        {editingMeeting && (
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold uppercase text-muted-foreground">Status</label>
+                                <Select value={meetingForm.status} onValueChange={(v) => setMeetingForm(f => ({ ...f, status: v as MeetingStatus }))}>
+                                    <SelectTrigger className="h-11 rounded-xl">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="scheduled">Scheduled</SelectItem>
+                                        <SelectItem value="completed">Completed</SelectItem>
+                                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-bold uppercase text-muted-foreground">Description</label>
+                            <Textarea value={meetingForm.description} onChange={(e) => setMeetingForm(f => ({ ...f, description: e.target.value }))} placeholder="Optional agenda or notes..." className="rounded-xl resize-none" rows={3} />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" className="rounded-xl" onClick={() => setMeetingModalOpen(false)}>Cancel</Button>
+                        <Button className="rounded-xl font-bold" disabled={savingMeeting} onClick={handleSaveMeeting}>
+                            {savingMeeting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                            {editingMeeting ? 'Save Changes' : 'Create Meeting'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={verifyPaymentOpen} onOpenChange={setVerifyPaymentOpen}>
+                <DialogContent className="max-w-md rounded-2xl">
+                    <DialogHeader>
+                        <DialogTitle className="font-extrabold flex items-center gap-2">
+                            <CreditCard className="w-5 h-5 text-primary" /> Verify Payment
+                        </DialogTitle>
+                        <DialogDescription>
+                            Update payment details for {selectedSeller?.firstName} {selectedSeller?.lastName}.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 mt-2">
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Amount Paid (KES)</label>
+                            <Input
+                                type="number"
+                                placeholder="0"
+                                value={verifyPaymentForm.amountPaid}
+                                onChange={(e) => setVerifyPaymentForm({ ...verifyPaymentForm, amountPaid: Number(e.target.value) })}
+                                className="h-11 rounded-xl"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Payment Method</label>
+                            <Input
+                                placeholder="e.g. MPesa, Bank Transfer"
+                                value={verifyPaymentForm.paymentMethod}
+                                onChange={(e) => setVerifyPaymentForm({ ...verifyPaymentForm, paymentMethod: e.target.value })}
+                                className="h-11 rounded-xl"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Payment Status</label>
+                            <Select
+                                value={verifyPaymentForm.paymentStatus}
+                                onValueChange={(v) => setVerifyPaymentForm({ ...verifyPaymentForm, paymentStatus: v as any })}
+                            >
+                                <SelectTrigger className="h-11 rounded-xl">
+                                    <SelectValue placeholder="Select status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="pending">Pending</SelectItem>
+                                    <SelectItem value="partial">Partial</SelectItem>
+                                    <SelectItem value="paid">Paid</SelectItem>
+                                    <SelectItem value="verified">Verified</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Transaction Reference</label>
+                            <Input
+                                placeholder="e.g. MPESA12345"
+                                value={verifyPaymentForm.transactionReference}
+                                onChange={(e) => setVerifyPaymentForm({ ...verifyPaymentForm, transactionReference: e.target.value })}
+                                className="h-11 rounded-xl"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Payment Date</label>
+                            <Input
+                                type="date"
+                                value={verifyPaymentForm.paymentDate}
+                                onChange={(e) => setVerifyPaymentForm({ ...verifyPaymentForm, paymentDate: e.target.value })}
+                                className="h-11 rounded-xl"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Notes</label>
+                            <Textarea
+                                placeholder="Optional notes..."
+                                value={verifyPaymentForm.paymentNotes}
+                                onChange={(e) => setVerifyPaymentForm({ ...verifyPaymentForm, paymentNotes: e.target.value })}
+                                className="min-h-[80px] rounded-xl"
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter className="mt-4">
+                        <Button variant="ghost" onClick={() => setVerifyPaymentOpen(false)}>Cancel</Button>
+                        <Button
+                            onClick={() => selectedSeller && handleVerifyPayment(selectedSeller._id)}
+                            disabled={actionLoading || !verifyPaymentForm.paymentMethod}
+                            className="rounded-xl gap-1.5"
+                        >
+                            {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                            Update Payment
+                        </Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
 

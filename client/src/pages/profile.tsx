@@ -57,6 +57,12 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/services/auth-context";
 import { businessService, BusinessData } from "@/services/business-service";
 import { cmsService, CmsStatus, CmsDashboard, CmsProduct, CmsCategory, CmsOrder } from "@/services/cms-service";
+import { memberService, MemberDashboardStats, FinancialsData } from "@/services/member-service";
+import { meetingService, MeetingDoc } from "@/services/meeting-service";
+import { attachmentService } from "@/services/attachment-service";
+import type { AttachmentRequest as AttachReq } from "@/services/attachment-service";
+import { websiteContentService } from "@/services/website-content-service";
+import type { WebsiteEventContent } from "@/types/content";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -115,6 +121,15 @@ export default function ProfilePage() {
     const [isSubmittingPassword, setIsSubmittingPassword] = useState(false);
     const [showPasswords, setShowPasswords] = useState({ current: false, new: false, confirm: false });
     const [activeTab, setActiveTab] = useState("overview");
+    const [dashboardStats, setDashboardStats] = useState<MemberDashboardStats | null>(null);
+    const [statsLoading, setStatsLoading] = useState(true);
+    const [upcomingEventsData, setUpcomingEventsData] = useState<WebsiteEventContent[]>([]);
+    const [eventsLoading, setEventsLoading] = useState(false);
+    const [attachmentRequests, setAttachmentRequests] = useState<AttachReq[]>([]);
+    const [upcomingMeetings, setUpcomingMeetings] = useState<MeetingDoc[]>([]);
+    const [attachmentsLoading, setAttachmentsLoading] = useState(false);
+    const [respondingTo, setRespondingTo] = useState<string | null>(null);
+    const [respondNote, setRespondNote] = useState<Record<string, string>>({});
 
     const businessSchema = z.object({
         name: z.string().min(2, "Business name must be at least 2 characters"),
@@ -203,6 +218,55 @@ export default function ProfilePage() {
             }
         }
     }, [user, authLoading, setLocation, form, personalForm]);
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            if (!user) return;
+            try {
+                setStatsLoading(true);
+                const response = await memberService.getDashboardStats();
+                if (response.success) {
+                    setDashboardStats(response.data);
+                }
+            } catch (error) {
+                console.error("Failed to fetch dashboard stats:", error);
+            } finally {
+                setStatsLoading(false);
+            }
+        };
+        fetchStats();
+    }, [user]);
+
+    useEffect(() => {
+        const fetchEvents = async () => {
+            if (!user) return;
+            try {
+                setEventsLoading(true);
+                const events = await websiteContentService.getEvents();
+                setUpcomingEventsData(events.filter((e) => !e.isPast).slice(0, 6));
+            } catch {
+                // silently fail — events section will show empty state
+            } finally {
+                setEventsLoading(false);
+            }
+        };
+        fetchEvents();
+    }, [user]);
+
+    useEffect(() => {
+        if (activeTab !== 'student-attachment' || !user) return;
+        setAttachmentsLoading(true);
+        attachmentService.businessList()
+            .then(setAttachmentRequests)
+            .catch(() => { })
+            .finally(() => setAttachmentsLoading(false));
+    }, [activeTab, user]);
+
+    useEffect(() => {
+        meetingService.getUpcomingMeetings()
+            .then(res => { if (res.success) setUpcomingMeetings(res.data.slice(0, 3)); })
+            .catch(() => {});
+    }, []);
 
     const onSubmit = async (data: z.infer<typeof businessSchema>) => {
         try {
@@ -752,6 +816,45 @@ export default function ProfilePage() {
                                                 <div className="p-6 bg-slate-50/50 dark:bg-slate-800/20 text-center border-t border-border/10">
                                                     <Button variant="ghost" className="font-extrabold text-primary text-[10px] uppercase tracking-[0.2em] hover:bg-transparent">All Updates <ChevronRight className="w-4 h-4 ml-1" /></Button>
                                                 </div>
+                                            </CardContent>
+                                        </Card>
+
+                                        {/* Upcoming Meetings */}
+                                        <Card className="border-border/40">
+                                            <CardHeader className="pb-3">
+                                                <CardTitle className="text-base font-extrabold flex items-center gap-2">
+                                                    <Calendar className="w-4 h-4 text-primary" /> Upcoming Meetings
+                                                </CardTitle>
+                                            </CardHeader>
+                                            <CardContent>
+                                                {upcomingMeetings.length === 0 ? (
+                                                    <div className="text-center py-6 text-muted-foreground">
+                                                        <Calendar className="w-6 h-6 mx-auto mb-2 opacity-30" />
+                                                        <p className="text-sm">No upcoming meetings scheduled.</p>
+                                                    </div>
+                                                ) : (
+                                                    <div className="space-y-3">
+                                                        {upcomingMeetings.map(m => (
+                                                            <div key={m._id} className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-border/30">
+                                                                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                                                    <Calendar className="w-5 h-5 text-primary" />
+                                                                </div>
+                                                                <div className="flex-1 min-w-0">
+                                                                    <div className="flex items-center gap-2 flex-wrap">
+                                                                        <p className="font-bold text-sm">{m.title}</p>
+                                                                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${m.targetGroup === 'directors' ? 'bg-amber-500/10 border-amber-500/20 text-amber-600' : 'bg-blue-500/10 border-blue-500/20 text-blue-600'}`}>
+                                                                            {m.targetGroup === 'directors' ? 'Directors' : 'All Members'}
+                                                                        </span>
+                                                                    </div>
+                                                                    <p className="text-xs text-muted-foreground mt-0.5">
+                                                                        {new Date(m.startDateTime).toLocaleString('en-KE', { dateStyle: 'medium', timeStyle: 'short' })}
+                                                                    </p>
+                                                                    {m.location && <p className="text-xs text-muted-foreground">{m.location}</p>}
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
                                             </CardContent>
                                         </Card>
                                     </motion.div>
