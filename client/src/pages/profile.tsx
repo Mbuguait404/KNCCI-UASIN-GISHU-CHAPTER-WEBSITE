@@ -49,7 +49,13 @@ import {
     Clock,
     RefreshCw,
     ArrowUpRight,
-    GraduationCap
+    GraduationCap,
+    NotebookPen,
+    Copy,
+    Share2,
+    CheckCheck,
+    X,
+    Video
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -63,7 +69,7 @@ import { useAuth } from "@/services/auth-context";
 import { businessService, BusinessData } from "@/services/business-service";
 import { cmsService, CmsStatus, CmsDashboard, CmsProduct, CmsCategory, CmsOrder } from "@/services/cms-service";
 import { memberService, MemberDashboardStats, FinancialsData } from "@/services/member-service";
-import { meetingService, MeetingDoc } from "@/services/meeting-service";
+import { meetingService, MeetingDoc, MeetingNote } from "@/services/meeting-service";
 import { attachmentService } from "@/services/attachment-service";
 import type { AttachmentRequest as AttachReq } from "@/services/attachment-service";
 import { websiteContentService } from "@/services/website-content-service";
@@ -132,6 +138,13 @@ export default function ProfilePage() {
     const [eventsLoading, setEventsLoading] = useState(false);
     const [attachmentRequests, setAttachmentRequests] = useState<AttachReq[]>([]);
     const [upcomingMeetings, setUpcomingMeetings] = useState<MeetingDoc[]>([]);
+    const [eventsSubTab, setEventsSubTab] = useState<'events' | 'meetings'>('events');
+    const [selectedMeeting, setSelectedMeeting] = useState<MeetingDoc | null>(null);
+    const [meetingNotes, setMeetingNotes] = useState<MeetingNote[]>([]);
+    const [noteContent, setNoteContent] = useState('');
+    const [noteSaving, setNoteSaving] = useState(false);
+    const [notesLoading, setNotesLoading] = useState(false);
+    const [noteCopied, setNoteCopied] = useState(false);
     const [attachmentsLoading, setAttachmentsLoading] = useState(false);
     const [respondingTo, setRespondingTo] = useState<string | null>(null);
     const [respondNote, setRespondNote] = useState<Record<string, string>>({});
@@ -269,9 +282,80 @@ export default function ProfilePage() {
 
     useEffect(() => {
         meetingService.getUpcomingMeetings()
-            .then(res => { if (res.success) setUpcomingMeetings(res.data.slice(0, 3)); })
+            .then(res => { if (res.success) setUpcomingMeetings(res.data); })
             .catch(() => {});
     }, []);
+
+    const openMeetingDetail = async (meeting: MeetingDoc) => {
+        setSelectedMeeting(meeting);
+        setNotesLoading(true);
+        setNoteContent('');
+        setMeetingNotes([]);
+        try {
+            const res = await meetingService.getNotes(meeting._id);
+            const notes = Array.isArray(res.data) ? res.data : [];
+            setMeetingNotes(notes);
+            const myUserId = user?._id || (user as any)?.id;
+            const myNote = notes.find(n => n.userId === myUserId);
+            if (myNote) setNoteContent(myNote.content);
+        } catch {
+            // ignore
+        } finally {
+            setNotesLoading(false);
+        }
+    };
+
+    const handleSaveNote = async () => {
+        if (!selectedMeeting || !noteContent.trim()) return;
+        setNoteSaving(true);
+        try {
+            const res = await meetingService.upsertNote(selectedMeeting._id, noteContent.trim());
+            if (res.data) {
+                setMeetingNotes(prev => {
+                    const idx = prev.findIndex(n => n.userId === (res.data as MeetingNote).userId);
+                    if (idx >= 0) {
+                        const updated = [...prev];
+                        updated[idx] = res.data as MeetingNote;
+                        return updated;
+                    }
+                    return [res.data as MeetingNote, ...prev];
+                });
+            }
+            toast({ title: 'Notes saved', description: 'Your meeting notes have been saved.' });
+        } catch {
+            toast({ title: 'Error', description: 'Failed to save notes.', variant: 'destructive' });
+        } finally {
+            setNoteSaving(false);
+        }
+    };
+
+    const handleCopyNote = async () => {
+        if (!noteContent) return;
+        try {
+            await navigator.clipboard.writeText(noteContent);
+            setNoteCopied(true);
+            setTimeout(() => setNoteCopied(false), 2000);
+        } catch {
+            // ignore
+        }
+    };
+
+    const handleShareNote = async () => {
+        if (!selectedMeeting || !noteContent.trim()) return;
+        try {
+            if (navigator.share) {
+                await navigator.share({
+                    title: `${selectedMeeting.title} - My Notes`,
+                    text: noteContent.trim(),
+                });
+                return;
+            }
+            await handleCopyNote();
+        } catch {
+            // ignore
+        }
+    };
+
     const onSubmit = async (data: z.infer<typeof businessSchema>) => {
         try {
             let response;
@@ -529,7 +613,7 @@ export default function ProfilePage() {
         { key: "business", label: "Business Profile", icon: <Briefcase className="w-4 h-4" /> },
         ...(DIRECTORY_MODE ? [] : [{ key: "finances", label: "Finances", icon: <PaymentIcon className="w-4 h-4" /> }]),
         { key: "marketplace", label: DIRECTORY_MODE ? "Business Directory" : "Marketplace", icon: <Store className="w-4 h-4" /> },
-        { key: "events", label: "Events & Trade", icon: <Activity className="w-4 h-4" /> },
+        { key: "events", label: "Events & Meetings", icon: <Activity className="w-4 h-4" /> },
         ...(business ? [{ key: "student-attachment", label: "Student Attachment", icon: <GraduationCap className="w-4 h-4" /> }] : []),
     ];
     const sideNavItems = allNavItems;
@@ -582,6 +666,21 @@ export default function ProfilePage() {
         { title: "Payments Made", value: statsLoading ? "…" : String(dashboardStats?.stats?.totalPayments ?? 0), icon: <TrendingUp className="w-5 h-5" />, color: "from-emerald-500 to-teal-600", bg: "bg-emerald-500/10" },
         { title: "Total Activities", value: statsLoading ? "…" : String(dashboardStats?.stats?.totalActivities ?? 0), icon: <Award className="w-5 h-5" />, color: "from-amber-500 to-orange-600", bg: "bg-amber-500/10" },
     ];
+
+    const getMeetingStatusStyle = (status: MeetingDoc["status"]) => {
+        if (status === "completed") return "bg-emerald-500/10 text-emerald-600 border-emerald-500/20";
+        if (status === "cancelled") return "bg-red-500/10 text-red-600 border-red-500/20";
+        return "bg-blue-500/10 text-blue-600 border-blue-500/20";
+    };
+
+    const formatMeetingDate = (value?: string, includeTime = true) => {
+        if (!value) return "—";
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return "—";
+        return date.toLocaleString("en-KE", includeTime
+            ? { dateStyle: "medium", timeStyle: "short" }
+            : { month: "short", day: "numeric" });
+    };
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex font-sans">
@@ -1682,71 +1781,272 @@ export default function ProfilePage() {
                                         <Card className="rounded-[2.5rem] border-none shadow-2xl shadow-primary/5 p-10 lg:p-12 bg-white dark:bg-slate-900 border border-border/40">
                                             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-12">
                                                 <div className="relative z-10">
-                                                    <h3 className="text-2xl lg:text-3xl font-extrabold tracking-tight">County Business Events</h3>
+                                                    <h3 className="text-2xl lg:text-3xl font-extrabold tracking-tight">Events & Meetings</h3>
                                                     <p className="text-sm text-muted-foreground mt-2 font-bold uppercase tracking-widest flex items-center gap-2">
                                                         <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> Live Event Portal
                                                     </p>
                                                 </div>
-                                                <Link href="/events">
-                                                    <Button className="rounded-2xl h-14 px-8 font-bold shadow-xl shadow-primary/20 bg-primary hover:scale-105 transition-transform uppercase tracking-widest text-[10px]">
-                                                        Full Calendar View
-                                                    </Button>
-                                                </Link>
+                                                {eventsSubTab === "events" && (
+                                                    <Link href="/events">
+                                                        <Button className="rounded-2xl h-14 px-8 font-bold shadow-xl shadow-primary/20 bg-primary hover:scale-105 transition-transform uppercase tracking-widest text-[10px]">
+                                                            Full Calendar View
+                                                        </Button>
+                                                    </Link>
+                                                )}
+                                            </div>
+
+                                            <div className="mb-8 inline-flex items-center rounded-2xl bg-slate-100 dark:bg-slate-800 p-1.5">
+                                                <button
+                                                    onClick={() => setEventsSubTab("events")}
+                                                    className={`px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-colors ${
+                                                        eventsSubTab === "events"
+                                                            ? "bg-primary text-white"
+                                                            : "bg-slate-100 dark:bg-slate-800 text-muted-foreground"
+                                                    }`}
+                                                >
+                                                    Events
+                                                </button>
+                                                <button
+                                                    onClick={() => setEventsSubTab("meetings")}
+                                                    className={`px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-colors ${
+                                                        eventsSubTab === "meetings"
+                                                            ? "bg-primary text-white"
+                                                            : "bg-slate-100 dark:bg-slate-800 text-muted-foreground"
+                                                    }`}
+                                                >
+                                                    Meetings
+                                                </button>
                                             </div>
 
                                             <div className="space-y-6">
-                                                {eventsLoading ? (
-                                                    <div className="flex items-center justify-center py-16">
-                                                        <Loader2 className="w-8 h-8 text-primary animate-spin" />
-                                                    </div>
-                                                ) : upcomingEventsData.length > 0 ? (
-                                                    upcomingEventsData.map((event, i) => {
-                                                        const dateObj = new Date(event.date);
-                                                        const month = dateObj.toLocaleDateString(undefined, { month: "short" });
-                                                        const day = isNaN(dateObj.getTime()) ? "—" : dateObj.getDate();
-                                                        return (
-                                                            <motion.div
-                                                                key={event._id}
-                                                                initial={{ opacity: 0, x: -10 }}
-                                                                animate={{ opacity: 1, x: 0 }}
-                                                                transition={{ delay: i * 0.08 }}
-                                                                className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-8 rounded-[2rem] bg-slate-50 dark:bg-slate-800/40 hover:bg-white dark:hover:bg-slate-800 transition-all border border-transparent hover:border-border/30 hover:shadow-xl hover:shadow-primary/5 group"
-                                                            >
-                                                                <div className="flex items-center gap-6 mb-4 sm:mb-0">
-                                                                    <div className="w-16 h-16 rounded-[1.5rem] bg-white dark:bg-slate-900 flex flex-col items-center justify-center border border-border/20 shadow-sm group-hover:border-primary/40 transition-colors shrink-0">
-                                                                        <span className="text-[10px] font-bold text-muted-foreground uppercase opacity-60 tracking-tighter">{month}</span>
-                                                                        <span className="text-2xl font-extrabold text-primary leading-none -mt-1">{day}</span>
-                                                                    </div>
-                                                                    <div>
-                                                                        <h4 className="font-extrabold text-base uppercase tracking-tight group-hover:text-primary transition-colors">{event.title}</h4>
-                                                                        <div className="flex flex-wrap items-center gap-3 mt-2">
-                                                                            <Badge variant="outline" className="text-[9px] h-5 font-bold border-primary/20 bg-primary/5 text-primary tracking-widest uppercase">{event.category}</Badge>
-                                                                            <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full uppercase tracking-widest">
-                                                                                {event.featured ? "Featured" : "Open"}
-                                                                            </span>
-                                                                            {event.location && (
-                                                                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1">
-                                                                                    <MapPin className="w-3 h-3" /> {event.location}
+                                                {eventsSubTab === "events" ? (
+                                                    eventsLoading ? (
+                                                        <div className="flex items-center justify-center py-16">
+                                                            <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                                                        </div>
+                                                    ) : upcomingEventsData.length > 0 ? (
+                                                        upcomingEventsData.map((event, i) => {
+                                                            const dateObj = new Date(event.date);
+                                                            const month = dateObj.toLocaleDateString(undefined, { month: "short" });
+                                                            const day = isNaN(dateObj.getTime()) ? "—" : dateObj.getDate();
+                                                            return (
+                                                                <motion.div
+                                                                    key={event._id}
+                                                                    initial={{ opacity: 0, x: -10 }}
+                                                                    animate={{ opacity: 1, x: 0 }}
+                                                                    transition={{ delay: i * 0.08 }}
+                                                                    className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-8 rounded-[2rem] bg-slate-50 dark:bg-slate-800/40 hover:bg-white dark:hover:bg-slate-800 transition-all border border-transparent hover:border-border/30 hover:shadow-xl hover:shadow-primary/5 group"
+                                                                >
+                                                                    <div className="flex items-center gap-6 mb-4 sm:mb-0">
+                                                                        <div className="w-16 h-16 rounded-[1.5rem] bg-white dark:bg-slate-900 flex flex-col items-center justify-center border border-border/20 shadow-sm group-hover:border-primary/40 transition-colors shrink-0">
+                                                                            <span className="text-[10px] font-bold text-muted-foreground uppercase opacity-60 tracking-tighter">{month}</span>
+                                                                            <span className="text-2xl font-extrabold text-primary leading-none -mt-1">{day}</span>
+                                                                        </div>
+                                                                        <div>
+                                                                            <h4 className="font-extrabold text-base uppercase tracking-tight group-hover:text-primary transition-colors">{event.title}</h4>
+                                                                            <div className="flex flex-wrap items-center gap-3 mt-2">
+                                                                                <Badge variant="outline" className="text-[9px] h-5 font-bold border-primary/20 bg-primary/5 text-primary tracking-widest uppercase">{event.category}</Badge>
+                                                                                <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full uppercase tracking-widest">
+                                                                                    {event.featured ? "Featured" : "Open"}
                                                                                 </span>
-                                                                            )}
+                                                                                {event.location && (
+                                                                                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1">
+                                                                                        <MapPin className="w-3 h-3" /> {event.location}
+                                                                                    </span>
+                                                                                )}
+                                                                            </div>
                                                                         </div>
                                                                     </div>
-                                                                </div>
-                                                                <Link href={`/events/${event.slug}`}>
-                                                                    <Button variant="ghost" className="rounded-xl font-bold text-xs uppercase tracking-widest text-primary hover:bg-primary/5 px-6">Event Details</Button>
-                                                                </Link>
-                                                            </motion.div>
-                                                        );
-                                                    })
+                                                                    <Link href={`/events/${event.slug}`}>
+                                                                        <Button variant="ghost" className="rounded-xl font-bold text-xs uppercase tracking-widest text-primary hover:bg-primary/5 px-6">Event Details</Button>
+                                                                    </Link>
+                                                                </motion.div>
+                                                            );
+                                                        })
+                                                    ) : (
+                                                        <div className="flex flex-col items-center justify-center py-16 text-center">
+                                                            <Calendar className="w-12 h-12 text-muted-foreground/20 mb-4" />
+                                                            <p className="text-sm font-medium text-muted-foreground">No upcoming events at this time. Check back soon.</p>
+                                                            <p className="text-xs text-muted-foreground mt-1">Visit the full calendar to see past events.</p>
+                                                        </div>
+                                                    )
                                                 ) : (
-                                                    <div className="flex flex-col items-center justify-center py-16 text-center">
-                                                        <Calendar className="w-12 h-12 text-muted-foreground/20 mb-4" />
-                                                        <p className="text-sm font-medium text-muted-foreground">No upcoming events at this time. Check back soon.</p>
-                                                        <p className="text-xs text-muted-foreground mt-1">Visit the full calendar to see past events.</p>
-                                                    </div>
+                                                    upcomingMeetings.length > 0 ? (
+                                                        upcomingMeetings.map((meeting, i) => {
+                                                            const dateObj = new Date(meeting.startDateTime);
+                                                            const month = dateObj.toLocaleDateString(undefined, { month: "short" });
+                                                            const day = Number.isNaN(dateObj.getTime()) ? "—" : dateObj.getDate();
+                                                            const hasVirtualLink = !!meeting.meetingLink;
+                                                            return (
+                                                                <motion.div
+                                                                    key={meeting._id}
+                                                                    initial={{ opacity: 0, x: -10 }}
+                                                                    animate={{ opacity: 1, x: 0 }}
+                                                                    transition={{ delay: i * 0.08 }}
+                                                                    className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-8 rounded-[2rem] bg-slate-50 dark:bg-slate-800/40 hover:bg-white dark:hover:bg-slate-800 transition-all border border-transparent hover:border-border/30 hover:shadow-xl hover:shadow-primary/5 group"
+                                                                >
+                                                                    <div className="flex items-center gap-6 mb-4 sm:mb-0">
+                                                                        <div className="w-16 h-16 rounded-[1.5rem] bg-white dark:bg-slate-900 flex flex-col items-center justify-center border border-border/20 shadow-sm group-hover:border-primary/40 transition-colors shrink-0">
+                                                                            <span className="text-[10px] font-bold text-muted-foreground uppercase opacity-60 tracking-tighter">{month}</span>
+                                                                            <span className="text-2xl font-extrabold text-primary leading-none -mt-1">{day}</span>
+                                                                        </div>
+                                                                        <div>
+                                                                            <h4 className="font-extrabold text-base uppercase tracking-tight group-hover:text-primary transition-colors">{meeting.title}</h4>
+                                                                            <div className="flex flex-wrap items-center gap-2 mt-2">
+                                                                                <Badge variant="outline" className={`text-[9px] h-5 font-bold tracking-widest uppercase ${meeting.targetGroup === "directors" ? "border-amber-500/20 bg-amber-500/10 text-amber-600" : "border-primary/20 bg-primary/5 text-primary"}`}>
+                                                                                    {meeting.targetGroup === "directors" ? "Directors Only" : "All Members"}
+                                                                                </Badge>
+                                                                                <Badge variant="outline" className={`text-[9px] h-5 font-bold uppercase tracking-widest ${getMeetingStatusStyle(meeting.status)}`}>
+                                                                                    {meeting.status}
+                                                                                </Badge>
+                                                                            </div>
+                                                                            <div className="mt-2 space-y-1">
+                                                                                <p className="text-xs text-muted-foreground font-medium">
+                                                                                    {formatMeetingDate(meeting.startDateTime)}
+                                                                                    {meeting.endDateTime ? ` - ${formatMeetingDate(meeting.endDateTime)}` : ""}
+                                                                                </p>
+                                                                                {meeting.location && (
+                                                                                    <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+                                                                                        <MapPin className="w-3 h-3" /> {meeting.location}
+                                                                                    </p>
+                                                                                )}
+                                                                                {hasVirtualLink && (
+                                                                                    <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+                                                                                        <Video className="w-3 h-3" /> Virtual meeting link available
+                                                                                    </p>
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        className="rounded-xl font-bold text-xs uppercase tracking-widest text-primary hover:bg-primary/5 px-6"
+                                                                        onClick={() => openMeetingDetail(meeting)}
+                                                                    >
+                                                                        View Details
+                                                                    </Button>
+                                                                </motion.div>
+                                                            );
+                                                        })
+                                                    ) : (
+                                                        <div className="flex flex-col items-center justify-center py-16 text-center">
+                                                            <Calendar className="w-12 h-12 text-muted-foreground/20 mb-4" />
+                                                            <p className="text-sm font-medium text-muted-foreground">No upcoming meetings at this time.</p>
+                                                        </div>
+                                                    )
                                                 )}
                                             </div>
                                         </Card>
+
+                                        {selectedMeeting && (
+                                            <div className="fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-sm flex justify-end">
+                                                <div className="w-full max-w-lg h-full bg-white dark:bg-slate-900 shadow-2xl p-6 sm:p-8 overflow-y-auto">
+                                                    <div className="flex items-start justify-between gap-4">
+                                                        <div>
+                                                            <h3 className="text-xl sm:text-2xl font-extrabold tracking-tight">{selectedMeeting.title}</h3>
+                                                            <Badge variant="outline" className={`mt-3 text-[10px] uppercase tracking-widest font-bold ${getMeetingStatusStyle(selectedMeeting.status)}`}>
+                                                                {selectedMeeting.status}
+                                                            </Badge>
+                                                        </div>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="rounded-full"
+                                                            onClick={() => setSelectedMeeting(null)}
+                                                        >
+                                                            <X className="w-5 h-5" />
+                                                        </Button>
+                                                    </div>
+
+                                                    <div className="mt-6 space-y-3 text-sm">
+                                                        <div className="flex items-center gap-2 text-muted-foreground"><Calendar className="w-4 h-4" /> {formatMeetingDate(selectedMeeting.startDateTime)}</div>
+                                                        {selectedMeeting.endDateTime && (
+                                                            <div className="flex items-center gap-2 text-muted-foreground"><Clock className="w-4 h-4" /> {formatMeetingDate(selectedMeeting.endDateTime)}</div>
+                                                        )}
+                                                        <div className="flex items-center gap-2 text-muted-foreground"><Users className="w-4 h-4" /> {selectedMeeting.targetGroup === "directors" ? "Directors Only" : "All Members"}</div>
+                                                        {selectedMeeting.location && (
+                                                            <div className="flex items-center gap-2 text-muted-foreground"><MapPin className="w-4 h-4" /> {selectedMeeting.location}</div>
+                                                        )}
+                                                    </div>
+
+                                                    {selectedMeeting.meetingLink && (
+                                                        <a
+                                                            href={selectedMeeting.meetingLink}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="mt-5 inline-flex items-center gap-2 rounded-xl bg-primary text-white px-4 py-2.5 text-xs font-bold uppercase tracking-widest hover:bg-primary/90"
+                                                        >
+                                                            <Video className="w-4 h-4" />
+                                                            {selectedMeeting.meetingLink.includes("meet.google")
+                                                                ? "Join on Google Meet"
+                                                                : selectedMeeting.meetingLink.includes("zoom.us")
+                                                                    ? "Join on Zoom"
+                                                                    : "Join Meeting"}
+                                                            <ExternalLink className="w-4 h-4" />
+                                                        </a>
+                                                    )}
+
+                                                    {selectedMeeting.description && (
+                                                        <div className="mt-6 rounded-2xl bg-slate-50 dark:bg-slate-800/60 p-4 text-sm text-muted-foreground leading-relaxed">
+                                                            {selectedMeeting.description}
+                                                        </div>
+                                                    )}
+
+                                                    <div className="mt-8">
+                                                        <h4 className="font-extrabold flex items-center gap-2 mb-3"><NotebookPen className="w-4 h-4 text-primary" /> My Notes</h4>
+                                                        {notesLoading ? (
+                                                            <div className="flex items-center justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
+                                                        ) : (
+                                                            <>
+                                                                <Textarea
+                                                                    className="min-h-[160px] rounded-2xl"
+                                                                    placeholder="Write your meeting notes here..."
+                                                                    value={noteContent}
+                                                                    onChange={(e) => setNoteContent(e.target.value)}
+                                                                />
+                                                                <div className="mt-3 flex items-center gap-2 flex-wrap">
+                                                                    <Button className="rounded-xl font-bold" onClick={handleSaveNote} disabled={noteSaving || !noteContent.trim()}>
+                                                                        {noteSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                                                                        Save Notes
+                                                                    </Button>
+                                                                    <Button variant="ghost" className="rounded-xl font-bold" onClick={handleCopyNote}>
+                                                                        {noteCopied ? <CheckCheck className="w-4 h-4 mr-2 text-emerald-600" /> : <Copy className="w-4 h-4 mr-2" />}
+                                                                        {noteCopied ? "Copied" : "Copy"}
+                                                                    </Button>
+                                                                    <Button variant="ghost" className="rounded-xl font-bold" onClick={handleShareNote}>
+                                                                        <Share2 className="w-4 h-4 mr-2" /> Share
+                                                                    </Button>
+                                                                </div>
+                                                            </>
+                                                        )}
+                                                    </div>
+
+                                                    {!notesLoading && (
+                                                        (() => {
+                                                            const myUserId = user?._id || (user as any)?.id;
+                                                            const memberNotes = meetingNotes.filter((n) => n.userId !== myUserId);
+                                                            if (memberNotes.length === 0) return null;
+                                                            return (
+                                                                <div className="mt-8">
+                                                                    <h4 className="font-extrabold mb-3">Members Notes</h4>
+                                                                    <div className="space-y-3">
+                                                                        {memberNotes.map((note) => (
+                                                                            <div key={note._id} className="rounded-2xl border border-border/40 p-4 bg-slate-50 dark:bg-slate-800/40">
+                                                                                <div className="flex items-center justify-between gap-2 mb-2">
+                                                                                    <p className="text-sm font-bold">{note.userName}</p>
+                                                                                    <span className="text-[10px] font-medium text-muted-foreground">{formatMeetingDate(note.createdAt)}</span>
+                                                                                </div>
+                                                                                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{note.content}</p>
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })()
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
                                     </motion.div>
                                 )}
                             </AnimatePresence>

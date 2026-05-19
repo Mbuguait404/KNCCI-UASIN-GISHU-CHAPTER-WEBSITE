@@ -8,12 +8,23 @@ export interface MeetingDoc {
     title: string;
     description?: string;
     location?: string;
+    meetingLink?: string;
     startDateTime: string;
     endDateTime?: string;
     targetGroup: MeetingTargetGroup;
     status: MeetingStatus;
     createdBy?: { _id: string; name: string };
     notificationsSent: boolean;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface MeetingNote {
+    _id: string;
+    meetingId: string;
+    userId: string;
+    userName: string;
+    content: string;
     createdAt: string;
     updatedAt: string;
 }
@@ -47,6 +58,21 @@ export const meetingService = {
     /** GET /meetings/upcoming — member: upcoming meetings filtered by memberType */
     async getUpcomingMeetings(): Promise<{ success: boolean; data: MeetingDoc[]; message: string }> {
         const response = await api.get('/meetings/upcoming');
+        return response.data;
+    },
+
+    async getMeeting(id: string): Promise<{ success: boolean; data: MeetingDoc; message: string }> {
+        const response = await api.get(`/meetings/${id}`);
+        return response.data;
+    },
+
+    async upsertNote(meetingId: string, content: string): Promise<{ success: boolean; data: MeetingNote; message: string }> {
+        const response = await api.post(`/meetings/${meetingId}/notes`, { content });
+        return response.data;
+    },
+
+    async getNotes(meetingId: string): Promise<{ success: boolean; data: MeetingNote[]; message: string }> {
+        const response = await api.get(`/meetings/${meetingId}/notes`);
         return response.data;
     },
 
