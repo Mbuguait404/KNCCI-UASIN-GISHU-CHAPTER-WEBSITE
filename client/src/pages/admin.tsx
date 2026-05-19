@@ -10,7 +10,7 @@ import {
     Plus, Pencil, Clock, CheckCircle2, XCircle, Smartphone,
     AtSign, UserPlus, FileEdit, Upload, Download,
     User, Store, Menu,
-    CreditCard
+    CreditCard, GraduationCap
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,10 +33,14 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import {
+    Tooltip, TooltipContent, TooltipTrigger, TooltipProvider,
+} from "@/components/ui/tooltip";
 import { SEOHead } from "@/components/seo/seo-head";
 import { useAuth } from "@/services/auth-context";
-import { adminService, DashboardStats, MemberDoc, PaginatedMembers, SellerDoc, PaginatedSellers, OrderStats, SubscriptionPlan, SubscriptionStats, PaginatedOrders, PaginatedSubscribers } from "@/services/admin-service";
+import { adminService, DashboardStats, MemberDoc, PaginatedMembers, SellerDoc, PaginatedSellers, SellerStats, OrderStats, SubscriptionPlan, SubscriptionStats, PaginatedOrders, PaginatedSubscribers } from "@/services/admin-service";
 import { messagingService, MessageTemplate, MessageLogEntry, MessageChannel, MessagingStats, PaginatedLogs, MessagingSettings } from "@/services/messaging-service";
+import { attachmentService, AttachmentRequest } from "@/services/attachment-service";
 import { notificationService } from "@/services/notification-service";
 import { useToast } from "@/hooks/use-toast";
 import { BUSINESS_CATEGORIES, normalizeBusinessCategory } from "@shared/business-categories";
@@ -83,6 +87,33 @@ function RoleBadge({ role }: { role: string }) {
             <Users className="w-3 h-3" /> Member
         </span>
     );
+}
+
+function PaymentStatusBadge({ status }: { status?: string }) {
+    const config: Record<string, { color: string; bg: string; border: string }> = {
+        pending: { color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-500/10", border: "border-amber-500/20" },
+        partial: { color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-500/10", border: "border-blue-500/20" },
+        paid: { color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/20" },
+        verified: { color: "text-green-700 dark:text-green-400", bg: "bg-green-500/10", border: "border-green-500/20" },
+    };
+    const cfg = config[status || "pending"] || config.pending;
+    return (
+        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${cfg.bg} ${cfg.border} ${cfg.color}`}>
+            <CreditCard className="w-3 h-3" /> {status || "pending"}
+        </span>
+    );
+}
+
+function AttachmentStatusBadge({ status }: { status: string }) {
+    const configs: Record<string, { color: string; bg: string; label: string }> = {
+        pending: { color: 'text-amber-700', bg: 'bg-amber-500/10 border-amber-500/20', label: 'Pending' },
+        matchmaking: { color: 'text-blue-700', bg: 'bg-blue-500/10 border-blue-500/20', label: 'Matchmaking' },
+        placed: { color: 'text-green-700', bg: 'bg-green-500/10 border-green-500/20', label: 'Placed' },
+        rejected: { color: 'text-red-700', bg: 'bg-red-500/10 border-red-500/20', label: 'Rejected' },
+        completed: { color: 'text-purple-700', bg: 'bg-purple-500/10 border-purple-500/20', label: 'Completed' },
+    };
+    const cfg = configs[status] || configs.pending;
+    return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${cfg.bg} ${cfg.color}`}>{cfg.label}</span>;
 }
 
 
@@ -262,12 +293,23 @@ export default function AdminDashboard() {
     const [loadingSellers, setLoadingSellers] = useState(false);
     const [sellerSearch, setSellerSearch] = useState("");
     const [sellerStatusFilter, setSellerStatusFilter] = useState("all");
+    const [sellerPaymentFilter, setSellerPaymentFilter] = useState("all");
     const [sellerPage, setSellerPage] = useState(1);
-    
+    const [sellerStats, setSellerStats] = useState<SellerStats | null>(null);
+
     // Seller Modals
     const [selectedSeller, setSelectedSeller] = useState<SellerDoc | null>(null);
     const [sellerDetailOpen, setSellerDetailOpen] = useState(false);
     const [sellerRejectionReason, setSellerRejectionReason] = useState("");
+    const [verifyPaymentOpen, setVerifyPaymentOpen] = useState(false);
+    const [verifyPaymentForm, setVerifyPaymentForm] = useState({
+        amountPaid: 0,
+        paymentMethod: "",
+        paymentStatus: "pending" as "pending" | "partial" | "paid" | "verified",
+        transactionReference: "",
+        paymentDate: "",
+        paymentNotes: "",
+    });
 
     // ─── Messaging state ────────────────────────────────────────────
     const [msgSubTab, setMsgSubTab] = useState<"compose" | "templates" | "logs" | "settings">("compose");
@@ -319,6 +361,14 @@ export default function AdminDashboard() {
     const [loadingSubscribers, setLoadingSubscribers] = useState(false);
     const [subPage, setSubPage] = useState(1);
     const [subSearch, setSubSearch] = useState("");
+    const [attachments, setAttachments] = useState<AttachmentRequest[]>([]);
+    const [attachmentPagination, setAttachmentPagination] = useState({ total: 0, page: 1, totalPages: 1 });
+    const [attachmentsLoading, setAttachmentsLoading] = useState(false);
+    const [selectedAttachment, setSelectedAttachment] = useState<AttachmentRequest | null>(null);
+    const [matchmakeOpen, setMatchmakeOpen] = useState(false);
+    const [matchmakeBusinessIds, setMatchmakeBusinessIds] = useState<string[]>([]);
+    const [matchmakeLoading, setMatchmakeLoading] = useState(false);
+    const [attachmentStatusFilter, setAttachmentStatusFilter] = useState('');
 
     // ─── Auth guard ────────────────────────────────────────────────────
     useEffect(() => {
@@ -443,6 +493,7 @@ export default function AdminDashboard() {
             const params: any = { page: sellerPage, limit: pageLimit };
             if (sellerSearch) params.search = sellerSearch;
             if (sellerStatusFilter !== "all") params.status = sellerStatusFilter;
+            if (sellerPaymentFilter !== "all") params.paymentStatus = sellerPaymentFilter;
             const res = await adminService.getSellers(params);
             if (res.success) setSellers(res.data);
         } catch (err: any) {
@@ -450,14 +501,40 @@ export default function AdminDashboard() {
         } finally {
             setLoadingSellers(false);
         }
-    }, [sellerPage, sellerSearch, sellerStatusFilter, toast]);
+    }, [sellerPage, sellerSearch, sellerStatusFilter, sellerPaymentFilter, toast]);
+
+    const fetchSellerStats = useCallback(async () => {
+        try {
+            const res = await adminService.getSellerStats();
+            if (res.success) setSellerStats(res.data);
+        } catch (err: any) {
+            toast({ title: "Error", description: err.response?.data?.message || "Failed to load seller stats", variant: "destructive" });
+        }
+    }, [toast]);
+
+    const fetchAttachments = useCallback(async () => {
+        setAttachmentsLoading(true);
+        try {
+            const result = await attachmentService.adminList({ status: attachmentStatusFilter || undefined });
+            setAttachments(result.data);
+            setAttachmentPagination(result.pagination);
+        } catch {
+            toast({ title: "Failed to load attachment requests", variant: "destructive" });
+        } finally {
+            setAttachmentsLoading(false);
+        }
+    }, [attachmentStatusFilter, toast]);
 
     useEffect(() => {
         if (activeTab === "overview") { fetchOrderStats(); fetchSubscriptionStats(); }
-        if (activeTab === "sellers") fetchSellers();
+        if (activeTab === "sellers") { fetchSellers(); fetchSellerStats(); }
         if (activeTab === "orders") { fetchOrders(); fetchOrderStats(); }
         if (activeTab === "subscriptions") { fetchPlans(); fetchSubscriptionStats(); fetchSubscribers(); }
-    }, [fetchSellers, fetchOrders, fetchOrderStats, fetchPlans, fetchSubscriptionStats, fetchSubscribers, activeTab]);
+        if (activeTab === "attachments") {
+            if (!members?.members?.length) fetchMembers();
+            fetchAttachments();
+        }
+    }, [fetchSellers, fetchSellerStats, fetchOrders, fetchOrderStats, fetchPlans, fetchSubscriptionStats, fetchSubscribers, activeTab, fetchAttachments, members, fetchMembers]);
 
     // ─── Messaging data fetchers ────────────────────────────────────
     const fetchMsgTemplates = useCallback(async () => {
@@ -879,6 +956,46 @@ export default function AdminDashboard() {
         }
     };
 
+    const handleVerifyPayment = async (id: string) => {
+        setActionLoading(true);
+        try {
+            const res = await adminService.updateSellerPayment(id, {
+                amountPaid: Number(verifyPaymentForm.amountPaid) || 0,
+                paymentMethod: verifyPaymentForm.paymentMethod,
+                paymentStatus: verifyPaymentForm.paymentStatus,
+                transactionReference: verifyPaymentForm.transactionReference || undefined,
+                paymentDate: verifyPaymentForm.paymentDate || undefined,
+                paymentNotes: verifyPaymentForm.paymentNotes || undefined,
+            });
+            if (res.success) {
+                toast({ title: "Payment Updated", description: `Payment status set to ${verifyPaymentForm.paymentStatus}.` });
+                setVerifyPaymentOpen(false);
+                fetchSellers();
+                fetchSellerStats();
+                if (selectedSeller && selectedSeller._id === id) {
+                    setSelectedSeller(res.data);
+                }
+            }
+        } catch (err: any) {
+            toast({ title: "Error", description: err.response?.data?.message || "Failed to update payment", variant: "destructive" });
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const openVerifyPayment = (seller: SellerDoc) => {
+        setSelectedSeller(seller);
+        setVerifyPaymentForm({
+            amountPaid: seller.amountPaid ?? 0,
+            paymentMethod: seller.paymentMethod ?? "",
+            paymentStatus: seller.paymentStatus ?? "pending",
+            transactionReference: seller.transactionReference ?? "",
+            paymentDate: seller.paymentDate ? seller.paymentDate.slice(0, 10) : "",
+            paymentNotes: "",
+        });
+        setVerifyPaymentOpen(true);
+    };
+
     const openSellerDetail = async (seller: SellerDoc) => {
         try {
             const res = await adminService.getSeller(seller._id);
@@ -1068,6 +1185,7 @@ export default function AdminDashboard() {
                             { key: "sellers", label: "Sellers", icon: <Store className="w-4 h-4" /> },
                             { key: "orders", label: "Orders", icon: <CreditCard className="w-4 h-4" /> },
                             { key: "subscriptions", label: "Subscriptions", icon: <Crown className="w-4 h-4" /> },
+                            { key: "attachments", label: "Student Attachment", icon: <GraduationCap className="w-4 h-4" /> },
                             { key: "bulk-import", label: "Bulk Import", icon: <Upload className="w-4 h-4" /> },
                             { key: "messaging", label: "Messaging", icon: <MessageSquare className="w-4 h-4" /> },
                         ].map((item) => (
@@ -1135,6 +1253,7 @@ export default function AdminDashboard() {
                                             activeTab === "sellers" ? "Sellers" :
                                                 activeTab === "orders" ? "Orders" :
                                                     activeTab === "subscriptions" ? "Subscriptions" :
+                                                    activeTab === "attachments" ? "Student Attachment" :
                                                         "Messaging"}
                             </p>
                         </div>
@@ -1167,6 +1286,7 @@ export default function AdminDashboard() {
                                 { key: "sellers", label: "Sellers", icon: <Store className="w-4 h-4" /> },
                                 { key: "orders", label: "Orders", icon: <CreditCard className="w-4 h-4" /> },
                                 { key: "subscriptions", label: "Subscriptions", icon: <Crown className="w-4 h-4" /> },
+                                { key: "attachments", label: "Student Attachment", icon: <GraduationCap className="w-4 h-4" /> },
                                 { key: "messaging", label: "Messaging", icon: <MessageSquare className="w-4 h-4" /> },
                             ].map((item) => (
                                 <button
@@ -1233,6 +1353,7 @@ export default function AdminDashboard() {
                              activeTab === "sellers" ? "Seller Marketplace" :
                              activeTab === "orders" ? "System Orders" :
                              activeTab === "subscriptions" ? "Subscription Plans" :
+                             activeTab === "attachments" ? "Student Attachment Requests" :
                               "Messaging Center"}
                         </h1>
                     </motion.div>
@@ -1939,6 +2060,35 @@ export default function AdminDashboard() {
                             transition={{ duration: 0.3 }}
                             className="space-y-6"
                         >
+                            {/* Seller Stats */}
+                            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-4">
+                                {[
+                                    { title: "Total Sellers", value: sellerStats?.total ?? 0, icon: <Store className="w-4 h-4" />, color: "bg-emerald-500" },
+                                    { title: "Members", value: sellerStats?.members ?? 0, icon: <Users className="w-4 h-4" />, color: "bg-blue-500" },
+                                    { title: "Non-Members", value: sellerStats?.nonMembers ?? 0, icon: <User className="w-4 h-4" />, color: "bg-slate-500" },
+                                    { title: "Pending Pay", value: sellerStats?.paymentBreakdown?.pending ?? 0, icon: <Clock className="w-4 h-4" />, color: "bg-amber-500" },
+                                    { title: "Verified Pay", value: sellerStats?.paymentBreakdown?.verified ?? 0, icon: <CheckCircle2 className="w-4 h-4" />, color: "bg-green-500" },
+                                    { title: "Collected", value: `KES ${(sellerStats?.totalCollected ?? 0).toLocaleString()}`, icon: <CreditCard className="w-4 h-4" />, color: "bg-primary" },
+                                ].map((card, i) => (
+                                    <motion.div
+                                        key={card.title}
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: i * 0.05 }}
+                                    >
+                                        <Card className="border-border/40 overflow-hidden">
+                                            <CardContent className="p-4">
+                                                <div className={`w-8 h-8 rounded-lg ${card.color} text-white flex items-center justify-center mb-2`}>
+                                                    {card.icon}
+                                                </div>
+                                                <p className="text-lg font-extrabold">{loadingSellers ? "—" : card.value}</p>
+                                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{card.title}</p>
+                                            </CardContent>
+                                        </Card>
+                                    </motion.div>
+                                ))}
+                            </div>
+
                             <Card className="border-border/40">
                                 <CardContent className="p-4">
                                     <div className="flex flex-col sm:flex-row gap-3">
@@ -1961,6 +2111,18 @@ export default function AdminDashboard() {
                                                 <SelectItem value="approved">Approved</SelectItem>
                                                 <SelectItem value="rejected">Rejected</SelectItem>
                                                 <SelectItem value="deactivated">Deactivated</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <Select value={sellerPaymentFilter} onValueChange={(v) => { setSellerPaymentFilter(v); setSellerPage(1); }}>
+                                            <SelectTrigger className="w-full sm:w-44 h-11 rounded-xl border-border/50">
+                                                <SelectValue placeholder="Payment" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">All Payments</SelectItem>
+                                                <SelectItem value="pending">Pending</SelectItem>
+                                                <SelectItem value="partial">Partial</SelectItem>
+                                                <SelectItem value="paid">Paid</SelectItem>
+                                                <SelectItem value="verified">Verified</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
@@ -1986,19 +2148,57 @@ export default function AdminDashboard() {
                                                         <p className="text-xs text-muted-foreground">{seller.email}</p>
                                                         <p className="text-xs font-medium mt-1">{seller.businessName}</p>
                                                         <p className="text-[11px] text-muted-foreground">{seller.businessCategory}</p>
+                                                        <div className="flex items-center gap-1.5 mt-1.5">
+                                                            <Badge variant={seller.status === 'pending' ? 'outline' : seller.status === 'approved' ? 'default' : 'destructive'} className="text-[10px]">
+                                                                {seller.status}
+                                                            </Badge>
+                                                            <PaymentStatusBadge status={seller.paymentStatus} />
+                                                            {seller.isMember ? (
+                                                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/10 border border-blue-500/20 text-blue-600">
+                                                                    <Users className="w-3 h-3" /> Member
+                                                                </span>
+                                                            ) : (
+                                                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-500/10 border border-slate-500/20 text-slate-600">
+                                                                    <User className="w-3 h-3" /> Non-Member
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <p className="text-[11px] text-muted-foreground mt-1">
+                                                            Paid: <span className="font-semibold text-foreground">KES {(seller.amountPaid ?? 0).toLocaleString()}</span>
+                                                            {seller.subscriptionFee ? ` / KES ${seller.subscriptionFee.toLocaleString()}` : ""}
+                                                        </p>
                                                     </div>
-                                                    <Badge variant={seller.status === 'pending' ? 'outline' : seller.status === 'approved' ? 'default' : 'destructive'} className="flex-shrink-0">
-                                                        {seller.status}
-                                                    </Badge>
                                                 </div>
                                                 <div className="flex items-center gap-1 mt-3 pt-3 border-t border-border/30">
                                                     <Button variant="ghost" size="icon" className="w-8 h-8 text-blue-500 hover:bg-blue-50" onClick={() => openSellerDetail(seller)}>
                                                         <Eye className="w-3.5 h-3.5" />
                                                     </Button>
-                                                    {seller.status === 'pending' && (
-                                                        <Button variant="ghost" size="sm" className="h-8 text-emerald-600 hover:bg-emerald-50 text-xs font-bold" onClick={() => handleSellerStatusUpdate(seller._id, 'approved')} disabled={actionLoading}>
-                                                            Approve
+                                                    {seller.paymentStatus !== 'verified' && (
+                                                        <Button variant="ghost" size="sm" className="h-8 text-purple-600 hover:bg-purple-50 text-xs font-bold" onClick={() => openVerifyPayment(seller)} disabled={actionLoading}>
+                                                            Verify
                                                         </Button>
+                                                    )}
+                                                    {seller.status === 'pending' && (
+                                                        <TooltipProvider>
+                                                            <Tooltip>
+                                                                <TooltipTrigger asChild>
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="sm"
+                                                                        className="h-8 text-emerald-600 hover:bg-emerald-50 text-xs font-bold"
+                                                                        onClick={() => handleSellerStatusUpdate(seller._id, 'approved')}
+                                                                        disabled={actionLoading || seller.paymentStatus !== 'verified'}
+                                                                    >
+                                                                        Approve
+                                                                    </Button>
+                                                                </TooltipTrigger>
+                                                                {seller.paymentStatus !== 'verified' && (
+                                                                    <TooltipContent>
+                                                                        <p>Payment must be verified before approval</p>
+                                                                    </TooltipContent>
+                                                                )}
+                                                            </Tooltip>
+                                                        </TooltipProvider>
                                                     )}
                                                     {(seller.status === 'approved' || seller.status === 'rejected') && (
                                                         <Button variant="ghost" size="sm" className="h-8 text-orange-500 hover:bg-orange-50 text-xs font-bold" onClick={() => handleSellerStatusUpdate(seller._id, 'deactivated')} disabled={actionLoading}>
@@ -2033,20 +2233,22 @@ export default function AdminDashboard() {
                                                 <TableHead className="font-extrabold text-xs uppercase tracking-wider text-slate-500">Business</TableHead>
                                                 <TableHead className="font-extrabold text-xs uppercase tracking-wider text-slate-500">Category</TableHead>
                                                 <TableHead className="font-extrabold text-xs uppercase tracking-wider text-slate-500">Status</TableHead>
+                                                <TableHead className="font-extrabold text-xs uppercase tracking-wider text-slate-500">Payment</TableHead>
+                                                <TableHead className="font-extrabold text-xs uppercase tracking-wider text-slate-500">Amount</TableHead>
                                                 <TableHead className="text-right font-extrabold text-xs uppercase tracking-wider text-slate-500">Actions</TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
                                             {loadingSellers ? (
                                                 <TableRow>
-                                                    <TableCell colSpan={5} className="h-40 text-center">
+                                                    <TableCell colSpan={7} className="h-40 text-center">
                                                         <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto" />
                                                         <p className="text-sm text-muted-foreground mt-2">Loading sellers...</p>
                                                     </TableCell>
                                                 </TableRow>
                                             ) : sellers?.sellers.length === 0 ? (
                                                 <TableRow>
-                                                    <TableCell colSpan={5} className="h-40 text-center">
+                                                    <TableCell colSpan={7} className="h-40 text-center">
                                                         <Store className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
                                                         <p className="text-sm font-bold text-muted-foreground">No sellers found</p>
                                                     </TableCell>
@@ -2079,6 +2281,26 @@ export default function AdminDashboard() {
                                                             </Badge>
                                                         </TableCell>
                                                         <TableCell>
+                                                            <div className="space-y-1">
+                                                                <PaymentStatusBadge status={seller.paymentStatus} />
+                                                                {seller.isMember ? (
+                                                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/10 border border-blue-500/20 text-blue-600">
+                                                                        <Users className="w-3 h-3" /> Member
+                                                                    </span>
+                                                                ) : (
+                                                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-500/10 border border-slate-500/20 text-slate-600">
+                                                                        <User className="w-3 h-3" /> Non-Member
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <p className="text-sm font-medium">KES {(seller.amountPaid ?? 0).toLocaleString()}</p>
+                                                            {seller.subscriptionFee ? (
+                                                                <p className="text-[10px] text-muted-foreground">of KES {seller.subscriptionFee.toLocaleString()}</p>
+                                                            ) : null}
+                                                        </TableCell>
+                                                        <TableCell>
                                                             <div className="flex items-center justify-end gap-1">
                                                                 <Button
                                                                     variant="ghost"
@@ -2089,18 +2311,39 @@ export default function AdminDashboard() {
                                                                 >
                                                                     <Eye className="w-4 h-4" />
                                                                 </Button>
+                                                                {seller.paymentStatus !== 'verified' && (
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="sm"
+                                                                        className="text-purple-500 hover:text-purple-600 hover:bg-purple-50"
+                                                                        onClick={() => openVerifyPayment(seller)}
+                                                                        disabled={actionLoading}
+                                                                        title="Verify Payment"
+                                                                    >
+                                                                        Verify
+                                                                    </Button>
+                                                                )}
                                                                 {seller.status === 'pending' && (
-                                                                    <>
-                                                                        <Button
-                                                                            variant="ghost"
-                                                                            size="sm"
-                                                                            className="text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50"
-                                                                            onClick={() => handleSellerStatusUpdate(seller._id, 'approved')}
-                                                                            disabled={actionLoading}
-                                                                        >
-                                                                            Approve
-                                                                        </Button>
-                                                                    </>
+                                                                    <TooltipProvider>
+                                                                        <Tooltip>
+                                                                            <TooltipTrigger asChild>
+                                                                                <Button
+                                                                                    variant="ghost"
+                                                                                    size="sm"
+                                                                                    className="text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50"
+                                                                                    onClick={() => handleSellerStatusUpdate(seller._id, 'approved')}
+                                                                                    disabled={actionLoading || seller.paymentStatus !== 'verified'}
+                                                                                >
+                                                                                    Approve
+                                                                                </Button>
+                                                                            </TooltipTrigger>
+                                                                            {seller.paymentStatus !== 'verified' && (
+                                                                                <TooltipContent>
+                                                                                    <p>Payment must be verified before approval</p>
+                                                                                </TooltipContent>
+                                                                            )}
+                                                                        </Tooltip>
+                                                                    </TooltipProvider>
                                                                 )}
                                                                 {(seller.status === 'approved' || seller.status === 'rejected') && (
                                                                     <Button
@@ -3101,6 +3344,144 @@ export default function AdminDashboard() {
                             )}
                         </motion.div>
                     )}
+
+                    {activeTab === "attachments" && (
+                        <div>
+                            <div className="flex items-center justify-between mb-6">
+                                <div>
+                                    <h2 className="text-2xl font-black">Student Attachment Requests</h2>
+                                    <p className="text-muted-foreground text-sm mt-1">{attachmentPagination.total} total requests</p>
+                                </div>
+                                <Select value={attachmentStatusFilter} onValueChange={(v) => setAttachmentStatusFilter(v === 'all' ? '' : v)}>
+                                    <SelectTrigger className="w-44"><SelectValue placeholder="All Statuses" /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Statuses</SelectItem>
+                                        <SelectItem value="pending">Pending</SelectItem>
+                                        <SelectItem value="matchmaking">Matchmaking</SelectItem>
+                                        <SelectItem value="placed">Placed</SelectItem>
+                                        <SelectItem value="rejected">Rejected</SelectItem>
+                                        <SelectItem value="completed">Completed</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            {attachmentsLoading ? (
+                                <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
+                            ) : attachments.length === 0 ? (
+                                <div className="text-center py-16 text-muted-foreground">No attachment requests found</div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {attachments.map(req => (
+                                        <Card key={req._id} className="rounded-2xl border border-border/60">
+                                            <CardContent className="p-6">
+                                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                                    <div className="space-y-1">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="font-bold text-lg">{req.studentName}</span>
+                                                            <AttachmentStatusBadge status={req.status} />
+                                                        </div>
+                                                        <p className="text-sm text-muted-foreground">{req.institution} · {req.course}</p>
+                                                        <p className="text-xs text-muted-foreground">{req.studentEmail} · {req.studentPhone}</p>
+                                                        <p className="text-xs text-muted-foreground">
+                                                            {new Date(req.attachmentStartDate).toLocaleDateString()} – {new Date(req.attachmentEndDate).toLocaleDateString()}
+                                                            {req.matchRequests.length > 0 && ` · ${req.matchRequests.length} business${req.matchRequests.length > 1 ? 'es' : ''} contacted`}
+                                                        </p>
+                                                    </div>
+                                                    <div className="flex gap-2 flex-wrap">
+                                                        {req.documents.length > 0 && (
+                                                            <Button size="sm" variant="outline" className="rounded-xl" asChild>
+                                                                <a href={req.documents[0]} target="_blank" rel="noopener noreferrer">
+                                                                    <FileText className="w-4 h-4 mr-1" /> Documents ({req.documents.length})
+                                                                </a>
+                                                            </Button>
+                                                        )}
+                                                        <Button size="sm" variant="outline" className="rounded-xl" onClick={() => { setSelectedAttachment(req); setMatchmakeBusinessIds([]); setMatchmakeOpen(true); }}>
+                                                            <Users className="w-4 h-4 mr-1" /> Matchmake
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                                {req.matchRequests.length > 0 && (
+                                                    <div className="mt-4 pt-4 border-t border-border/60">
+                                                        <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">Match Requests</p>
+                                                        <div className="flex flex-wrap gap-2">
+                                                            {req.matchRequests.map(m => (
+                                                                <span key={m._id} className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${m.status === 'accepted'
+                                                                    ? 'bg-green-500/10 text-green-700 border-green-500/20'
+                                                                    : m.status === 'declined'
+                                                                        ? 'bg-red-500/10 text-red-700 border-red-500/20'
+                                                                        : 'bg-amber-500/10 text-amber-700 border-amber-500/20'
+                                                                    }`}>
+                                                                    {m.businessName} · {m.status}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </CardContent>
+                                        </Card>
+                                    ))}
+                                </div>
+                            )}
+
+                            <Dialog open={matchmakeOpen} onOpenChange={setMatchmakeOpen}>
+                                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                                    <DialogHeader>
+                                        <DialogTitle>Matchmake: {selectedAttachment?.studentName}</DialogTitle>
+                                        <DialogDescription>
+                                            Select businesses to send this attachment request to. Selected businesses will see this request in their dashboard.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                                        {(members?.members || []).filter(m => m.business && m.role !== 'admin').map(member => {
+                                            const bizId = member.business?._id;
+                                            if (!bizId) return null;
+                                            const selected = matchmakeBusinessIds.includes(bizId);
+                                            const alreadySent = selectedAttachment?.matchRequests.some(r => r.businessId === bizId);
+                                            return (
+                                                <div key={member._id} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${selected ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40'} ${alreadySent ? 'opacity-50 pointer-events-none' : ''}`}
+                                                    onClick={() => {
+                                                        if (alreadySent) return;
+                                                        setMatchmakeBusinessIds(prev =>
+                                                            prev.includes(bizId) ? prev.filter(id => id !== bizId) : [...prev, bizId]
+                                                        );
+                                                    }}>
+                                                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${selected ? 'bg-primary border-primary' : 'border-muted-foreground'}`}>
+                                                        {(selected || alreadySent) && <CheckCircle2 className="w-3 h-3 text-white" />}
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="font-bold text-sm truncate">{member.business?.name || member.name}</p>
+                                                        <p className="text-xs text-muted-foreground truncate">{member.business?.category} · {member.email}</p>
+                                                    </div>
+                                                    {alreadySent && <Badge variant="secondary" className="text-xs">Already sent</Badge>}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                    <DialogFooter>
+                                        <Button variant="outline" onClick={() => { setMatchmakeOpen(false); setMatchmakeBusinessIds([]); }}>Cancel</Button>
+                                        <Button disabled={matchmakeBusinessIds.length === 0 || matchmakeLoading} onClick={async () => {
+                                            if (!selectedAttachment) return;
+                                            setMatchmakeLoading(true);
+                                            try {
+                                                await attachmentService.adminMatchmake(selectedAttachment._id, matchmakeBusinessIds);
+                                                toast({ title: `Sent to ${matchmakeBusinessIds.length} business(es)` });
+                                                setMatchmakeOpen(false);
+                                                setMatchmakeBusinessIds([]);
+                                                fetchAttachments();
+                                            } catch {
+                                                toast({ title: 'Matchmaking failed', variant: 'destructive' });
+                                            } finally {
+                                                setMatchmakeLoading(false);
+                                            }
+                                        }}>
+                                            {matchmakeLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                                            Send to {matchmakeBusinessIds.length} Business{matchmakeBusinessIds.length !== 1 ? 'es' : ''}
+                                        </Button>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
+                        </div>
+                    )}
                 </div>
             </main>
 
@@ -3973,20 +4354,84 @@ export default function AdminDashboard() {
                                 </div>
                             </div>
 
+                            {/* Payment Details */}
+                            <div className="border-t border-border/40 pt-4">
+                                <h4 className="font-bold mb-3 flex items-center gap-2"><CreditCard className="w-4 h-4 text-primary" /> Payment Details</h4>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-1">
+                                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Member Status</p>
+                                        <p className="font-medium">{selectedSeller.isMember ? 'KNCCI Member' : 'Non-Member'}</p>
+                                        {selectedSeller.kncciMemberId && <p className="text-[11px] text-muted-foreground">ID: {selectedSeller.kncciMemberId}</p>}
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Payment Status</p>
+                                        <PaymentStatusBadge status={selectedSeller.paymentStatus} />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Subscription Fee</p>
+                                        <p className="font-medium">KES {(selectedSeller.subscriptionFee ?? 0).toLocaleString()}</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Amount Paid</p>
+                                        <p className="font-medium">KES {(selectedSeller.amountPaid ?? 0).toLocaleString()}</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Payment Method</p>
+                                        <p className="font-medium">{selectedSeller.paymentMethod || 'N/A'}</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Transaction Ref</p>
+                                        <p className="font-medium">{selectedSeller.transactionReference || 'N/A'}</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Payment Date</p>
+                                        <p className="font-medium">{selectedSeller.paymentDate ? new Date(selectedSeller.paymentDate).toLocaleDateString() : 'N/A'}</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Verified</p>
+                                        <p className="font-medium">{selectedSeller.paymentVerifiedAt ? new Date(selectedSeller.paymentVerifiedAt).toLocaleDateString() : 'Not yet'}</p>
+                                        {selectedSeller.paymentVerifiedBy && <p className="text-[11px] text-muted-foreground">By: {selectedSeller.paymentVerifiedBy}</p>}
+                                    </div>
+                                </div>
+                                {selectedSeller.paymentStatus !== 'verified' && (
+                                    <Button
+                                        className="mt-4 bg-purple-500 hover:bg-purple-600 text-white rounded-xl"
+                                        onClick={() => {
+                                            setSellerDetailOpen(false);
+                                            openVerifyPayment(selectedSeller);
+                                        }}
+                                        disabled={actionLoading}
+                                    >
+                                        <CheckCircle2 className="w-4 h-4 mr-2" /> Verify Payment
+                                    </Button>
+                                )}
+                            </div>
+
                             {selectedSeller.status === 'pending' && (
                                 <div className="border-t border-border/40 pt-4 space-y-3">
                                     <h4 className="font-bold flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-amber-500" /> Admin Actions</h4>
                                     <div className="flex gap-2">
-                                        <Button
-                                            className="bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl flex-1"
-                                            onClick={() => {
-                                                setSellerDetailOpen(false);
-                                                handleSellerStatusUpdate(selectedSeller._id, 'approved');
-                                            }}
-                                            disabled={actionLoading}
-                                        >
-                                            <CheckCircle2 className="w-4 h-4 mr-2" /> Approve Seller
-                                        </Button>
+                                        <TooltipProvider>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <Button
+                                                        className="bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl flex-1"
+                                                        onClick={() => {
+                                                            setSellerDetailOpen(false);
+                                                            handleSellerStatusUpdate(selectedSeller._id, 'approved');
+                                                        }}
+                                                        disabled={actionLoading || selectedSeller.paymentStatus !== 'verified'}
+                                                    >
+                                                        <CheckCircle2 className="w-4 h-4 mr-2" /> Approve Seller
+                                                    </Button>
+                                                </TooltipTrigger>
+                                                {selectedSeller.paymentStatus !== 'verified' && (
+                                                    <TooltipContent>
+                                                        <p>Payment must be verified before approval</p>
+                                                    </TooltipContent>
+                                                )}
+                                            </Tooltip>
+                                        </TooltipProvider>
                                     </div>
                                     <div className="space-y-2 mt-4 p-4 bg-red-50 dark:bg-red-950/20 rounded-xl border border-red-100 dark:border-red-900/30">
                                         <label className="text-xs font-bold text-red-800 dark:text-red-400">Reject Application</label>
@@ -4012,6 +4457,96 @@ export default function AdminDashboard() {
                             )}
                         </div>
                     )}
+                </DialogContent>
+            </Dialog>
+
+            {/* ─── Verify Payment Dialog ───────────────────────────────────  */}
+            <Dialog open={verifyPaymentOpen} onOpenChange={setVerifyPaymentOpen}>
+                <DialogContent className="max-w-md rounded-2xl">
+                    <DialogHeader>
+                        <DialogTitle className="font-extrabold flex items-center gap-2">
+                            <CreditCard className="w-5 h-5 text-primary" /> Verify Payment
+                        </DialogTitle>
+                        <DialogDescription>
+                            Update payment details for {selectedSeller?.firstName} {selectedSeller?.lastName}.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 mt-2">
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Amount Paid (KES)</label>
+                            <Input
+                                type="number"
+                                placeholder="0"
+                                value={verifyPaymentForm.amountPaid}
+                                onChange={(e) => setVerifyPaymentForm({ ...verifyPaymentForm, amountPaid: Number(e.target.value) })}
+                                className="h-11 rounded-xl"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Payment Method</label>
+                            <Input
+                                placeholder="e.g. MPesa, Bank Transfer"
+                                value={verifyPaymentForm.paymentMethod}
+                                onChange={(e) => setVerifyPaymentForm({ ...verifyPaymentForm, paymentMethod: e.target.value })}
+                                className="h-11 rounded-xl"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Payment Status</label>
+                            <Select
+                                value={verifyPaymentForm.paymentStatus}
+                                onValueChange={(v) => setVerifyPaymentForm({ ...verifyPaymentForm, paymentStatus: v as any })}
+                            >
+                                <SelectTrigger className="h-11 rounded-xl">
+                                    <SelectValue placeholder="Select status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="pending">Pending</SelectItem>
+                                    <SelectItem value="partial">Partial</SelectItem>
+                                    <SelectItem value="paid">Paid</SelectItem>
+                                    <SelectItem value="verified">Verified</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Transaction Reference</label>
+                            <Input
+                                placeholder="e.g. MPESA12345"
+                                value={verifyPaymentForm.transactionReference}
+                                onChange={(e) => setVerifyPaymentForm({ ...verifyPaymentForm, transactionReference: e.target.value })}
+                                className="h-11 rounded-xl"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Payment Date</label>
+                            <Input
+                                type="date"
+                                value={verifyPaymentForm.paymentDate}
+                                onChange={(e) => setVerifyPaymentForm({ ...verifyPaymentForm, paymentDate: e.target.value })}
+                                className="h-11 rounded-xl"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Notes</label>
+                            <Textarea
+                                placeholder="Optional notes..."
+                                value={verifyPaymentForm.paymentNotes}
+                                onChange={(e) => setVerifyPaymentForm({ ...verifyPaymentForm, paymentNotes: e.target.value })}
+                                className="min-h-[80px] rounded-xl"
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter className="mt-4">
+                        <Button variant="ghost" onClick={() => setVerifyPaymentOpen(false)}>Cancel</Button>
+                        <Button
+                            onClick={() => selectedSeller && handleVerifyPayment(selectedSeller._id)}
+                            disabled={actionLoading || !verifyPaymentForm.paymentMethod}
+                            className="rounded-xl gap-1.5"
+                        >
+                            {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                            Update Payment
+                        </Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
 

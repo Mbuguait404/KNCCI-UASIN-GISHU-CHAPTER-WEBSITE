@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Link } from "wouter";
+import { SellerApplyDialog } from "@/components/seller-apply-dialog";
 import { ShoppingBag, Store, Users, TrendingUp, Globe, ShieldCheck, ArrowRight, Check } from "lucide-react";
 
 const marketplaceBenefits = [
@@ -38,6 +40,8 @@ const marketplaceBenefits = [
 ];
 
 export function MarketplaceSection() {
+  const [isSellerDialogOpen, setIsSellerDialogOpen] = useState(false);
+
   return (
     <section id="marketplace" className="py-20 sm:py-28 bg-slate-50 dark:bg-slate-900/40 relative overflow-hidden">
       {/* Decorative background */}
@@ -110,7 +114,7 @@ export function MarketplaceSection() {
                   </li>
                 ))}
               </ul>
-              <Link href="/marketplace">
+              <Link href="/profile">
                 <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
                   Get Started <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
@@ -147,11 +151,13 @@ export function MarketplaceSection() {
                   </li>
                 ))}
               </ul>
-              <Link href="/marketplace">
-                <Button variant="outline" className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground">
-                  Explore Marketplace <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              </Link>
+              <Button
+                variant="outline"
+                className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                onClick={() => setIsSellerDialogOpen(true)}
+              >
+                Apply as Seller <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
             </div>
           </Card>
         </motion.div>
@@ -186,6 +192,8 @@ export function MarketplaceSection() {
           ))}
         </motion.div>
       </div>
+
+      <SellerApplyDialog isOpen={isSellerDialogOpen} onOpenChange={setIsSellerDialogOpen} />
     </section>
   );
 }

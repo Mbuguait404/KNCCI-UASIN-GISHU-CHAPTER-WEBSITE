@@ -3,8 +3,6 @@ import { Navigation } from "@/components/navigation";
 import { Footer } from "@/components/footer";
 import { motion } from "framer-motion";
 import {
-    ShoppingBag,
-    Search,
     Store,
     ArrowUpRight,
     ChevronRight,
@@ -13,7 +11,6 @@ import {
     ExternalLink,
     Loader2,
 } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -41,7 +38,6 @@ interface Vendor {
 const MARKETPLACE_URL = import.meta.env.VITE_MARKETPLACE_URL || "http://localhost:3002";
 
 export default function MarketplacePage() {
-    const [searchQuery, setSearchQuery] = useState("");
     const [vendors, setVendors] = useState<Vendor[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -53,7 +49,6 @@ export default function MarketplacePage() {
                 const response = await api.get("/marketplace/vendors", {
                     params: { limit: 5, page: 1 },
                 });
-                // Response shape: { data: { data: Vendor[], total, page, limit }, message }
                 const result = response.data?.data;
                 setVendors(result?.data || []);
             } catch (err: any) {
@@ -64,16 +59,6 @@ export default function MarketplacePage() {
         }
         fetchVendors();
     }, []);
-
-    const categories = [
-        "All Categories",
-        "Agribusiness",
-        "Manufacturing",
-        "Professional Services",
-        "Hospitality & Tourism",
-        "Construction",
-        "Technology",
-    ];
 
     return (
         <div className="min-h-screen bg-background">
@@ -104,45 +89,20 @@ export default function MarketplacePage() {
                             </motion.div>
                         </div>
 
-                        {/* Search Bar */}
-                        <div className="mt-8 max-w-5xl mx-auto">
-                            <div className="flex flex-col md:flex-row gap-4 p-2 bg-background rounded-2xl shadow-xl border border-border">
-                                <div className="relative flex-1">
-                                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                                    <Input
-                                        placeholder="Search for products, services or companies..."
-                                        className="pl-12 h-14 border-none focus-visible:ring-0 text-lg rounded-xl"
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                    />
-                                </div>
-                                <Button
-                                    size="lg"
-                                    className="h-14 px-12 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all hover:scale-105"
-                                    asChild
-                                >
-                                    <a href={MARKETPLACE_URL} target="_blank" rel="noopener noreferrer">
-                                        Explore Marketplace <ExternalLink className="w-4 h-4 ml-2" />
-                                    </a>
-                                </Button>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                {/* Categories / Tabs Section */}
-                <section className="py-12 border-b border-border bg-background">
-                    <div className="container mx-auto px-4 overflow-x-auto">
-                        <div className="flex whitespace-nowrap gap-4 pb-2">
-                            {categories.map((cat, i) => (
-                                <Button
-                                    key={i}
-                                    variant={i === 0 ? "default" : "outline"}
-                                    className={`rounded-full px-8 ${i === 0 ? "bg-primary text-white shadow-lg" : "bg-background hover:bg-primary/5"}`}
-                                >
-                                    {cat}
-                                </Button>
-                            ))}
+                        {/* CTA */}
+                        <div className="mt-8 max-w-xl mx-auto flex flex-col sm:flex-row gap-4 justify-center">
+                            <Button
+                                size="lg"
+                                className="h-14 px-12 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all hover:scale-105"
+                                asChild
+                            >
+                                <a href={MARKETPLACE_URL} target="_blank" rel="noopener noreferrer">
+                                    Visit the Marketplace <ExternalLink className="w-4 h-4 ml-2" />
+                                </a>
+                            </Button>
+                            <Button size="lg" variant="outline" className="h-14 px-10 rounded-xl font-bold" asChild>
+                                <a href="/membership">Become a Member</a>
+                            </Button>
                         </div>
                     </div>
                 </section>

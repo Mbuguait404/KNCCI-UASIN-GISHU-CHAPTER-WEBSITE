@@ -44,7 +44,12 @@ import {
     Trash2,
     AlertCircle,
     ShieldCheck,
-    Wallet
+    Wallet,
+    Receipt,
+    Clock,
+    RefreshCw,
+    ArrowUpRight,
+    GraduationCap
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -57,6 +62,11 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/services/auth-context";
 import { businessService, BusinessData } from "@/services/business-service";
 import { cmsService, CmsStatus, CmsDashboard, CmsProduct, CmsCategory, CmsOrder } from "@/services/cms-service";
+import { memberService, MemberDashboardStats, FinancialsData } from "@/services/member-service";
+import { attachmentService } from "@/services/attachment-service";
+import type { AttachmentRequest as AttachReq } from "@/services/attachment-service";
+import { websiteContentService } from "@/services/website-content-service";
+import type { WebsiteEventContent } from "@/types/content";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -115,6 +125,14 @@ export default function ProfilePage() {
     const [isSubmittingPassword, setIsSubmittingPassword] = useState(false);
     const [showPasswords, setShowPasswords] = useState({ current: false, new: false, confirm: false });
     const [activeTab, setActiveTab] = useState("overview");
+    const [dashboardStats, setDashboardStats] = useState<MemberDashboardStats | null>(null);
+    const [statsLoading, setStatsLoading] = useState(true);
+    const [upcomingEventsData, setUpcomingEventsData] = useState<WebsiteEventContent[]>([]);
+    const [eventsLoading, setEventsLoading] = useState(false);
+    const [attachmentRequests, setAttachmentRequests] = useState<AttachReq[]>([]);
+    const [attachmentsLoading, setAttachmentsLoading] = useState(false);
+    const [respondingTo, setRespondingTo] = useState<string | null>(null);
+    const [respondNote, setRespondNote] = useState<Record<string, string>>({});
 
     const businessSchema = z.object({
         name: z.string().min(2, "Business name must be at least 2 characters"),
@@ -203,6 +221,49 @@ export default function ProfilePage() {
             }
         }
     }, [user, authLoading, setLocation, form, personalForm]);
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            if (!user) return;
+            try {
+                setStatsLoading(true);
+                const response = await memberService.getDashboardStats();
+                if (response.success) {
+                    setDashboardStats(response.data);
+                }
+            } catch (error) {
+                console.error("Failed to fetch dashboard stats:", error);
+            } finally {
+                setStatsLoading(false);
+            }
+        };
+        fetchStats();
+    }, [user]);
+
+    useEffect(() => {
+        const fetchEvents = async () => {
+            if (!user) return;
+            try {
+                setEventsLoading(true);
+                const events = await websiteContentService.getEvents();
+                setUpcomingEventsData(events.filter((e) => !e.isPast).slice(0, 6));
+            } catch {
+                // silently fail — events section will show empty state
+            } finally {
+                setEventsLoading(false);
+            }
+        };
+        fetchEvents();
+    }, [user]);
+
+    useEffect(() => {
+        if (activeTab !== 'student-attachment' || !user) return;
+        setAttachmentsLoading(true);
+        attachmentService.businessList()
+            .then(setAttachmentRequests)
+            .catch(() => { })
+            .finally(() => setAttachmentsLoading(false));
+    }, [activeTab, user]);
 
     const onSubmit = async (data: z.infer<typeof businessSchema>) => {
         try {
@@ -462,6 +523,7 @@ export default function ProfilePage() {
         ...(DIRECTORY_MODE ? [] : [{ key: "finances", label: "Finances", icon: <PaymentIcon className="w-4 h-4" /> }]),
         { key: "marketplace", label: DIRECTORY_MODE ? "Business Directory" : "Marketplace", icon: <Store className="w-4 h-4" /> },
         { key: "events", label: "Events & Trade", icon: <Activity className="w-4 h-4" /> },
+        ...(business ? [{ key: "student-attachment", label: "Student Attachment", icon: <GraduationCap className="w-4 h-4" /> }] : []),
     ];
     const sideNavItems = allNavItems;
 
@@ -472,13 +534,46 @@ export default function ProfilePage() {
         ...(DIRECTORY_MODE ? [] : [{ key: "finances", label: "Finances", icon: <PaymentIcon className="w-5 h-5" /> }]),
         { key: "marketplace",  label: DIRECTORY_MODE ? "Directory" : "Market", icon: <Store className="w-5 h-5" /> },
         { key: "events",       label: "Events",    icon: <Activity className="w-5 h-5" /> },
+        ...(business ? [{ key: "student-attachment", label: "Attachments", icon: <GraduationCap className="w-5 h-5" /> }] : []),
     ];
 
+    const getActivityStyle = (type: string): { icon: React.ComponentType<{ className?: string }>; color: string; bg: string } => {
+        const map: Record<string, { icon: React.ComponentType<{ className?: string }>; color: string; bg: string }> = {
+            membership_renewed: { icon: Award, color: "text-amber-500", bg: "bg-amber-500/10" },
+            payment_made: { icon: DollarSign, color: "text-emerald-500", bg: "bg-emerald-500/10" },
+            event_registered: { icon: Calendar, color: "text-blue-500", bg: "bg-blue-500/10" },
+            event_attended: { icon: Calendar, color: "text-indigo-500", bg: "bg-indigo-500/10" },
+            marketplace_activated: { icon: Store, color: "text-purple-500", bg: "bg-purple-500/10" },
+            product_created: { icon: Package, color: "text-teal-500", bg: "bg-teal-500/10" },
+            product_updated: { icon: Package, color: "text-cyan-500", bg: "bg-cyan-500/10" },
+            order_received: { icon: TrendingUp, color: "text-green-500", bg: "bg-green-500/10" },
+            order_fulfilled: { icon: ShoppingCart, color: "text-emerald-600", bg: "bg-emerald-500/10" },
+            profile_updated: { icon: User, color: "text-slate-500", bg: "bg-slate-500/10" },
+            business_updated: { icon: Briefcase, color: "text-blue-500", bg: "bg-blue-500/10" },
+            login: { icon: Shield, color: "text-slate-400", bg: "bg-slate-100 dark:bg-slate-700" },
+            password_changed: { icon: KeyRound, color: "text-orange-500", bg: "bg-orange-500/10" },
+            certificate_downloaded: { icon: FileText, color: "text-primary", bg: "bg-primary/10" },
+        };
+        return map[type] ?? { icon: Activity, color: "text-slate-400", bg: "bg-slate-100 dark:bg-slate-700" };
+    };
+
+    const getRelativeTime = (dateStr: string) => {
+        const diff = Date.now() - new Date(dateStr).getTime();
+        const mins = Math.floor(diff / 60000);
+        if (mins < 1) return "just now";
+        if (mins < 60) return `${mins}m ago`;
+        const hours = Math.floor(mins / 60);
+        if (hours < 24) return `${hours}h ago`;
+        const days = Math.floor(hours / 24);
+        if (days < 30) return `${days}d ago`;
+        return new Date(dateStr).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    };
+
     const stats = [
-        { title: "Membership Status", value: business?.plan || "Full", icon: <Shield className="w-5 h-5" />, color: "from-blue-500 to-indigo-600", bg: "bg-blue-500/10" },
-        { title: "Registered Events", value: "2", icon: <Calendar className="w-5 h-5" />, color: "from-primary to-primary/70", bg: "bg-primary/10" },
-        { title: "Trade Leads", value: "12", icon: <TrendingUp className="w-5 h-5" />, color: "from-emerald-500 to-teal-600", bg: "bg-emerald-500/10" },
-        { title: "Total Points", value: "450", icon: <Award className="w-5 h-5" />, color: "from-amber-500 to-orange-600", bg: "bg-amber-500/10" },
+        { title: "Membership Status", value: statsLoading ? "…" : (business?.plan || "—"), icon: <Shield className="w-5 h-5" />, color: "from-blue-500 to-indigo-600", bg: "bg-blue-500/10" },
+        { title: "Registered Events", value: statsLoading ? "…" : String(dashboardStats?.stats?.activeEventRegistrations ?? 0), icon: <Calendar className="w-5 h-5" />, color: "from-primary to-primary/70", bg: "bg-primary/10" },
+        { title: "Payments Made", value: statsLoading ? "…" : String(dashboardStats?.stats?.totalPayments ?? 0), icon: <TrendingUp className="w-5 h-5" />, color: "from-emerald-500 to-teal-600", bg: "bg-emerald-500/10" },
+        { title: "Total Activities", value: statsLoading ? "…" : String(dashboardStats?.stats?.totalActivities ?? 0), icon: <Award className="w-5 h-5" />, color: "from-amber-500 to-orange-600", bg: "bg-amber-500/10" },
     ];
 
     return (
@@ -670,7 +765,10 @@ export default function ProfilePage() {
                                         <span className="text-xs font-extrabold text-foreground uppercase tracking-widest">Verified Member</span>
                                     </div>
                                     <span className="text-[11px] font-bold text-muted-foreground/60 uppercase tracking-widest border-l border-border/40 pl-4 h-4 flex items-center">
-                                        Member Since Jan 2023
+                                        Member Since{" "}
+                                        {dashboardStats?.member?.membershipVerifiedAt
+                                            ? new Date(dashboardStats.member.membershipVerifiedAt).toLocaleDateString(undefined, { month: "short", year: "numeric" })
+                                            : "—"}
                                     </span>
                                 </div>
                             </motion.div>
@@ -741,24 +839,33 @@ export default function ProfilePage() {
                                             </CardHeader>
                                             <CardContent className="p-0">
                                                 <div className="divide-y divide-border/20">
-                                                    {[
-                                                        { title: "Renewal Success", desc: "Your membership for 2026/27 has been officially confirmed.", time: "2h ago", icon: Award, color: "text-amber-500", bg: "bg-amber-500/10" },
-                                                        { title: "Marketplace Match", desc: "A new lead in 'Construction Materials' matches your profile.", time: "1d ago", icon: TrendingUp, color: "text-emerald-500", bg: "bg-emerald-500/10" },
-                                                        { title: "Directory Profile", desc: "Your business is now visible in the verified member directory.", time: "3d ago", icon: User, color: "text-blue-500", bg: "bg-blue-500/10" },
-                                                    ].map((item, i) => (
-                                                        <div key={i} className="p-6 flex gap-6 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all cursor-pointer group">
-                                                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${item.bg} ${item.color} shadow-sm group-hover:rotate-6 transition-transform`}>
-                                                                <item.icon className="w-7 h-7" />
-                                                            </div>
-                                                            <div className="flex-1 min-w-0">
-                                                                <div className="flex justify-between items-start mb-1">
-                                                                    <h4 className="font-extrabold truncate pr-4 text-xs uppercase tracking-tight group-hover:text-primary transition-colors">{item.title}</h4>
-                                                                    <span className="text-[10px] font-extrabold text-muted-foreground bg-slate-100 dark:bg-slate-800 rounded-full px-2 py-0.5 whitespace-nowrap">{item.time}</span>
+                                                    {dashboardStats?.recentActivities && dashboardStats.recentActivities.length > 0 ? (
+                                                        dashboardStats.recentActivities.map((item, i) => {
+                                                            const { icon: Icon, color, bg } = getActivityStyle(item.type);
+                                                            return (
+                                                                <div key={(item as any)._id || i} className="p-6 flex gap-6 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all cursor-pointer group">
+                                                                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${bg} ${color} shadow-sm group-hover:rotate-6 transition-transform`}>
+                                                                        <Icon className="w-7 h-7" />
+                                                                    </div>
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <div className="flex justify-between items-start mb-1">
+                                                                            <h4 className="font-extrabold truncate pr-4 text-xs uppercase tracking-tight group-hover:text-primary transition-colors">{item.title}</h4>
+                                                                            <span className="text-[10px] font-extrabold text-muted-foreground bg-slate-100 dark:bg-slate-800 rounded-full px-2 py-0.5 whitespace-nowrap">{getRelativeTime((item as any).createdAt)}</span>
+                                                                        </div>
+                                                                        <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed font-medium">{item.description || "—"}</p>
+                                                                    </div>
                                                                 </div>
-                                                                <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed font-medium">{item.desc}</p>
-                                                            </div>
+                                                            );
+                                                        })
+                                                    ) : !statsLoading ? (
+                                                        <div className="p-8 text-center">
+                                                            <p className="text-sm text-muted-foreground font-medium">No recent activity yet. Start exploring your member benefits!</p>
                                                         </div>
-                                                    ))}
+                                                    ) : (
+                                                        <div className="p-8 flex items-center justify-center">
+                                                            <Loader2 className="w-6 h-6 text-primary animate-spin" />
+                                                        </div>
+                                                    )}
                                                 </div>
                                                 <div className="p-6 bg-slate-50/50 dark:bg-slate-800/20 text-center border-t border-border/10">
                                                     <Button variant="ghost" className="font-extrabold text-primary text-[10px] uppercase tracking-[0.2em] hover:bg-transparent">All Updates <ChevronRight className="w-4 h-4 ml-1" /></Button>
@@ -898,6 +1005,166 @@ export default function ProfilePage() {
                                     </motion.div>
                                 )}
 
+                                {activeTab === "student-attachment" && (
+                                    <motion.div
+                                        key="student-attachment"
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -10 }}
+                                        className="space-y-6"
+                                    >
+                                        <Card className="rounded-[2.5rem] border-none shadow-2xl shadow-primary/5 p-8 bg-white dark:bg-slate-900 border border-border/40">
+                                            <div className="flex items-center justify-between mb-6">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center">
+                                                        <GraduationCap className="w-5 h-5 text-primary" />
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="font-extrabold text-lg">Student Attachment Requests</h3>
+                                                        <p className="text-xs text-muted-foreground">Students matched with your business for internship placement</p>
+                                                    </div>
+                                                </div>
+                                                <Button variant="outline" size="sm" className="rounded-xl gap-2" onClick={() => {
+                                                    setAttachmentsLoading(true);
+                                                    attachmentService.businessList()
+                                                        .then(setAttachmentRequests)
+                                                        .catch(() => { })
+                                                        .finally(() => setAttachmentsLoading(false));
+                                                }}>
+                                                    <RefreshCw className="w-3.5 h-3.5" /> Refresh
+                                                </Button>
+                                            </div>
+
+                                            {attachmentsLoading ? (
+                                                <div className="flex justify-center py-12">
+                                                    <Loader2 className="w-7 h-7 animate-spin text-primary" />
+                                                </div>
+                                            ) : attachmentRequests.length === 0 ? (
+                                                <div className="text-center py-14">
+                                                    <div className="w-16 h-16 rounded-3xl bg-primary/5 flex items-center justify-center mx-auto mb-4">
+                                                        <GraduationCap className="w-8 h-8 text-primary/40" />
+                                                    </div>
+                                                    <p className="font-bold text-foreground">No attachment requests yet</p>
+                                                    <p className="text-sm text-muted-foreground mt-1">When KNCCI matches students with your business, they will appear here.</p>
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-5">
+                                                    {attachmentRequests.map(req => {
+                                                        const myReq = req.myMatchRequest;
+                                                        const isPending = myReq?.status === 'pending';
+                                                        const note = respondNote[req._id] ?? '';
+                                                        return (
+                                                            <div key={req._id} className="rounded-2xl border border-border/60 bg-slate-50 dark:bg-slate-800/30 overflow-hidden">
+                                                                <div className="p-5 pb-4 flex flex-col sm:flex-row sm:items-start gap-4">
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <div className="flex items-center gap-2 flex-wrap">
+                                                                            <p className="font-extrabold text-base leading-tight">{req.studentName}</p>
+                                                                            {myReq && (
+                                                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
+                                                                                    myReq.status === 'accepted'
+                                                                                        ? 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20'
+                                                                                        : myReq.status === 'declined'
+                                                                                            ? 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20'
+                                                                                            : 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20'
+                                                                                }`}>
+                                                                                    {myReq.status === 'accepted' ? '✓ Accepted' : myReq.status === 'declined' ? '✕ Declined' : '⏳ Awaiting Response'}
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+                                                                        <p className="text-sm text-muted-foreground mt-0.5">{req.institution} · {req.course}</p>
+                                                                        <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                                                                            <Calendar className="w-3 h-3 inline" />
+                                                                            {' '}{new Date(req.attachmentStartDate).toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' })} –{' '}
+                                                                            {new Date(req.attachmentEndDate).toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="px-5 pb-4 flex items-center gap-4 flex-wrap">
+                                                                    <a href={`mailto:${req.studentEmail}`} className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline font-medium">
+                                                                        <Mail className="w-3 h-3" /> {req.studentEmail}
+                                                                    </a>
+                                                                    <a href={`tel:${req.studentPhone}`} className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground font-medium">
+                                                                        <Phone className="w-3 h-3" /> {req.studentPhone}
+                                                                    </a>
+                                                                </div>
+
+                                                                {req.documents && req.documents.length > 0 && (
+                                                                    <div className="px-5 pb-4 flex gap-2 flex-wrap">
+                                                                        {req.documents.map((url, i) => (
+                                                                            <a key={i} href={url} target="_blank" rel="noopener noreferrer"
+                                                                                className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-xl bg-primary/5 text-primary border border-primary/20 hover:bg-primary/10 transition-colors font-medium">
+                                                                                <FileText className="w-3 h-3" /> Document {i + 1}
+                                                                            </a>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
+
+                                                                {myReq?.businessNote && (
+                                                                    <div className="px-5 pb-4">
+                                                                        <p className="text-xs text-muted-foreground bg-muted/50 rounded-xl px-3 py-2 italic">
+                                                                            <span className="font-semibold not-italic">Your note:</span> "{myReq.businessNote}"
+                                                                        </p>
+                                                                    </div>
+                                                                )}
+
+                                                                {isPending && (
+                                                                    <div className="border-t border-border/50 bg-white dark:bg-slate-900 px-5 py-4 space-y-3">
+                                                                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Your Response</p>
+                                                                        <Textarea
+                                                                            placeholder="Add an optional message to the student (e.g. next steps, contact person, start date)..."
+                                                                            className="rounded-xl text-sm min-h-[80px] resize-none"
+                                                                            value={note}
+                                                                            onChange={e => setRespondNote(prev => ({ ...prev, [req._id]: e.target.value }))}
+                                                                        />
+                                                                        <div className="flex gap-2">
+                                                                            <Button size="sm" className="rounded-xl font-bold gap-1.5 flex-1 sm:flex-none" disabled={respondingTo === req._id}
+                                                                                onClick={async () => {
+                                                                                    setRespondingTo(req._id);
+                                                                                    try {
+                                                                                        await attachmentService.businessRespond(req._id, true, note || undefined);
+                                                                                        setAttachmentRequests(prev => prev.map(r => r._id === req._id
+                                                                                            ? { ...r, myMatchRequest: { ...r.myMatchRequest!, status: 'accepted', businessNote: note || undefined } }
+                                                                                            : r));
+                                                                                        toast({ title: '✓ Attachment request accepted', description: 'The student will be notified by email and SMS.' });
+                                                                                    } catch {
+                                                                                        toast({ title: 'Failed to respond', variant: 'destructive' });
+                                                                                    } finally {
+                                                                                        setRespondingTo(null);
+                                                                                    }
+                                                                                }}>
+                                                                                {respondingTo === req._id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+                                                                                Accept
+                                                                            </Button>
+                                                                            <Button size="sm" variant="outline" className="rounded-xl font-bold gap-1.5 border-red-200 text-red-600 hover:bg-red-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-900/20 flex-1 sm:flex-none" disabled={respondingTo === req._id}
+                                                                                onClick={async () => {
+                                                                                    setRespondingTo(req._id);
+                                                                                    try {
+                                                                                        await attachmentService.businessRespond(req._id, false, note || undefined);
+                                                                                        setAttachmentRequests(prev => prev.map(r => r._id === req._id
+                                                                                            ? { ...r, myMatchRequest: { ...r.myMatchRequest!, status: 'declined', businessNote: note || undefined } }
+                                                                                            : r));
+                                                                                        toast({ title: 'Request declined', description: 'The student will be notified.' });
+                                                                                    } catch {
+                                                                                        toast({ title: 'Failed to respond', variant: 'destructive' });
+                                                                                    } finally {
+                                                                                        setRespondingTo(null);
+                                                                                    }
+                                                                                }}>
+                                                                                <XCircle className="w-3.5 h-3.5" /> Decline
+                                                                            </Button>
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
+                                        </Card>
+                                    </motion.div>
+                                )}
+
                                 {activeTab === "finances" && (
                                     <motion.div
                                         key="finances"
@@ -906,23 +1173,437 @@ export default function ProfilePage() {
                                         exit={{ opacity: 0, y: -10 }}
                                         className="space-y-6"
                                     >
-                                        <Card className="rounded-[2.5rem] border-none shadow-2xl shadow-primary/5 p-12 bg-white dark:bg-slate-900 border border-border/40 min-h-[500px] flex flex-col items-center justify-center text-center">
-                                            <div className="w-24 h-24 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center mb-8 shadow-inner">
-                                                <PaymentIcon className="w-10 h-10 text-muted-foreground/30" />
+                                        {statsLoading ? (
+                                            <Card className="rounded-[2.5rem] border-none shadow-2xl shadow-primary/5 p-12 bg-white dark:bg-slate-900 min-h-[400px] flex items-center justify-center">
+                                                <div className="flex flex-col items-center gap-4">
+                                                    <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                                                    <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Loading financials...</p>
+                                                </div>
+                                            </Card>
+                                        ) : (
+                                            <div className="space-y-8">
+                                                {/* Header */}
+                                                <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+                                                    <div>
+                                                        <h3 className="text-3xl font-extrabold tracking-tight">Finances & Billing</h3>
+                                                        <p className="text-sm text-muted-foreground font-medium mt-1">Track subscriptions, view receipts, and manage renewals</p>
+                                                    </div>
+                                                    <div className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/20">
+                                                        <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+                                                            <DollarSign className="w-5 h-5 text-emerald-600" />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Total Invested</p>
+                                                            <p className="text-lg font-extrabold text-emerald-600">KES {dashboardStats?.financials?.payments?.reduce((sum, p) => sum + (p.amount || 0), 0).toLocaleString() || 0}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Quick Stats Row */}
+                                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                                                    {[
+                                                        {
+                                                            label: "Membership",
+                                                            value: dashboardStats?.financials?.membership?.isActive ? "Active" : (dashboardStats?.financials?.membership?.status || "N/A"),
+                                                            sub: dashboardStats?.financials?.membership?.plan || "—",
+                                                            icon: <BadgeCheck className="w-5 h-5" />,
+                                                            color: dashboardStats?.financials?.membership?.isActive ? "from-emerald-500 to-teal-600" : "from-slate-400 to-slate-500",
+                                                            bg: dashboardStats?.financials?.membership?.isActive ? "bg-emerald-500/10" : "bg-slate-100",
+                                                            text: dashboardStats?.financials?.membership?.isActive ? "text-emerald-600" : "text-slate-500",
+                                                        },
+                                                        {
+                                                            label: "Marketplace",
+                                                            value: dashboardStats?.financials?.marketplace?.isActive ? "Active" : (dashboardStats?.financials?.marketplace ? (dashboardStats.financials.marketplace.status === "pending" ? "Pending" : dashboardStats.financials.marketplace.status) : "Not Active"),
+                                                            sub: dashboardStats?.financials?.marketplace ? `KES ${dashboardStats.financials.marketplace.subscriptionFee?.toLocaleString() || 0}` : "—",
+                                                            icon: <Store className="w-5 h-5" />,
+                                                            color: dashboardStats?.financials?.marketplace?.isActive ? "from-secondary to-secondary/70" : "from-slate-400 to-slate-500",
+                                                            bg: dashboardStats?.financials?.marketplace?.isActive ? "bg-secondary/10" : "bg-slate-100",
+                                                            text: dashboardStats?.financials?.marketplace?.isActive ? "text-secondary" : "text-slate-500",
+                                                        },
+                                                        {
+                                                            label: "Total Payments",
+                                                            value: String(dashboardStats?.financials?.payments?.length || 0),
+                                                            sub: "transactions",
+                                                            icon: <Receipt className="w-5 h-5" />,
+                                                            color: "from-blue-500 to-indigo-600",
+                                                            bg: "bg-blue-500/10",
+                                                            text: "text-blue-600",
+                                                        },
+                                                        {
+                                                            label: "Next Due",
+                                                            value: (() => {
+                                                                const mem = dashboardStats?.financials?.membership;
+                                                                const mkt = dashboardStats?.financials?.marketplace;
+                                                                const dates = [];
+                                                                if (mem?.nextPaymentDue) dates.push(new Date(mem.nextPaymentDue));
+                                                                if (mkt?.nextPaymentDue) dates.push(new Date(mkt.nextPaymentDue));
+                                                                if (dates.length === 0) return "—";
+                                                                const soonest = new Date(Math.min(...dates.map(d => d.getTime())));
+                                                                const days = Math.ceil((soonest.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                                                                return days <= 30 ? `${days}d` : soonest.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+                                                            })(),
+                                                            sub: "soonest renewal",
+                                                            icon: <Clock className="w-5 h-5" />,
+                                                            color: (() => {
+                                                                const mem = dashboardStats?.financials?.membership;
+                                                                const mkt = dashboardStats?.financials?.marketplace;
+                                                                const dates = [];
+                                                                if (mem?.nextPaymentDue) dates.push(new Date(mem.nextPaymentDue));
+                                                                if (mkt?.nextPaymentDue) dates.push(new Date(mkt.nextPaymentDue));
+                                                                if (dates.length === 0) return "from-slate-400 to-slate-500";
+                                                                const soonest = Math.min(...dates.map(d => d.getTime()));
+                                                                const days = Math.ceil((soonest - Date.now()) / (1000 * 60 * 60 * 24));
+                                                                return days <= 30 ? "from-amber-500 to-orange-600" : "from-primary to-primary/70";
+                                                            })(),
+                                                            bg: (() => {
+                                                                const mem = dashboardStats?.financials?.membership;
+                                                                const mkt = dashboardStats?.financials?.marketplace;
+                                                                const dates = [];
+                                                                if (mem?.nextPaymentDue) dates.push(new Date(mem.nextPaymentDue));
+                                                                if (mkt?.nextPaymentDue) dates.push(new Date(mkt.nextPaymentDue));
+                                                                if (dates.length === 0) return "bg-slate-100";
+                                                                const soonest = Math.min(...dates.map(d => d.getTime()));
+                                                                const days = Math.ceil((soonest - Date.now()) / (1000 * 60 * 60 * 24));
+                                                                return days <= 30 ? "bg-amber-500/10" : "bg-primary/10";
+                                                            })(),
+                                                            text: (() => {
+                                                                const mem = dashboardStats?.financials?.membership;
+                                                                const mkt = dashboardStats?.financials?.marketplace;
+                                                                const dates = [];
+                                                                if (mem?.nextPaymentDue) dates.push(new Date(mem.nextPaymentDue));
+                                                                if (mkt?.nextPaymentDue) dates.push(new Date(mkt.nextPaymentDue));
+                                                                if (dates.length === 0) return "text-slate-500";
+                                                                const soonest = Math.min(...dates.map(d => d.getTime()));
+                                                                const days = Math.ceil((soonest - Date.now()) / (1000 * 60 * 60 * 24));
+                                                                return days <= 30 ? "text-amber-600" : "text-primary";
+                                                            })(),
+                                                        },
+                                                    ].map((stat, i) => (
+                                                        <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
+                                                            <Card className="rounded-3xl border-none shadow-xl shadow-primary/5 overflow-hidden relative group hover:shadow-primary/10 transition-all">
+                                                                <div className={`absolute top-0 right-0 w-20 h-20 ${stat.bg} rounded-full -mr-10 -mt-10 blur-2xl group-hover:scale-150 transition-transform duration-700`} />
+                                                                <CardContent className="p-5 relative">
+                                                                    <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center text-white mb-3 shadow-lg group-hover:scale-110 transition-transform`}>
+                                                                        {stat.icon}
+                                                                    </div>
+                                                                    <p className="text-lg font-extrabold tracking-tight">{stat.value}</p>
+                                                                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">{stat.label}</p>
+                                                                    <p className={`text-xs font-bold mt-1 ${stat.text}`}>{stat.sub}</p>
+                                                                </CardContent>
+                                                            </Card>
+                                                        </motion.div>
+                                                    ))}
+                                                </div>
+
+                                                {/* Subscription Cards */}
+                                                <div className="grid md:grid-cols-2 gap-6">
+                                                    {/* Membership Subscription */}
+                                                    <Card className="rounded-[2.5rem] border-none shadow-xl shadow-primary/5 overflow-hidden relative">
+                                                        <div className={`h-2 ${dashboardStats?.financials?.membership?.isActive ? 'bg-gradient-to-r from-emerald-500 to-teal-500' : 'bg-gradient-to-r from-amber-400 to-orange-500'}`} />
+                                                        <div className="p-8 bg-white dark:bg-slate-900">
+                                                            <div className="flex items-center justify-between mb-8">
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className={`w-14 h-14 rounded-[1.2rem] flex items-center justify-center shadow-lg ${dashboardStats?.financials?.membership?.isActive ? 'bg-gradient-to-br from-emerald-500 to-teal-600 shadow-emerald-500/20' : 'bg-gradient-to-br from-amber-400 to-orange-500 shadow-amber-500/20'}`}>
+                                                                        <BadgeCheck className="w-7 h-7 text-white" />
+                                                                    </div>
+                                                                    <div>
+                                                                        <h4 className="font-extrabold text-base">KNCCI Membership</h4>
+                                                                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">Annual Subscription</p>
+                                                                    </div>
+                                                                </div>
+                                                                <div className={`px-3 py-1.5 rounded-xl border ${dashboardStats?.financials?.membership?.isActive ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-amber-500/10 border-amber-500/20'}`}>
+                                                                    <span className={`text-[10px] font-extrabold uppercase tracking-widest ${dashboardStats?.financials?.membership?.isActive ? 'text-emerald-600' : 'text-amber-600'}`}>
+                                                                        {dashboardStats?.financials?.membership?.isActive ? 'Active' : (dashboardStats?.financials?.membership?.status || 'Pending')}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Progress Ring */}
+                                                            {dashboardStats?.financials?.membership?.daysRemaining !== undefined && dashboardStats.financials.membership.daysRemaining > 0 && (
+                                                                <div className="flex items-center gap-6 mb-8 p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                                                                    <div className="relative w-20 h-20 shrink-0">
+                                                                        <svg className="w-20 h-20 -rotate-90" viewBox="0 0 80 80">
+                                                                            <circle cx="40" cy="40" r="34" fill="none" stroke="currentColor" strokeWidth="6" className="text-slate-100 dark:text-slate-700" />
+                                                                            <circle
+                                                                                cx="40"
+                                                                                cy="40"
+                                                                                r="34"
+                                                                                fill="none"
+                                                                                stroke="currentColor"
+                                                                                strokeWidth="6"
+                                                                                strokeLinecap="round"
+                                                                                strokeDasharray={`${2 * Math.PI * 34}`}
+                                                                                strokeDashoffset={`${2 * Math.PI * 34 * (1 - Math.min(dashboardStats.financials.membership.daysRemaining / 365, 1))}`}
+                                                                                className={dashboardStats.financials.membership.daysRemaining <= 30 ? 'text-amber-500' : 'text-emerald-500'}
+                                                                                style={{ transition: 'stroke-dashoffset 1s ease-out' }}
+                                                                            />
+                                                                        </svg>
+                                                                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                                                            <span className="text-lg font-extrabold leading-none">{dashboardStats.financials.membership.daysRemaining}</span>
+                                                                            <span className="text-[9px] font-bold text-muted-foreground uppercase">days</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <p className="text-sm font-bold text-muted-foreground mb-1">Subscription Timeline</p>
+                                                                        <div className="w-full h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                                                                            <motion.div
+                                                                                className={`h-full rounded-full ${dashboardStats.financials.membership.daysRemaining <= 30 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                                                                                initial={{ width: 0 }}
+                                                                                animate={{ width: `${Math.min((dashboardStats.financials.membership.daysRemaining / 365) * 100, 100)}%` }}
+                                                                                transition={{ duration: 1, ease: "easeOut" }}
+                                                                            />
+                                                                        </div>
+                                                                        <div className="flex justify-between mt-1.5">
+                                                                            <span className="text-[10px] font-bold text-muted-foreground">
+                                                                                {dashboardStats.financials.membership.startDate ? new Date(dashboardStats.financials.membership.startDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Start'}
+                                                                            </span>
+                                                                            <span className={`text-[10px] font-bold ${dashboardStats.financials.membership.daysRemaining <= 30 ? 'text-amber-500' : 'text-emerald-600'}`}>
+                                                                                Due {dashboardStats.financials.membership.nextPaymentDue ? new Date(dashboardStats.financials.membership.nextPaymentDue).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Soon'}
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+
+                                                            <div className="grid grid-cols-2 gap-3">
+                                                                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                                                                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Plan</p>
+                                                                    <p className="text-base font-extrabold">{dashboardStats?.financials?.membership?.plan || 'None'}</p>
+                                                                </div>
+                                                                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                                                                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Total Paid</p>
+                                                                    <p className="text-base font-extrabold">KES {dashboardStats?.financials?.membership?.totalPaid?.toLocaleString() || 0}</p>
+                                                                </div>
+                                                                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                                                                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Start Date</p>
+                                                                    <p className="text-sm font-extrabold">{dashboardStats?.financials?.membership?.startDate ? new Date(dashboardStats.financials.membership.startDate).toLocaleDateString() : 'N/A'}</p>
+                                                                </div>
+                                                                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                                                                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Payments Made</p>
+                                                                    <p className="text-sm font-extrabold">{dashboardStats?.financials?.membership?.paymentCount || 0}</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </Card>
+
+                                                    {/* Marketplace Subscription */}
+                                                    <Card className="rounded-[2.5rem] border-none shadow-xl shadow-primary/5 overflow-hidden relative">
+                                                        <div className={`h-2 ${dashboardStats?.financials?.marketplace?.isActive ? 'bg-gradient-to-r from-secondary to-secondary/70' : (dashboardStats?.financials?.marketplace ? 'bg-gradient-to-r from-amber-400 to-orange-500' : 'bg-gradient-to-r from-slate-300 to-slate-400')}`} />
+                                                        <div className="p-8 bg-white dark:bg-slate-900">
+                                                            <div className="flex items-center justify-between mb-8">
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className={`w-14 h-14 rounded-[1.2rem] flex items-center justify-center shadow-lg ${dashboardStats?.financials?.marketplace?.isActive ? 'bg-gradient-to-br from-secondary to-secondary/70 shadow-secondary/20' : (dashboardStats?.financials?.marketplace ? 'bg-gradient-to-br from-amber-400 to-orange-500 shadow-amber-500/20' : 'bg-gradient-to-br from-slate-400 to-slate-500 shadow-slate-500/20')}`}>
+                                                                        <Store className="w-7 h-7 text-white" />
+                                                                    </div>
+                                                                    <div>
+                                                                        <h4 className="font-extrabold text-base">Marketplace</h4>
+                                                                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">Seller Subscription</p>
+                                                                    </div>
+                                                                </div>
+                                                                <div className={`px-3 py-1.5 rounded-xl border ${dashboardStats?.financials?.marketplace?.isActive ? 'bg-secondary/10 border-secondary/20' : (dashboardStats?.financials?.marketplace ? 'bg-amber-500/10 border-amber-500/20' : 'bg-slate-100 border-slate-200')}`}>
+                                                                    <span className={`text-[10px] font-extrabold uppercase tracking-widest ${dashboardStats?.financials?.marketplace?.isActive ? 'text-secondary' : (dashboardStats?.financials?.marketplace ? 'text-amber-600' : 'text-slate-500')}`}>
+                                                                        {dashboardStats?.financials?.marketplace?.isActive ? 'Active' : (dashboardStats?.financials?.marketplace ? (dashboardStats.financials.marketplace.status === 'pending' ? 'Pending Approval' : dashboardStats.financials.marketplace.status) : 'Not Active')}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+
+                                                            {dashboardStats?.financials?.marketplace ? (
+                                                                <>
+                                                                    {/* Progress Ring */}
+                                                                    {dashboardStats.financials.marketplace.daysRemaining !== undefined && dashboardStats.financials.marketplace.daysRemaining > 0 && (
+                                                                        <div className="flex items-center gap-6 mb-8 p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                                                                            <div className="relative w-20 h-20 shrink-0">
+                                                                                <svg className="w-20 h-20 -rotate-90" viewBox="0 0 80 80">
+                                                                                    <circle cx="40" cy="40" r="34" fill="none" stroke="currentColor" strokeWidth="6" className="text-slate-100 dark:text-slate-700" />
+                                                                                    <circle
+                                                                                        cx="40"
+                                                                                        cy="40"
+                                                                                        r="34"
+                                                                                        fill="none"
+                                                                                        stroke="currentColor"
+                                                                                        strokeWidth="6"
+                                                                                        strokeLinecap="round"
+                                                                                        strokeDasharray={`${2 * Math.PI * 34}`}
+                                                                                        strokeDashoffset={`${2 * Math.PI * 34 * (1 - Math.min(dashboardStats.financials.marketplace.daysRemaining / 365, 1))}`}
+                                                                                        className={dashboardStats.financials.marketplace.daysRemaining <= 30 ? 'text-amber-500' : 'text-secondary'}
+                                                                                        style={{ transition: 'stroke-dashoffset 1s ease-out' }}
+                                                                                    />
+                                                                                </svg>
+                                                                                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                                                                    <span className="text-lg font-extrabold leading-none">{dashboardStats.financials.marketplace.daysRemaining}</span>
+                                                                                    <span className="text-[9px] font-bold text-muted-foreground uppercase">days</span>
+                                                                                </div>
+                                                                            </div>
+                                                                            <div className="flex-1 min-w-0">
+                                                                                <p className="text-sm font-bold text-muted-foreground mb-1">Subscription Timeline</p>
+                                                                                <div className="w-full h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                                                                                    <motion.div
+                                                                                        className={`h-full rounded-full ${dashboardStats.financials.marketplace.daysRemaining <= 30 ? 'bg-amber-500' : 'bg-secondary'}`}
+                                                                                        initial={{ width: 0 }}
+                                                                                        animate={{ width: `${Math.min((dashboardStats.financials.marketplace.daysRemaining / 365) * 100, 100)}%` }}
+                                                                                        transition={{ duration: 1, ease: "easeOut" }}
+                                                                                    />
+                                                                                </div>
+                                                                                <div className="flex justify-between mt-1.5">
+                                                                                    <span className="text-[10px] font-bold text-muted-foreground">
+                                                                                        {dashboardStats.financials.marketplace.startDate ? new Date(dashboardStats.financials.marketplace.startDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Start'}
+                                                                                    </span>
+                                                                                    <span className={`text-[10px] font-bold ${dashboardStats.financials.marketplace.daysRemaining <= 30 ? 'text-amber-500' : 'text-secondary'}`}>
+                                                                                        Due {dashboardStats.financials.marketplace.nextPaymentDue ? new Date(dashboardStats.financials.marketplace.nextPaymentDue).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Soon'}
+                                                                                    </span>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+
+                                                                    <div className="grid grid-cols-2 gap-3">
+                                                                        <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                                                                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Subscription Fee</p>
+                                                                            <p className="text-base font-extrabold">KES {dashboardStats.financials.marketplace.subscriptionFee?.toLocaleString() || 0}</p>
+                                                                        </div>
+                                                                        <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                                                                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Amount Paid</p>
+                                                                            <p className="text-base font-extrabold">KES {dashboardStats.financials.marketplace.amountPaid?.toLocaleString() || 0}</p>
+                                                                        </div>
+                                                                        <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                                                                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Start Date</p>
+                                                                            <p className="text-sm font-extrabold">{dashboardStats.financials.marketplace.startDate ? new Date(dashboardStats.financials.marketplace.startDate).toLocaleDateString() : 'N/A'}</p>
+                                                                        </div>
+                                                                        <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                                                                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Payments Made</p>
+                                                                            <p className="text-sm font-extrabold">{dashboardStats.financials.marketplace.paymentCount || 0}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                </>
+                                                            ) : (
+                                                                <div className="flex flex-col items-center justify-center py-10 text-center">
+                                                                    <div className="w-16 h-16 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center mb-4">
+                                                                        <Store className="w-8 h-8 text-muted-foreground/30" />
+                                                                    </div>
+                                                                    <p className="text-sm font-medium text-muted-foreground mb-2">You have not activated your marketplace seller account yet.</p>
+                                                                    <p className="text-xs text-muted-foreground mb-5 max-w-[250px]">Start selling your products and services to the KNCCI trade network.</p>
+                                                                    <Button className="rounded-2xl h-11 px-8 font-bold shadow-lg" onClick={() => setActiveTab("marketplace")}>
+                                                                        <Store className="w-4 h-4 mr-2" /> Activate Marketplace
+                                                                    </Button>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </Card>
+                                                </div>
+
+                                                {/* Payment History */}
+                                                <Card className="rounded-[2.5rem] border-none shadow-xl shadow-primary/5 bg-white dark:bg-slate-900 overflow-hidden">
+                                                    <CardHeader className="p-8 pb-4">
+                                                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                                                                    <Receipt className="w-5 h-5 text-primary" />
+                                                                </div>
+                                                                <div>
+                                                                    <CardTitle className="text-lg font-extrabold">Payment History</CardTitle>
+                                                                    <CardDescription className="font-medium">{dashboardStats?.financials?.payments?.length || 0} transactions</CardDescription>
+                                                                </div>
+                                                            </div>
+                                                            {dashboardStats?.financials?.payments && dashboardStats.financials.payments.length > 0 && (
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Sort by:</span>
+                                                                    <select className="text-xs font-bold bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary/20">
+                                                                        <option>Newest First</option>
+                                                                        <option>Oldest First</option>
+                                                                        <option>Amount (High-Low)</option>
+                                                                    </select>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </CardHeader>
+                                                    <CardContent className="p-8 pt-0">
+                                                        {dashboardStats?.financials?.payments && dashboardStats.financials.payments.length > 0 ? (
+                                                            <div className="space-y-2">
+                                                                {dashboardStats.financials.payments.map((payment, i) => {
+                                                                    const typeColors: Record<string, { bg: string; icon: string; label: string }> = {
+                                                                        membership: { bg: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20', icon: 'text-emerald-500', label: 'Membership' },
+                                                                        marketplace: { bg: 'bg-secondary/10 text-secondary border-secondary/20', icon: 'text-secondary', label: 'Marketplace' },
+                                                                        event: { bg: 'bg-blue-500/10 text-blue-600 border-blue-500/20', icon: 'text-blue-500', label: 'Event' },
+                                                                        sponsorship: { bg: 'bg-purple-500/10 text-purple-600 border-purple-500/20', icon: 'text-purple-500', label: 'Sponsorship' },
+                                                                    };
+                                                                    const colors = typeColors[payment.type] || { bg: 'bg-slate-100 text-slate-600 border-slate-200', icon: 'text-slate-500', label: payment.type };
+                                                                    const isCompleted = payment.status === 'completed';
+                                                                    const isPending = payment.status === 'pending';
+
+                                                                    return (
+                                                                        <motion.div
+                                                                            key={payment.id || i}
+                                                                            initial={{ opacity: 0, x: -10 }}
+                                                                            animate={{ opacity: 1, x: 0 }}
+                                                                            transition={{ delay: i * 0.04 }}
+                                                                            className="group flex items-center gap-4 p-4 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/60 border border-transparent hover:border-slate-100 dark:hover:border-slate-700 transition-all cursor-default"
+                                                                        >
+                                                                            {/* Status Indicator */}
+                                                                            <div className="relative shrink-0">
+                                                                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${colors.bg}`}>
+                                                                                    {payment.type === 'membership' ? <BadgeCheck className={`w-5 h-5 ${colors.icon}`} /> :
+                                                                                     payment.type === 'marketplace' ? <Store className={`w-5 h-5 ${colors.icon}`} /> :
+                                                                                     payment.type === 'event' ? <Calendar className={`w-5 h-5 ${colors.icon}`} /> :
+                                                                                     <DollarSign className={`w-5 h-5 ${colors.icon}`} />}
+                                                                                </div>
+                                                                                <div className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full border-2 border-white dark:border-slate-900 ${isCompleted ? 'bg-emerald-500' : isPending ? 'bg-amber-500' : 'bg-red-500'}`} />
+                                                                            </div>
+
+                                                                            {/* Details */}
+                                                                            <div className="flex-1 min-w-0">
+                                                                                <div className="flex items-center gap-2 mb-0.5">
+                                                                                    <p className="text-sm font-extrabold capitalize">{colors.label}</p>
+                                                                                    <span className={`text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-md ${isCompleted ? 'bg-emerald-500/10 text-emerald-600' : isPending ? 'bg-amber-500/10 text-amber-600' : 'bg-red-500/10 text-red-600'}`}>
+                                                                                        {payment.status}
+                                                                                    </span>
+                                                                                </div>
+                                                                                <p className="text-xs text-muted-foreground font-medium truncate">{payment.description}</p>
+                                                                                <div className="flex items-center gap-3 mt-1">
+                                                                                    <span className="text-[10px] font-bold text-muted-foreground flex items-center gap-1">
+                                                                                        <Calendar className="w-3 h-3" /> {new Date(payment.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+                                                                                    </span>
+                                                                                    <span className="text-[10px] font-bold text-muted-foreground flex items-center gap-1">
+                                                                                        <CreditCard className="w-3 h-3" /> {payment.method}
+                                                                                    </span>
+                                                                                    {payment.transactionReference && (
+                                                                                        <span className="text-[9px] font-mono text-muted-foreground bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">Ref: {payment.transactionReference}</span>
+                                                                                    )}
+                                                                                </div>
+                                                                            </div>
+
+                                                                            {/* Amount & Actions */}
+                                                                            <div className="text-right shrink-0">
+                                                                                <p className="text-base font-extrabold">KES {payment.amount.toLocaleString()}</p>
+                                                                                <div className="flex items-center justify-end gap-2 mt-1">
+                                                                                    {payment.receiptUrl && (
+                                                                                        <a
+                                                                                            href={payment.receiptUrl}
+                                                                                            target="_blank"
+                                                                                            rel="noopener noreferrer"
+                                                                                            className="inline-flex items-center gap-1 text-[10px] font-bold text-primary hover:text-primary/80 transition-colors bg-primary/5 hover:bg-primary/10 px-2 py-1 rounded-lg"
+                                                                                        >
+                                                                                            <Download className="w-3 h-3" /> Receipt
+                                                                                        </a>
+                                                                                    )}
+                                                                                </div>
+                                                                            </div>
+                                                                        </motion.div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        ) : (
+                                                            <div className="flex flex-col items-center justify-center py-16 text-center">
+                                                                <div className="w-20 h-20 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center mb-5">
+                                                                    <Receipt className="w-10 h-10 text-muted-foreground/20" />
+                                                                </div>
+                                                                <h4 className="text-lg font-extrabold mb-1">No Payments Yet</h4>
+                                                                <p className="text-sm text-muted-foreground font-medium max-w-xs">Your payment history will appear here once you make your first transaction with KNCCI.</p>
+                                                            </div>
+                                                        )}
+                                                    </CardContent>
+                                                </Card>
                                             </div>
-                                            <h3 className="text-3xl font-extrabold mb-4 tracking-tight">Finances & Billing</h3>
-                                            <p className="text-muted-foreground max-w-sm font-medium leading-[1.8]">
-                                                Track your investment in the chamber. View past receipts, upcoming renewals, and download tax-ready invoices. This feature is currently in final verification.
-                                            </p>
-                                            <div className="mt-10 flex gap-4">
-                                                <Button variant="ghost" className="font-bold opacity-50 cursor-not-allowed">H1 Stat</Button>
-                                                <div className="w-px h-10 bg-border/40" />
-                                                <Button variant="ghost" className="font-bold opacity-50 cursor-not-allowed">H2 Stat</Button>
-                                            </div>
-                                            <Button variant="outline" className="mt-12 rounded-2xl h-12 px-10 font-extrabold uppercase tracking-widest text-[10px]" disabled>
-                                                System locked
-                                            </Button>
-                                        </Card>
+                                        )}
                                     </motion.div>
                                 )}
 
@@ -962,36 +1643,56 @@ export default function ProfilePage() {
                                             </div>
 
                                             <div className="space-y-6">
-                                                {[
-                                                    { title: "Eldoret Business Expo 2026", date: "Oct 15, 2026", type: "Conference", status: "Open for Gold", speakers: 12 },
-                                                    { title: "SME Digital Growth Forum", date: "Nov 02, 2026", type: "Workshop", status: "Limited Slots", speakers: 4 },
-                                                ].map((event, i) => (
-                                                    <motion.div
-                                                        key={i}
-                                                        initial={{ opacity: 0, x: -10 }}
-                                                        animate={{ opacity: 1, x: 0 }}
-                                                        transition={{ delay: i * 0.1 }}
-                                                        className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-8 rounded-[2rem] bg-slate-50 dark:bg-slate-800/40 hover:bg-white dark:hover:bg-slate-800 transition-all border border-transparent hover:border-border/30 hover:shadow-xl hover:shadow-primary/5 group"
-                                                    >
-                                                        <div className="flex items-center gap-6 mb-4 sm:mb-0">
-                                                            <div className="w-16 h-16 rounded-[1.5rem] bg-white dark:bg-slate-900 flex flex-col items-center justify-center border border-border/20 shadow-sm group-hover:border-primary/40 transition-colors">
-                                                                <span className="text-[10px] font-bold text-muted-foreground uppercase opacity-60 tracking-tighter">{event.date.split(' ')[0]}</span>
-                                                                <span className="text-2xl font-extrabold text-primary leading-none -mt-1">{event.date.split(' ')[1].slice(0, 2)}</span>
-                                                            </div>
-                                                            <div>
-                                                                <h4 className="font-extrabold text-base uppercase tracking-tight group-hover:text-primary transition-colors">{event.title}</h4>
-                                                                <div className="flex flex-wrap items-center gap-3 mt-2">
-                                                                    <Badge variant="outline" className="text-[9px] h-5 font-bold border-primary/20 bg-primary/5 text-primary tracking-widest uppercase">{event.type}</Badge>
-                                                                    <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full uppercase tracking-widest">{event.status}</span>
-                                                                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1">
-                                                                        <Users className="w-3 h-3" /> {event.speakers} Key Speakers
-                                                                    </span>
+                                                {eventsLoading ? (
+                                                    <div className="flex items-center justify-center py-16">
+                                                        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                                                    </div>
+                                                ) : upcomingEventsData.length > 0 ? (
+                                                    upcomingEventsData.map((event, i) => {
+                                                        const dateObj = new Date(event.date);
+                                                        const month = dateObj.toLocaleDateString(undefined, { month: "short" });
+                                                        const day = isNaN(dateObj.getTime()) ? "—" : dateObj.getDate();
+                                                        return (
+                                                            <motion.div
+                                                                key={event._id}
+                                                                initial={{ opacity: 0, x: -10 }}
+                                                                animate={{ opacity: 1, x: 0 }}
+                                                                transition={{ delay: i * 0.08 }}
+                                                                className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-8 rounded-[2rem] bg-slate-50 dark:bg-slate-800/40 hover:bg-white dark:hover:bg-slate-800 transition-all border border-transparent hover:border-border/30 hover:shadow-xl hover:shadow-primary/5 group"
+                                                            >
+                                                                <div className="flex items-center gap-6 mb-4 sm:mb-0">
+                                                                    <div className="w-16 h-16 rounded-[1.5rem] bg-white dark:bg-slate-900 flex flex-col items-center justify-center border border-border/20 shadow-sm group-hover:border-primary/40 transition-colors shrink-0">
+                                                                        <span className="text-[10px] font-bold text-muted-foreground uppercase opacity-60 tracking-tighter">{month}</span>
+                                                                        <span className="text-2xl font-extrabold text-primary leading-none -mt-1">{day}</span>
+                                                                    </div>
+                                                                    <div>
+                                                                        <h4 className="font-extrabold text-base uppercase tracking-tight group-hover:text-primary transition-colors">{event.title}</h4>
+                                                                        <div className="flex flex-wrap items-center gap-3 mt-2">
+                                                                            <Badge variant="outline" className="text-[9px] h-5 font-bold border-primary/20 bg-primary/5 text-primary tracking-widest uppercase">{event.category}</Badge>
+                                                                            <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full uppercase tracking-widest">
+                                                                                {event.featured ? "Featured" : "Open"}
+                                                                            </span>
+                                                                            {event.location && (
+                                                                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1">
+                                                                                    <MapPin className="w-3 h-3" /> {event.location}
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
                                                                 </div>
-                                                            </div>
-                                                        </div>
-                                                        <Button variant="ghost" className="rounded-xl font-bold text-xs uppercase tracking-widest text-primary hover:bg-primary/5 px-6">Event Details</Button>
-                                                    </motion.div>
-                                                ))}
+                                                                <Link href={`/events/${event.slug}`}>
+                                                                    <Button variant="ghost" className="rounded-xl font-bold text-xs uppercase tracking-widest text-primary hover:bg-primary/5 px-6">Event Details</Button>
+                                                                </Link>
+                                                            </motion.div>
+                                                        );
+                                                    })
+                                                ) : (
+                                                    <div className="flex flex-col items-center justify-center py-16 text-center">
+                                                        <Calendar className="w-12 h-12 text-muted-foreground/20 mb-4" />
+                                                        <p className="text-sm font-medium text-muted-foreground">No upcoming events at this time. Check back soon.</p>
+                                                        <p className="text-xs text-muted-foreground mt-1">Visit the full calendar to see past events.</p>
+                                                    </div>
+                                                )}
                                             </div>
                                         </Card>
                                     </motion.div>
@@ -1416,6 +2117,9 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
     const [cmsPassword, setCmsPassword] = useState("");
     const [cmsConfirmPassword, setCmsConfirmPassword] = useState("");
     const [showCmsPassword, setShowCmsPassword] = useState(false);
+    const [cmsAmountPaid, setCmsAmountPaid] = useState("");
+    const [cmsPaymentMethod, setCmsPaymentMethod] = useState<'mpesa' | 'bank' | 'cash' | 'other'>('mpesa');
+    const [cmsTransactionRef, setCmsTransactionRef] = useState("");
     const [addingProduct, setAddingProduct] = useState(false);
     const [isUploadingProductImage, setIsUploadingProductImage] = useState(false);
     const [isUploadingSelectedProductImage, setIsUploadingSelectedProductImage] = useState(false);
@@ -1496,6 +2200,8 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
         }
     };
 
+    const MEMBER_FEE = 20000;
+
     const handleConnect = async () => {
         if (cmsPassword.length < 8) {
             toast({ title: "Password too short", description: "Password must be at least 8 characters.", variant: "destructive" });
@@ -1505,14 +2211,29 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
             toast({ title: "Passwords don't match", description: "Please make sure both passwords match.", variant: "destructive" });
             return;
         }
+        const amountPaid = Number(cmsAmountPaid);
+        if (!amountPaid || amountPaid <= 0) {
+            toast({ title: "Payment Required", description: "Please enter the amount paid for marketplace activation.", variant: "destructive" });
+            return;
+        }
+        if (!cmsTransactionRef) {
+            toast({ title: "Reference Required", description: "Please provide a transaction reference.", variant: "destructive" });
+            return;
+        }
         try {
             setConnecting(true);
-            const res = await cmsService.connect({ password: cmsPassword, confirmPassword: cmsConfirmPassword });
-            toast({ title: "🎉 Marketplace Activated!", description: res.data.message });
-            setCmsPassword(""); setCmsConfirmPassword("");
+            const res = await memberService.activateMarketplace({
+                password: cmsPassword,
+                amountPaid,
+                paymentMethod: cmsPaymentMethod,
+                transactionReference: cmsTransactionRef,
+                subscriptionFee: MEMBER_FEE,
+            });
+            toast({ title: "Activation Submitted", description: res.data.message || "Your application is awaiting admin verification." });
+            setCmsPassword(""); setCmsConfirmPassword(""); setCmsAmountPaid(""); setCmsTransactionRef("");
             await loadCmsData();
         } catch (error: any) {
-            toast({ title: "Activation Failed", description: error.response?.data?.message || "Could not activate marketplace account.", variant: "destructive" });
+            toast({ title: "Activation Failed", description: error.response?.data?.message || "Could not submit marketplace activation.", variant: "destructive" });
         } finally {
             setConnecting(false);
         }
@@ -1967,6 +2688,29 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
     ];
     const requiredComplete = checks.filter(c => !c.optional).every(c => c.ok);
 
+    // ─── Pending approval — check BEFORE connected gate ──────────
+    // connectToCms runs immediately on activation (sets cms_tenant_id),
+    // so connected=true even while seller.status is still 'pending'.
+    // We must catch this state before allowing access to the full dashboard.
+    if (cmsStatus?.sellerStatus === 'pending') {
+        return (
+            <Card className="rounded-[2.5rem] border-none shadow-2xl shadow-primary/5 p-12 bg-white dark:bg-slate-900 min-h-[500px] flex flex-col items-center justify-center text-center">
+                <div className="w-24 h-24 rounded-full bg-amber-500/10 flex items-center justify-center mb-8">
+                    <Store className="w-10 h-10 text-amber-500" />
+                </div>
+                <h3 className="text-3xl font-extrabold mb-4 tracking-tight">Application Under Review</h3>
+                <p className="text-muted-foreground max-w-md font-medium leading-relaxed mb-8">
+                    Your marketplace activation request has been submitted and is awaiting admin verification.
+                    You will be notified via email and SMS once your payment has been verified and your seller account is approved.
+                </p>
+                <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-amber-500/10 border border-amber-500/20">
+                    <Loader2 className="w-4 h-4 text-amber-500 animate-spin" />
+                    <span className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-widest">Pending Admin Approval</span>
+                </div>
+            </Card>
+        );
+    }
+
     // ─── Not connected: Activation flow ──────────────────────────
     if (!cmsStatus?.connected) {
         return (
@@ -1986,7 +2730,7 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
                         </div>
                         <p className="text-muted-foreground max-w-2xl leading-relaxed font-medium">
                             As a verified KNCCI member, you can list your products and services on the marketplace.
-                            Your business details will be used to set up your seller storefront. Complete the checklist below and choose a marketplace password to get started.
+                            Your business details will be used to set up your seller storefront. Complete the checklist below, submit your payment details, and choose a marketplace password to get started.
                         </p>
                     </div>
                 </Card>
@@ -2065,13 +2809,77 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
                             </div>
                         </div>
 
+                        {/* Payment Section */}
+                        <div className="mt-6 border-t pt-6">
+                            <h4 className="font-extrabold text-sm uppercase tracking-[0.2em] text-muted-foreground mb-4 flex items-center gap-2">
+                                <DollarSign className="w-4 h-4 text-primary" /> Payment Details
+                            </h4>
+                            <div className="bg-slate-100 dark:bg-slate-800 rounded-xl p-4 mb-4">
+                                <div className="flex justify-between items-center mb-2">
+                                    <span className="text-sm text-muted-foreground">Member Subscription Fee</span>
+                                    <span className="font-bold text-foreground">KES {MEMBER_FEE.toLocaleString()}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-sm text-muted-foreground">Balance</span>
+                                    <span className={`font-bold ${Number(cmsAmountPaid) >= MEMBER_FEE ? 'text-green-500' : 'text-orange-500'}`}>
+                                        KES {Math.max(0, MEMBER_FEE - (Number(cmsAmountPaid) || 0)).toLocaleString()}
+                                    </span>
+                                </div>
+                            </div>
+                            <div className="space-y-4">
+                                <div className="space-y-1.5">
+                                    <label className="font-bold text-[10px] uppercase tracking-widest text-muted-foreground ml-1">Payment Method</label>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {[
+                                            { value: 'mpesa', label: 'M-Pesa' },
+                                            { value: 'bank', label: 'Bank Transfer' },
+                                            { value: 'cash', label: 'Cash' },
+                                            { value: 'other', label: 'Other' },
+                                        ].map((m) => (
+                                            <button
+                                                key={m.value}
+                                                type="button"
+                                                onClick={() => setCmsPaymentMethod(m.value as any)}
+                                                className={`py-2 px-3 rounded-lg text-xs font-bold border-2 transition-all ${
+                                                    cmsPaymentMethod === m.value
+                                                        ? 'border-primary bg-primary/5 text-primary'
+                                                        : 'border-slate-200 dark:border-slate-700 hover:border-primary/30'
+                                                }`}
+                                            >
+                                                {m.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="font-bold text-[10px] uppercase tracking-widest text-muted-foreground ml-1">Amount Paid (KES)</label>
+                                    <Input
+                                        type="number"
+                                        placeholder="Enter amount paid"
+                                        value={cmsAmountPaid}
+                                        onChange={(e) => setCmsAmountPaid(e.target.value)}
+                                        className="rounded-xl h-12 bg-slate-50 dark:bg-slate-800 border-border/50"
+                                    />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="font-bold text-[10px] uppercase tracking-widest text-muted-foreground ml-1">Transaction Reference</label>
+                                    <Input
+                                        placeholder="e.g. MPESA123456 or Bank Ref"
+                                        value={cmsTransactionRef}
+                                        onChange={(e) => setCmsTransactionRef(e.target.value)}
+                                        className="rounded-xl h-12 bg-slate-50 dark:bg-slate-800 border-border/50"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
                         <Button
                             className="w-full mt-8 rounded-2xl h-14 font-extrabold text-sm shadow-xl shadow-primary/20 uppercase tracking-widest"
-                            disabled={!requiredComplete || connecting || cmsPassword.length < 8 || cmsPassword !== cmsConfirmPassword}
+                            disabled={!requiredComplete || connecting || cmsPassword.length < 8 || cmsPassword !== cmsConfirmPassword || !cmsAmountPaid || !cmsTransactionRef}
                             onClick={handleConnect}
                         >
                             {connecting ? (
-                                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Activating...</>
+                                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Submitting...</>
                             ) : (
                                 <><Store className="w-4 h-4 mr-2" /> Activate Seller Account</>
                             )}
