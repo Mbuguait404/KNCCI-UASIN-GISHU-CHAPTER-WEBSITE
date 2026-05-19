@@ -50,6 +50,7 @@ const footerSections = [
       { label: "Marketplace", href: "/marketplace" },
       { label: "Member Directory", href: "/member-directory" },
       { label: "Become a Member", href: "/membership" },
+      { label: "Student Attachment", href: "/attachment" },
       { label: "Trade Facilitation", href: "/about#trade" },
       { label: "Contact Support", href: "/contact" },
     ],

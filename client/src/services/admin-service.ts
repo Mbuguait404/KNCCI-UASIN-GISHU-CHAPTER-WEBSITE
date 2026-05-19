@@ -92,6 +92,17 @@ export interface SellerDoc {
     cms_org_slug?: string;
     createdAt: string;
     updatedAt: string;
+    // Payment fields
+    isMember?: boolean;
+    kncciMemberId?: string;
+    subscriptionFee?: number;
+    amountPaid?: number;
+    paymentMethod?: string;
+    paymentStatus?: 'pending' | 'partial' | 'paid' | 'verified';
+    transactionReference?: string;
+    paymentDate?: string;
+    paymentVerifiedBy?: string;
+    paymentVerifiedAt?: string;
 }
 
 export interface PaginatedSellers {
@@ -110,6 +121,15 @@ export interface SellerStats {
     approved: number;
     rejected: number;
     deactivated: number;
+    members: number;
+    nonMembers: number;
+    paymentBreakdown: {
+        pending: number;
+        verified: number;
+        partial: number;
+        paid: number;
+    };
+    totalCollected: number;
 }
 
 export interface SellerListParams {
@@ -117,6 +137,8 @@ export interface SellerListParams {
     limit?: number;
     search?: string;
     status?: SellerStatus;
+    paymentStatus?: 'pending' | 'partial' | 'paid' | 'verified';
+    isMember?: boolean;
 }
 
 // ── Order & Plan Types ──────────────────────────────────────────────────────
@@ -314,6 +336,22 @@ export const adminService = {
             rejectionReason,
             adminNotes,
         });
+        return response.data;
+    },
+
+    /** PATCH /admin/sellers/:id/payment */
+    async updateSellerPayment(
+        id: string,
+        data: {
+            amountPaid: number;
+            paymentMethod: string;
+            paymentStatus: 'pending' | 'partial' | 'paid' | 'verified';
+            transactionReference?: string;
+            paymentDate?: string;
+            paymentNotes?: string;
+        },
+    ): Promise<{ success: boolean; data: SellerDoc; message: string }> {
+        const response = await api.patch(`/admin/sellers/${id}/payment`, data);
         return response.data;
     },
 

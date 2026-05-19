@@ -330,7 +330,7 @@ export default function LoginPage() {
                                                                         type={showPassword ? "text" : "password"}
                                                                         value={password}
                                                                         onChange={(e) => setPassword(e.target.value)}
-                                                                        placeholder="ΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇó"
+                                                                        placeholder="••••••••"
                                                                         className="h-14 pl-12 pr-12 rounded-2xl bg-slate-50 dark:bg-slate-900 border-border/50 focus:border-primary focus:ring-primary/20 transition-all text-base"
                                                                     />
                                                                     <button
@@ -402,7 +402,7 @@ export default function LoginPage() {
                                         </Tabs>
                                     </motion.div>
                                 ) : (
-                                    /* ΓöÇΓöÇ OTP Step ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
+                                    /* ── OTP Step ─────────────────────────────────────────────────── */
                                     <motion.div
                                         key="otp"
                                         initial={{ opacity: 0, x: 20 }}

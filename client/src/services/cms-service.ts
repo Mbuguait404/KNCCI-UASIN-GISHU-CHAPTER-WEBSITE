@@ -4,6 +4,7 @@ export interface CmsStatus {
     connected: boolean;
     tenantId: string | null;
     connectedAt: string | null;
+    sellerStatus: string | null;
 }
 
 export interface CmsProduct {
@@ -81,6 +82,10 @@ export interface CmsDashboard {
 export interface ConnectCmsPayload {
     password: string;
     confirmPassword: string;
+    amountPaid?: number;
+    paymentMethod?: 'mpesa' | 'bank' | 'cash' | 'other';
+    transactionReference?: string;
+    subscriptionFee?: number;
 }
 
 export interface CreateProductPayload {

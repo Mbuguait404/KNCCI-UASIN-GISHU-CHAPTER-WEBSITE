@@ -68,6 +68,9 @@ export function MarketplaceTab({ business, user, onBusinessTabSwitch }: Marketpl
     const [cmsPassword, setCmsPassword] = useState("");
     const [cmsConfirmPassword, setCmsConfirmPassword] = useState("");
     const [showCmsPassword, setShowCmsPassword] = useState(false);
+    const [cmsAmountPaid, setCmsAmountPaid] = useState("");
+    const [cmsPaymentMethod, setCmsPaymentMethod] = useState<'mpesa' | 'bank' | 'cash' | 'other'>('mpesa');
+    const [cmsTransactionRef, setCmsTransactionRef] = useState("");
     const [addingProduct, setAddingProduct] = useState(false);
     const [showAddForm, setShowAddForm] = useState(false);
     const [newProduct, setNewProduct] = useState({ name: "", description: "", price: "", category: "", stock: "", unit: "" });
@@ -177,6 +180,8 @@ export function MarketplaceTab({ business, user, onBusinessTabSwitch }: Marketpl
         }
     };
 
+    const MEMBER_FEE = 20000;
+
     const handleConnect = async () => {
         if (cmsPassword.length < 8) {
             toast({ title: "Password too short", description: "Password must be at least 8 characters.", variant: "destructive" });
@@ -186,11 +191,27 @@ export function MarketplaceTab({ business, user, onBusinessTabSwitch }: Marketpl
             toast({ title: "Passwords don't match", description: "Please make sure both passwords match.", variant: "destructive" });
             return;
         }
+        const amountPaid = Number(cmsAmountPaid);
+        if (!amountPaid || amountPaid <= 0) {
+            toast({ title: "Payment Required", description: "Please enter the amount paid for marketplace activation.", variant: "destructive" });
+            return;
+        }
+        if (!cmsTransactionRef) {
+            toast({ title: "Reference Required", description: "Please provide a transaction reference.", variant: "destructive" });
+            return;
+        }
         try {
             setConnecting(true);
-            const res = await cmsService.connect({ password: cmsPassword, confirmPassword: cmsConfirmPassword });
+            const res = await cmsService.connect({
+                password: cmsPassword,
+                confirmPassword: cmsConfirmPassword,
+                amountPaid,
+                paymentMethod: cmsPaymentMethod,
+                transactionReference: cmsTransactionRef,
+                subscriptionFee: MEMBER_FEE,
+            });
             toast({ title: "🎉 Marketplace Activated!", description: res.data.message });
-            setCmsPassword(""); setCmsConfirmPassword("");
+            setCmsPassword(""); setCmsConfirmPassword(""); setCmsAmountPaid(""); setCmsTransactionRef("");
             await loadCmsData();
         } catch (error: any) {
             toast({ title: "Activation Failed", description: error.response?.data?.message || "Could not activate marketplace account.", variant: "destructive" });
@@ -667,9 +688,73 @@ export function MarketplaceTab({ business, user, onBusinessTabSwitch }: Marketpl
                             </div>
                         </div>
 
+                        {/* Payment Section */}
+                        <div className="mt-6 border-t pt-6">
+                            <h4 className="font-extrabold text-sm uppercase tracking-[0.2em] text-muted-foreground mb-4 flex items-center gap-2">
+                                <DollarSign className="w-4 h-4 text-primary" /> Payment Details
+                            </h4>
+                            <div className="bg-slate-100 dark:bg-slate-800 rounded-xl p-4 mb-4">
+                                <div className="flex justify-between items-center mb-2">
+                                    <span className="text-sm text-muted-foreground">Member Subscription Fee</span>
+                                    <span className="font-bold text-foreground">KES {MEMBER_FEE.toLocaleString()}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-sm text-muted-foreground">Balance</span>
+                                    <span className={`font-bold ${Number(cmsAmountPaid) >= MEMBER_FEE ? 'text-green-500' : 'text-orange-500'}`}>
+                                        KES {Math.max(0, MEMBER_FEE - (Number(cmsAmountPaid) || 0)).toLocaleString()}
+                                    </span>
+                                </div>
+                            </div>
+                            <div className="space-y-4">
+                                <div className="space-y-1.5">
+                                    <label className="font-bold text-[10px] uppercase tracking-widest text-muted-foreground ml-1">Payment Method</label>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {[
+                                            { value: 'mpesa', label: 'M-Pesa' },
+                                            { value: 'bank', label: 'Bank Transfer' },
+                                            { value: 'cash', label: 'Cash' },
+                                            { value: 'other', label: 'Other' },
+                                        ].map((m) => (
+                                            <button
+                                                key={m.value}
+                                                type="button"
+                                                onClick={() => setCmsPaymentMethod(m.value as any)}
+                                                className={`py-2 px-3 rounded-lg text-xs font-bold border-2 transition-all ${
+                                                    cmsPaymentMethod === m.value
+                                                        ? 'border-primary bg-primary/5 text-primary'
+                                                        : 'border-slate-200 dark:border-slate-700 hover:border-primary/30'
+                                                }`}
+                                            >
+                                                {m.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="font-bold text-[10px] uppercase tracking-widest text-muted-foreground ml-1">Amount Paid (KES)</label>
+                                    <Input
+                                        type="number"
+                                        placeholder="Enter amount paid"
+                                        value={cmsAmountPaid}
+                                        onChange={(e) => setCmsAmountPaid(e.target.value)}
+                                        className="rounded-xl h-12 bg-slate-50 dark:bg-slate-800 border-border/50"
+                                    />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="font-bold text-[10px] uppercase tracking-widest text-muted-foreground ml-1">Transaction Reference</label>
+                                    <Input
+                                        placeholder="e.g. MPESA123456 or Bank Ref"
+                                        value={cmsTransactionRef}
+                                        onChange={(e) => setCmsTransactionRef(e.target.value)}
+                                        className="rounded-xl h-12 bg-slate-50 dark:bg-slate-800 border-border/50"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
                         <Button
                             className="w-full mt-8 rounded-2xl h-14 font-extrabold text-sm shadow-xl shadow-primary/20 uppercase tracking-widest"
-                            disabled={!requiredComplete || connecting || cmsPassword.length < 8 || cmsPassword !== cmsConfirmPassword}
+                            disabled={!requiredComplete || connecting || cmsPassword.length < 8 || cmsPassword !== cmsConfirmPassword || !cmsAmountPaid || !cmsTransactionRef}
                             onClick={handleConnect}
                         >
                             {connecting ? (

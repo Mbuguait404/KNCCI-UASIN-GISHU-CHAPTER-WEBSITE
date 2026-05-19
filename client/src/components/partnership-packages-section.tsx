@@ -116,7 +116,7 @@ export function PartnershipPackagesSection() {
                     <Plus className="w-4 h-4 text-white dark:text-slate-800 group-data-[state=open]:hidden" />
                     <Minus className="w-4 h-4 text-white dark:text-slate-800 hidden group-data-[state=open]:block" />
                   </div>
-                  <span className="text-lg font-semibold text-foreground">{objective.title}</span>
+                  <span className="text-base sm:text-lg font-semibold text-foreground">{objective.title}</span>
                 </div>
               </AccordionTrigger>
               <AccordionContent className="px-6 pb-5 pl-[4.5rem]">

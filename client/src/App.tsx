@@ -29,6 +29,7 @@ import MemberDirectoryPage from "@/pages/member-directory";
 import LoginPage from "@/pages/login";
 import ProfilePage from "@/pages/profile";
 import AdminDashboard from "@/pages/admin";
+import AttachmentPage from "@/pages/attachment";
 import NotFound from "@/pages/not-found";
 
 
@@ -47,7 +48,7 @@ function Router() {
       <Route path="/login" component={LoginPage} />
       <Route path="/profile" component={ProfilePage} />
       <Route path="/admin" component={AdminDashboard} />
-
+      <Route path="/attachment" component={AttachmentPage} />
       <Route path="/membership" component={Membership} />
       <Route path="/board" component={Board} />
       <Route path="/gallery" component={GalleryPage} />
@@ -74,7 +75,7 @@ function App() {
                   <ScrollToTop />
                   <Toaster />
                   <Router />
-                  <WhatsAppFloat />
+                  <ConditionalWhatsApp />
                   <MembershipDialogWrapper />
                   <AdvertisementPopup />
                 </MembershipProvider>
@@ -99,6 +100,12 @@ function ScrollToTop() {
   }, [location]);
 
   return null;
+}
+
+function ConditionalWhatsApp() {
+  const [location] = useLocation();
+  if (location === "/profile" || location === "/admin") return null;
+  return <WhatsAppFloat />;
 }
 
 function MembershipDialogWrapper() {

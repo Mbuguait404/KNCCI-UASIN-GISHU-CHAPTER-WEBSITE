@@ -22,7 +22,7 @@ function WhatsAppIcon({ className }: { className?: string }) {
 
 export function WhatsAppFloat() {
   return (
-    <div className="fixed bottom-6 right-6 z-[9999]">
+    <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[9999]">
       <a
         href={whatsAppUrl(DEFAULT_MESSAGE)}
         target="_blank"
@@ -31,12 +31,15 @@ export function WhatsAppFloat() {
         aria-label="Need Help? Chat with us on WhatsApp"
         data-testid="whatsapp-float"
       >
-        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-[#25D366] text-white shadow-md group-hover:bg-[#20BD5A] transition-colors">
-          <WhatsAppIcon className="h-5 w-5" />
-        </div>
-        <span className="rounded-xl bg-[#E8E8E8] px-3 py-1.5 text-xs text-foreground shadow-sm hover:bg-[#E0E0E0] transition-colors">
-          Need Help? <span className="font-bold">Chat with us</span>
+        {/* Text label - hidden on mobile, visible on sm+ */}
+        <span className="hidden sm:inline-flex rounded-xl bg-[#E8E8E8] dark:bg-white/90 px-3 py-1.5 text-xs text-foreground shadow-sm hover:bg-[#E0E0E0] dark:hover:bg-white transition-colors order-2">
+          Need Help? <span className="font-bold ml-1">Chat with us</span>
         </span>
+
+        {/* Icon - slightly larger on mobile for easier tapping */}
+        <div className="flex h-12 w-12 sm:h-10 sm:w-10 flex-shrink-0 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg group-hover:bg-[#20BD5A] group-hover:scale-110 transition-all duration-300 order-1 sm:order-3">
+          <WhatsAppIcon className="h-6 w-6 sm:h-5 sm:w-5" />
+        </div>
       </a>
     </div>
   );
