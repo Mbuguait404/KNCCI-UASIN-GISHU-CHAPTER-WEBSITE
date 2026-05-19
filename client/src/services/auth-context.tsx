@@ -12,10 +12,18 @@ interface User {
     requirePasswordChange?: boolean;
 }
 
+export interface OtpPendingState {
+    requiresOTP: true;
+    otpToken: string;
+    maskedEmail: string;
+    maskedPhone?: string;
+}
+
 interface AuthContextType {
     user: User | null;
     loading: boolean;
-    login: (credentials: any) => Promise<User>;
+    login: (credentials: any) => Promise<User | OtpPendingState>;
+    verifyOtp: (otpToken: string, code: string, credentials?: any) => Promise<User>;
     logout: () => void;
     updateUser: (userData: Partial<User>) => void;
     temporaryPassword: string | null;
@@ -68,33 +76,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         initAuth();
     }, []);
 
-    const login = async (credentials: any): Promise<User> => {
-        try {
-            const response = await authService.login(credentials);
-            if (response.success) {
-                localStorage.setItem('accessToken', response.data.accessToken);
-                setUser(response.data.user);
+    const login = async (credentials: any): Promise<User | OtpPendingState> => {
+        const response = await authService.login(credentials);
+        if (!response.success) throw new Error('Login failed');
 
-                const shouldKeepTemporaryPassword =
-                    response.data.user?.requirePasswordChange &&
-                    typeof credentials?.password === 'string' &&
-                    credentials.password.length > 0;
-
-                if (shouldKeepTemporaryPassword) {
-                    setTemporaryPassword(credentials.password);
-                    sessionStorage.setItem(TEMP_PASSWORD_STORAGE_KEY, credentials.password);
-                } else {
-                    setTemporaryPassword(null);
-                    sessionStorage.removeItem(TEMP_PASSWORD_STORAGE_KEY);
-                }
-
-                return response.data.user;
-            }
-            throw new Error('Login failed');
-        } catch (error) {
-            console.error("Login failed:", error);
-            throw error;
+        // OTP challenge — return pending state without setting user
+        if (response.data?.requiresOTP) {
+            return {
+                requiresOTP: true,
+                otpToken: response.data.otpToken,
+                maskedEmail: response.data.maskedEmail,
+                maskedPhone: response.data.maskedPhone,
+            } as OtpPendingState;
         }
+
+        // Direct login (fallback, e.g. exchange-marketplace-token flow)
+        return _applyLoginResponse(response.data, credentials?.password);
+    };
+
+    const verifyOtp = async (otpToken: string, code: string, credentials?: any): Promise<User> => {
+        const response = await authService.verifyOtp(otpToken, code);
+        if (!response.success) throw new Error('OTP verification failed');
+        return _applyLoginResponse(response.data, credentials?.password);
+    };
+
+    /** Shared helper: store tokens + set user state after successful auth */
+    const _applyLoginResponse = (data: any, password?: string): User => {
+        localStorage.setItem('accessToken', data.accessToken);
+        setUser(data.user);
+
+        const shouldKeepTemporaryPassword =
+            data.user?.requirePasswordChange &&
+            typeof password === 'string' &&
+            password.length > 0;
+
+        if (shouldKeepTemporaryPassword) {
+            setTemporaryPassword(password!);
+            sessionStorage.setItem(TEMP_PASSWORD_STORAGE_KEY, password!);
+        } else {
+            setTemporaryPassword(null);
+            sessionStorage.removeItem(TEMP_PASSWORD_STORAGE_KEY);
+        }
+
+        return data.user;
     };
 
     const updateUser = (userData: Partial<User>) => {
@@ -122,6 +146,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 user,
                 loading,
                 login,
+                verifyOtp,
                 logout,
                 updateUser,
                 temporaryPassword,

@@ -7,6 +7,11 @@ export const authService = {
         return response.data;
     },
 
+    async verifyOtp(otpToken: string, code: string) {
+        const response = await api.post('/auth/verify-otp', { otpToken, code });
+        return response.data;
+    },
+
     async getMe() {
         const response = await api.get('/auth/me');
         return response.data;
