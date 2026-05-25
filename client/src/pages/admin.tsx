@@ -346,10 +346,10 @@ export default function AdminDashboard() {
     const [verifyPaymentOpen, setVerifyPaymentOpen] = useState(false);
     const [verifyPaymentForm, setVerifyPaymentForm] = useState({
         amountPaid: 0,
-        paymentMethod: "",
+        paymentMethod: "" as "mpesa" | "bank" | "cash" | "other" | "",
         paymentStatus: "pending" as "pending" | "partial" | "paid" | "verified",
         transactionReference: "",
-        paymentDate: "",
+        paymentDate: new Date().toISOString().slice(0, 10),
         paymentNotes: "",
     });
 
@@ -1081,10 +1081,12 @@ export default function AdminDashboard() {
         try {
             const res = await adminService.updateSellerPayment(id, {
                 amountPaid: Number(verifyPaymentForm.amountPaid) || 0,
-                paymentMethod: verifyPaymentForm.paymentMethod,
+                paymentMethod: verifyPaymentForm.paymentMethod as any,
                 paymentStatus: verifyPaymentForm.paymentStatus,
                 transactionReference: verifyPaymentForm.transactionReference || undefined,
-                paymentDate: verifyPaymentForm.paymentDate || undefined,
+                paymentDate: verifyPaymentForm.paymentDate
+                    ? new Date(verifyPaymentForm.paymentDate).toISOString()
+                    : new Date().toISOString(),
                 paymentNotes: verifyPaymentForm.paymentNotes || undefined,
             });
             if (res.success) {
@@ -1107,7 +1109,9 @@ export default function AdminDashboard() {
             paymentMethod: (seller as any).paymentMethod ?? "",
             paymentStatus: (seller as any).paymentStatus ?? "pending",
             transactionReference: (seller as any).transactionReference ?? "",
-            paymentDate: (seller as any).paymentDate ? (seller as any).paymentDate.slice(0, 10) : "",
+            paymentDate: (seller as any).paymentDate
+                ? new Date((seller as any).paymentDate).toISOString().slice(0, 10)
+                : new Date().toISOString().slice(0, 10),
             paymentNotes: "",
         });
         setVerifyPaymentOpen(true);
@@ -4579,12 +4583,20 @@ export default function AdminDashboard() {
                         </div>
                         <div className="space-y-2">
                             <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Payment Method</label>
-                            <Input
-                                placeholder="e.g. MPesa, Bank Transfer"
+                            <Select
                                 value={verifyPaymentForm.paymentMethod}
-                                onChange={(e) => setVerifyPaymentForm({ ...verifyPaymentForm, paymentMethod: e.target.value })}
-                                className="h-11 rounded-xl"
-                            />
+                                onValueChange={(v) => setVerifyPaymentForm({ ...verifyPaymentForm, paymentMethod: v as any })}
+                            >
+                                <SelectTrigger className="h-11 rounded-xl">
+                                    <SelectValue placeholder="Select method" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="mpesa">M-Pesa</SelectItem>
+                                    <SelectItem value="bank">Bank Transfer</SelectItem>
+                                    <SelectItem value="cash">Cash</SelectItem>
+                                    <SelectItem value="other">Other</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
                         <div className="space-y-2">
                             <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Payment Status</label>
