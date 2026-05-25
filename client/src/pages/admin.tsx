@@ -169,7 +169,7 @@ function BulkImportTab() {
                 });
             }
         } catch (err: any) {
-            toast({ title: "Import Failed", description: err.response?.data?.message || "Bulk import failed.", variant: "destructive" });
+            toast({ title: "Import Failed", description: err.response?.data?.message || err.response?.data?.error || "Bulk import failed.", variant: "destructive" });
         } finally {
             setImporting(false);
         }
@@ -428,7 +428,7 @@ export default function AdminDashboard() {
             const res = await adminService.getStats();
             if (res.success) setStats(res.data);
         } catch (err: any) {
-            toast({ title: "Error", description: err.response?.data?.message || "Failed to load stats", variant: "destructive" });
+            toast({ title: "Error", description: err.response?.data?.message || err.response?.data?.error || "Failed to load stats", variant: "destructive" });
         } finally {
             setLoadingStats(false);
         }
@@ -446,7 +446,7 @@ export default function AdminDashboard() {
             const res = await adminService.getMembers(params);
             if (res.success) setMembers(res.data);
         } catch (err: any) {
-            toast({ title: "Error", description: err.response?.data?.message || "Failed to load members", variant: "destructive" });
+            toast({ title: "Error", description: err.response?.data?.message || err.response?.data?.error || "Failed to load members", variant: "destructive" });
         } finally {
             setLoadingMembers(false);
         }
@@ -462,7 +462,7 @@ export default function AdminDashboard() {
             const res = await adminService.getApplications();
             if (res.success) setApplications(res.data);
         } catch (err: any) {
-            toast({ title: "Error", description: err.response?.data?.message || "Failed to load applications", variant: "destructive" });
+            toast({ title: "Error", description: err.response?.data?.message || err.response?.data?.error || "Failed to load applications", variant: "destructive" });
         } finally {
             setLoadingApplications(false);
         }
@@ -554,7 +554,7 @@ export default function AdminDashboard() {
             const res = await adminService.getSellers(params);
             if (res.success) setSellers(res.data);
         } catch (err: any) {
-            toast({ title: "Error", description: err.response?.data?.message || "Failed to load sellers", variant: "destructive" });
+            toast({ title: "Error", description: err.response?.data?.message || err.response?.data?.error || "Failed to load sellers", variant: "destructive" });
         } finally {
             setLoadingSellers(false);
         }
@@ -569,7 +569,7 @@ export default function AdminDashboard() {
             setAttachments(result.data);
             setAttachmentPagination(result.pagination);
         } catch (err: any) {
-            toast({ title: "Error", description: err.response?.data?.message || "Failed to load attachments", variant: "destructive" });
+            toast({ title: "Error", description: err.response?.data?.message || err.response?.data?.error || "Failed to load attachments", variant: "destructive" });
         } finally {
             setAttachmentsLoading(false);
         }
@@ -644,7 +644,7 @@ export default function AdminDashboard() {
                 toast({ title: "Settings Saved", description: "Messaging configuration updated successfully." });
             }
         } catch (err: any) {
-            toast({ title: "Save Failed", description: err.response?.data?.message || "Failed to save settings", variant: "destructive" });
+            toast({ title: "Save Failed", description: err.response?.data?.message || err.response?.data?.error || "Failed to save settings", variant: "destructive" });
         } finally { setMsgSavingSettings(false); }
     };
 
@@ -683,7 +683,7 @@ export default function AdminDashboard() {
                 fetchMsgLogs(); fetchMsgStats();
             }
         } catch (err: any) {
-            toast({ title: "Send Failed", description: err.response?.data?.message || "Failed to send messages", variant: "destructive" });
+            toast({ title: "Send Failed", description: err.response?.data?.message || err.response?.data?.error || "Failed to send messages", variant: "destructive" });
         } finally { setMsgSending(false); }
     };
 
@@ -702,7 +702,7 @@ export default function AdminDashboard() {
             setTplEditOpen(false); setTplEditing(null); setTplName(""); setTplChannel("sms"); setTplSubject(""); setTplBody("");
             fetchMsgTemplates();
         } catch (err: any) {
-            toast({ title: "Error", description: err.response?.data?.message || "Failed to save template", variant: "destructive" });
+            toast({ title: "Error", description: err.response?.data?.message || err.response?.data?.error || "Failed to save template", variant: "destructive" });
         } finally { setTplSaving(false); }
     };
 
@@ -743,7 +743,7 @@ export default function AdminDashboard() {
             fetchMembers();
             fetchStats();
         } catch (err: any) {
-            toast({ title: "Error", description: err.response?.data?.message || "Failed to update role", variant: "destructive" });
+            toast({ title: "Error", description: err.response?.data?.message || err.response?.data?.error || "Failed to update role", variant: "destructive" });
         } finally {
             setActionLoading(false);
         }
@@ -757,7 +757,7 @@ export default function AdminDashboard() {
             fetchMembers();
             fetchStats();
         } catch (err: any) {
-            toast({ title: "Error", description: err.response?.data?.message || "Failed to update plan", variant: "destructive" });
+            toast({ title: "Error", description: err.response?.data?.message || err.response?.data?.error || "Failed to update plan", variant: "destructive" });
         } finally {
             setActionLoading(false);
         }
@@ -772,7 +772,7 @@ export default function AdminDashboard() {
             setResetPwTarget(null);
             setNewPassword("");
         } catch (err: any) {
-            toast({ title: "Error", description: err.response?.data?.message || "Failed to reset password", variant: "destructive" });
+            toast({ title: "Error", description: err.response?.data?.message || err.response?.data?.error || "Failed to reset password", variant: "destructive" });
         } finally {
             setActionLoading(false);
         }
@@ -788,7 +788,7 @@ export default function AdminDashboard() {
             fetchMembers();
             fetchStats();
         } catch (err: any) {
-            toast({ title: "Error", description: err.response?.data?.message || "Failed to delete member", variant: "destructive" });
+            toast({ title: "Error", description: err.response?.data?.message || err.response?.data?.error || "Failed to delete member", variant: "destructive" });
         } finally {
             setActionLoading(false);
         }
@@ -842,7 +842,7 @@ export default function AdminDashboard() {
 
             fetchApplications();
         } catch (err: any) {
-            toast({ title: "Error", description: err.response?.data?.message || "Failed to update status", variant: "destructive" });
+            toast({ title: "Error", description: err.response?.data?.message || err.response?.data?.error || "Failed to update status", variant: "destructive" });
         } finally {
             setActionLoading(false);
         }
@@ -873,7 +873,7 @@ export default function AdminDashboard() {
                 }
             }
         } catch (err: any) {
-            toast({ title: "Error", description: err.response?.data?.message || "Failed to resend email", variant: "destructive" });
+            toast({ title: "Error", description: err.response?.data?.message || err.response?.data?.error || "Failed to resend email", variant: "destructive" });
         } finally {
             setActionLoading(false);
         }
@@ -886,7 +886,7 @@ export default function AdminDashboard() {
             toast({ title: "Application Deleted", description: "The membership application has been removed." });
             fetchApplications();
         } catch (err: any) {
-            toast({ title: "Error", description: err.response?.data?.message || "Failed to delete application", variant: "destructive" });
+            toast({ title: "Error", description: err.response?.data?.message || err.response?.data?.error || "Failed to delete application", variant: "destructive" });
         } finally {
             setActionLoading(false);
         }
@@ -936,7 +936,7 @@ export default function AdminDashboard() {
             setMeetingModalOpen(false);
             fetchMeetings();
         } catch (err: any) {
-            toast({ title: "Error", description: err.response?.data?.message || "Failed to save meeting", variant: "destructive" });
+            toast({ title: "Error", description: err.response?.data?.message || err.response?.data?.error || "Failed to save meeting", variant: "destructive" });
         } finally {
             setSavingMeeting(false);
         }
@@ -959,7 +959,7 @@ export default function AdminDashboard() {
             toast({ title: "Notifications Sent", description: res.message || "Notifications dispatched successfully." });
             fetchMeetings();
         } catch (err: any) {
-            toast({ title: "Error", description: err.response?.data?.message || "Failed to send notifications", variant: "destructive" });
+            toast({ title: "Error", description: err.response?.data?.message || err.response?.data?.error || "Failed to send notifications", variant: "destructive" });
         } finally {
             setSendingNotification(null);
         }
@@ -977,7 +977,7 @@ export default function AdminDashboard() {
                 fetchApplications();
             }
         } catch (err: any) {
-            toast({ title: "Error", description: err.response?.data?.message || "Failed to update application", variant: "destructive" });
+            toast({ title: "Error", description: err.response?.data?.message || err.response?.data?.error || "Failed to update application", variant: "destructive" });
         } finally {
             setActionLoading(false);
         }
@@ -1007,7 +1007,7 @@ export default function AdminDashboard() {
                 fetchMembers();
             }
         } catch (err: any) {
-            toast({ title: "Error", description: err.response?.data?.message || "Failed to update profile", variant: "destructive" });
+            toast({ title: "Error", description: err.response?.data?.message || err.response?.data?.error || "Failed to update profile", variant: "destructive" });
         } finally {
             setActionLoading(false);
         }
@@ -1037,7 +1037,7 @@ export default function AdminDashboard() {
                 }
             }
         } catch (err: any) {
-            toast({ title: "Upload Failed", description: err.response?.data?.message || "File upload failed", variant: "destructive" });
+            toast({ title: "Upload Failed", description: err.response?.data?.message || err.response?.data?.error || "File upload failed", variant: "destructive" });
         } finally {
             setFileUploading(prev => ({ ...prev, [type]: false }));
         }
@@ -1054,7 +1054,7 @@ export default function AdminDashboard() {
                 if (status === 'rejected') setSellerRejectionReason("");
             }
         } catch (err: any) {
-            toast({ title: "Error", description: err.response?.data?.message || `Failed to ${status} seller`, variant: "destructive" });
+            toast({ title: "Error", description: err.response?.data?.message || err.response?.data?.error || `Failed to ${status} seller`, variant: "destructive" });
         } finally {
             setActionLoading(false);
         }
@@ -1070,7 +1070,7 @@ export default function AdminDashboard() {
                 fetchStats();
             }
         } catch (err: any) {
-            toast({ title: "Error", description: err.response?.data?.message || "Failed to delete seller", variant: "destructive" });
+            toast({ title: "Error", description: err.response?.data?.message || err.response?.data?.error || "Failed to delete seller", variant: "destructive" });
         } finally {
             setActionLoading(false);
         }
@@ -1094,7 +1094,7 @@ export default function AdminDashboard() {
                 if (selectedSeller && selectedSeller._id === id) setSelectedSeller(res.data);
             }
         } catch (err: any) {
-            toast({ title: "Error", description: err.response?.data?.message || "Failed to update payment", variant: "destructive" });
+            toast({ title: "Error", description: err.response?.data?.message || err.response?.data?.error || "Failed to update payment", variant: "destructive" });
         } finally {
             setActionLoading(false);
         }
@@ -1163,7 +1163,7 @@ export default function AdminDashboard() {
                 fetchOrders();
             }
         } catch (err: any) {
-            toast({ title: "Error", description: err.response?.data?.message || "Failed to release funds", variant: "destructive" });
+            toast({ title: "Error", description: err.response?.data?.message || err.response?.data?.error || "Failed to release funds", variant: "destructive" });
         } finally {
             setReleasingOrders(prev => { const next = new Set(prev); next.delete(orderId); return next; });
         }
