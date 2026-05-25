@@ -71,12 +71,13 @@ export function ChairmanSection() {
                                 thriving business ecosystem for all stakeholders."
                             </p>
                             <p>
-                                "Eldoret continues to present immense opportunities in agro-processing, manufacturing,
-                                logistics, exports, ICT, sports economy, and real estate development. Ongoing developments
-                                such as the Eldoret Special Economic Zone, expansion of Eldoret International Airport, and
-                                the growth of industrial parks are opening doors for investors, SMEs, farmers, exporters,
-                                transporters, and young entrepreneurs. These developments continue to strengthen Eldoret's
-                                position as a key commercial and investment hub within Kenya and the East African region."
+                                "Eldoret continues to present immense opportunities in agro-processing, manufacturing, logistics, exports, ICT, sports economy, and real estate development. This growth is further strengthened by national development frameworks such as the <strong>County Aggregation and Industrial Parks (CAIPs)</strong> programme, a flagship government initiative under the Bottom-Up Economic Transformation Agenda (BETA). The programme is designed to establish structured county-based hubs that bring together aggregation, storage, processing, and value addition facilities for agricultural and industrial products. It aims to reduce post-harvest losses, support MSMEs, increase farmer incomes, and accelerate agro-industrialisation at the county level."
+                            </p>
+                            <p>
+                                "In addition, the establishment and expansion of industrial parks across the region are accelerating value addition, job creation, and SME growth, while providing a structured environment for manufacturing and light industry to thrive. Further, the presence and active role of the Export Processing Zones Authority (EPZA) continues to enhance export-oriented investment opportunities, attracting both local and international investors into value-added production and global trade integration."
+                            </p>
+                            <p>
+                                "Ongoing developments such as the expansion of Eldoret International Airport, and supporting logistics infrastructure are further opening doors for investors, SMEs, farmers, exporters, transporters, and young entrepreneurs. Collectively, these initiatives are reinforcing Eldoret's position as a key commercial, industrial, and investment hub within Kenya and the broader East African region."
                             </p>
                             <p>
                                 "In line with this vision, KNCCI Uasin Gishu Chapter will host the Eldoret International

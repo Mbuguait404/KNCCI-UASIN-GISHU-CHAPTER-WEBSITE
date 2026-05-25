@@ -70,6 +70,10 @@ const memberBenefits = [
   { icon: TrendingUp, text: "Access exclusive trade leads & opportunities" },
   { icon: Award, text: "Register for summits with member discounts" },
   { icon: Store, text: "Showcase products on the marketplace" },
+  { icon: Users, text: "Policy advocacy & government engagement" },
+  { icon: Award, text: "Certification of origin & trade documentation" },
+  { icon: TrendingUp, text: "Business mentorship & capacity building" },
+  { icon: Store, text: "Access to market intelligence & research" },
 ];
 
 const heroStats = [
@@ -300,7 +304,7 @@ export function HeroSection({ event: propEvent }: HeroSectionProps) {
       />
 
       {/* Two-column main content */}
-      <div className="relative z-10 flex-1 min-h-0 flex items-center">
+      <div className="relative z-10 flex-1 min-h-0 flex items-center pt-20 pb-4">
         <div className="w-full max-w-7xl mx-auto px-5 sm:px-8 lg:px-14">
           <div className="grid lg:grid-cols-[1fr_340px] xl:grid-cols-[1fr_360px] gap-8 xl:gap-14 items-center">
 

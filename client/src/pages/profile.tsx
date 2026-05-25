@@ -565,7 +565,7 @@ export default function ProfilePage() {
     };
 
     const openMarketplace = async () => {
-        let marketplaceUrl = import.meta.env.VITE_MARKETPLACE_URL || 'http://localhost:3000';
+        let marketplaceUrl = import.meta.env.VITE_MARKETPLACE_URL || 'https://kncci-marketplace.vercel.app';
         if (!marketplaceUrl.startsWith('http://') && !marketplaceUrl.startsWith('https://')) {
             marketplaceUrl = `https://${marketplaceUrl}`;
         }
@@ -876,12 +876,6 @@ export default function ProfilePage() {
                                             {(dashboardStats?.memberType || "member").toString()}
                                         </span>
                                     </div>
-                                    <span className="text-[11px] font-bold text-muted-foreground/60 uppercase tracking-widest border-l border-border/40 pl-4 h-4 flex items-center">
-                                        Member Since{" "}
-                                        {dashboardStats?.member?.membershipVerifiedAt
-                                            ? new Date(dashboardStats.member.membershipVerifiedAt).toLocaleDateString(undefined, { month: "short", year: "numeric" })
-                                            : "—"}
-                                    </span>
                                 </div>
                             </motion.div>
 
@@ -2592,7 +2586,7 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
     };
 
     const openMarketplace = async () => {
-        let marketplaceUrl = import.meta.env.VITE_MARKETPLACE_URL || 'http://localhost:3000';
+        let marketplaceUrl = import.meta.env.VITE_MARKETPLACE_URL || 'https://kncci-marketplace.vercel.app';
         if (!marketplaceUrl.startsWith('http://') && !marketplaceUrl.startsWith('https://')) {
             marketplaceUrl = `https://${marketplaceUrl}`;
         }
@@ -2896,7 +2890,7 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
 
     // ─── Directory Mode: Business Listing View ─────────────────────
     if (DIRECTORY_MODE) {
-        const marketplaceUrl = import.meta.env.VITE_MARKETPLACE_URL || 'http://localhost:3002';
+        const marketplaceUrl = import.meta.env.VITE_MARKETPLACE_URL || 'https://kncci-marketplace.vercel.app';
         const storeSlug = business?.cms_org_slug || business?.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '') || '';
         const storeUrl = `${marketplaceUrl}/stores/${storeSlug}`;
 
@@ -2945,7 +2939,7 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
                                 {business?.email && <span className="flex items-center gap-1"><Mail className="w-3 h-3" /> {business.email}</span>}
                             </div>
                             <div className="flex items-center gap-2 text-xs font-medium text-emerald-600">
-                                <CheckCircle2 className="w-4 h-4" /> Verified KNCCI Member
+                                <CheckCircle2 className="w-4 h-4" /> Verified
                             </div>
                             <Button asChild className="w-full rounded-xl h-11 font-bold shadow-lg shadow-emerald-500/20 mt-2 bg-gradient-to-r from-emerald-600 to-emerald-700">
                                 <a href={storeUrl} target="_blank" rel="noopener noreferrer">

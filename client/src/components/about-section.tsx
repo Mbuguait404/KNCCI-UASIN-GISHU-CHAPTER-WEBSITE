@@ -60,7 +60,7 @@ export function AboutSection() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="text-center">
                       <div className="text-2xl sm:text-3xl font-bold text-foreground" data-testid="stat-visitors">{org.stats.activeMembers}</div>
-                      <div className="text-xs sm:text-sm text-muted-foreground mt-1">Active Members</div>
+                      <div className="text-xs sm:text-sm text-muted-foreground mt-1">Uasin Gishu Chapter Active Members</div>
                     </div>
                     <div className="text-center">
                       <div className="text-2xl sm:text-3xl font-bold text-primary" data-testid="stat-exhibitors">{org.stats.chapters}</div>
@@ -91,7 +91,7 @@ export function AboutSection() {
                 Becoming a member of KNCCI Uasin Gishu Chapter unlocks unparalleled opportunities for your business. 
                 From direct access to government decision-makers and exclusive trade facilitation services, to high-value 
                 networking events and capacity-building programs — membership positions your business at the centre of 
-                Uasin Gishu's economic transformation. Join over 5,000 active members who are already benefiting from 
+                Uasin Gishu's economic transformation. Join over 5,000 Uasin Gishu Chapter active members who are already benefiting from 
                 our advocacy, market access, and strategic partnerships.
               </p>
             </div>

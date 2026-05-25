@@ -347,15 +347,6 @@ export default function MemberDirectoryPage() {
                                     </div>
                                     <div className="flex gap-4 items-center group">
                                         <div className="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-slate-900 flex items-center justify-center text-primary border border-slate-100 dark:border-slate-800 transition-colors group-hover:bg-primary group-hover:text-white">
-                                            <Calendar className="w-5 h-5" />
-                                        </div>
-                                        <div>
-                                            <p className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground">Member Since</p>
-                                            <p className="font-bold text-lg group-hover:text-primary transition-colors">August 2022</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex gap-4 items-center group">
-                                        <div className="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-slate-900 flex items-center justify-center text-primary border border-slate-100 dark:border-slate-800 transition-colors group-hover:bg-primary group-hover:text-white">
                                             <Globe className="w-5 h-5" />
                                         </div>
                                         <div>

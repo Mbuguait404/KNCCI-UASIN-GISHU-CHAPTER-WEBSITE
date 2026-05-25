@@ -75,7 +75,7 @@ export function TestimonialsSection() {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
-          className="grid md:grid-cols-2 lg:grid-cols-4 gap-8"
+          className="grid md:grid-cols-2 lg:grid-cols-4 gap-6"
         >
           {testimonials.map((testimonial, index) => (
             <motion.div key={testimonial.id} variants={itemVariants} className="h-full">
@@ -90,9 +90,25 @@ export function TestimonialsSection() {
                     ))}
                   </div>
 
-                  <blockquote className="text-foreground leading-relaxed italic flex-grow">
+                  <blockquote className="text-foreground leading-relaxed italic flex-grow mb-6">
                     "{testimonial.quote}"
                   </blockquote>
+
+                  <div className="flex items-center gap-3 mt-auto pt-4 border-t border-border/40">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                      <span className="text-primary font-bold text-sm">
+                        {testimonial.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm text-foreground">{testimonial.name}</p>
+                      {(testimonial.title || testimonial.organization) && (
+                        <p className="text-xs text-muted-foreground">
+                          {[testimonial.title, testimonial.organization].filter(Boolean).join(", ")}
+                        </p>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </Card>
             </motion.div>

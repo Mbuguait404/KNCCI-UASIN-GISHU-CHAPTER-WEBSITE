@@ -31,7 +31,7 @@ export function MembershipCertificate({
         if (!url) return "";
         if (url.startsWith('http')) return url;
         // Assume it's a relative path from the server
-        const baseUrl = "http://localhost:3000"; // Should come from config
+        const baseUrl = typeof window !== 'undefined' ? window.location.origin : "";
         return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
     };
 

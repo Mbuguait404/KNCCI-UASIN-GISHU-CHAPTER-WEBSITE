@@ -100,20 +100,6 @@ export function MarketplaceSection() {
               <p className="text-sm text-muted-foreground mb-6">
                 Full marketplace access exclusively for KNCCI members. List unlimited products and services.
               </p>
-              <ul className="space-y-3 mb-6">
-                {[
-                  "Unlimited product listings",
-                  "Verified business badge",
-                  "Priority search placement",
-                  "Access to buyer leads",
-                  "Member-only networking events",
-                ].map((item, i) => (
-                  <li key={i} className="flex items-center gap-2 text-sm text-foreground">
-                    <Check className="w-4 h-4 text-primary flex-shrink-0" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
               <Link href="/profile">
                 <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
                   Get Started <ArrowRight className="w-4 h-4 ml-2" />
@@ -137,20 +123,6 @@ export function MarketplaceSection() {
               <p className="text-sm text-muted-foreground mb-6">
                 Marketplace access for non-members. List your products and connect with our business community.
               </p>
-              <ul className="space-y-3 mb-6">
-                {[
-                  "Up to 50 product listings",
-                  "Standard business profile",
-                  "Search visibility",
-                  "Basic analytics dashboard",
-                  "Email support",
-                ].map((item, i) => (
-                  <li key={i} className="flex items-center gap-2 text-sm text-foreground">
-                    <Check className="w-4 h-4 text-primary flex-shrink-0" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
               <Button
                 variant="outline"
                 className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground"

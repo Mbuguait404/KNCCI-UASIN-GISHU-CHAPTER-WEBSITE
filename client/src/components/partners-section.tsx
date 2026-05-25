@@ -121,6 +121,24 @@ const sponsors = [
     logoUrl:
       "https://www.kenyachamber.or.ke/wp-content/uploads/2021/02/Algerian-Chamber-of-Commerce-and-Industry.jpg",
   },
+  {
+    id: 19,
+    name: "Eldobase Chemists Ltd",
+    logoUrl: "/sponsors/eldobase.png",
+    website: "https://www.eldobase.co.ke/",
+  },
+  {
+    id: 20,
+    name: "The Cube Innovation Hub",
+    logoUrl: "/sponsors/the-cube.png",
+    website: "https://the-cube.co.ke/",
+  },
+  {
+    id: 21,
+    name: "The Grand Empire Hotel",
+    logoUrl: "/sponsors/grand-empire-hotel.png",
+    website: "https://www.thegrandempirehotel.co.ke/",
+  },
 ];
 
 function SponsorLogo({ sponsor }: { sponsor: (typeof sponsors)[number] }) {
