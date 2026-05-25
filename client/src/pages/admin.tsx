@@ -2288,6 +2288,18 @@ export default function AdminDashboard() {
                                                                 >
                                                                     <Eye className="w-4 h-4" />
                                                                 </Button>
+                                                                {seller.status !== 'deactivated' && (
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        className="text-indigo-500 hover:text-indigo-600 hover:bg-indigo-50"
+                                                                        onClick={() => openVerifyPayment(seller)}
+                                                                        title="Verify Payment"
+                                                                        disabled={actionLoading}
+                                                                    >
+                                                                        <CreditCard className="w-4 h-4" />
+                                                                    </Button>
+                                                                )}
                                                                 {seller.status === 'pending' && (
                                                                     <>
                                                                         <Button
@@ -4364,6 +4376,17 @@ export default function AdminDashboard() {
                                 <div className="border-t border-border/40 pt-4 space-y-3">
                                     <h4 className="font-bold flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-amber-500" /> Admin Actions</h4>
                                     <div className="flex gap-2">
+                                        <Button
+                                            variant="outline"
+                                            className="border-indigo-200 text-indigo-600 hover:bg-indigo-50 dark:border-indigo-800 dark:text-indigo-400 rounded-xl flex-1"
+                                            onClick={() => {
+                                                setSellerDetailOpen(false);
+                                                openVerifyPayment(selectedSeller);
+                                            }}
+                                            disabled={actionLoading}
+                                        >
+                                            <CreditCard className="w-4 h-4 mr-2" /> Verify Payment
+                                        </Button>
                                         <Button
                                             className="bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl flex-1"
                                             onClick={() => {

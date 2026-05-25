@@ -18,4 +18,18 @@ api.interceptors.request.use((config) => {
     return config;
 });
 
+// Normalize backend error responses: backend uses { error: "..." } not { message: "..." }
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response?.data && typeof error.response.data === 'object') {
+            const data = error.response.data;
+            if (!data.message && data.error) {
+                error.response.data.message = data.error;
+            }
+        }
+        return Promise.reject(error);
+    }
+);
+
 export default api;
