@@ -166,7 +166,7 @@ function SponsorLogo({ sponsor }: { sponsor: (typeof sponsors)[number] }) {
           <img
             src={sponsor.logoUrl}
             alt={sponsor.name}
-            className="max-h-full max-w-full object-contain opacity-75 grayscale transition-all duration-300 group-hover:grayscale-0 group-hover:opacity-100"
+            className="max-h-full max-w-full object-contain transition-all duration-300 group-hover:grayscale group-hover:opacity-60"
             loading="lazy"
           />
         </div>
