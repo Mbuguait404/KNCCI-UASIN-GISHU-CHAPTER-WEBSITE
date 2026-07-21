@@ -833,11 +833,43 @@ export function MarketplaceTab({ business, user, onBusinessTabSwitch }: Marketpl
                         <span className="text-[10px] font-extrabold text-emerald-600 dark:text-emerald-400 uppercase tracking-[0.1em]">Connected to Marketplace</span>
                     </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                     <div className="text-right">
                         <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Store Slug</p>
                         <p className="text-[11px] font-extrabold text-foreground truncate max-w-[150px]">{business?.cms_org_slug || 'active-store'}</p>
                     </div>
+                    <Button
+                        className="rounded-2xl h-10 px-5 font-extrabold bg-primary text-white shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all text-[10px] uppercase tracking-wider"
+                        onClick={async () => {
+                            let marketplaceUrl = import.meta.env.VITE_MARKETPLACE_URL || 'https://marketplace.the-cube.co.ke';
+                            if (!marketplaceUrl.startsWith('http://') && !marketplaceUrl.startsWith('https://')) {
+                                marketplaceUrl = `https://${marketplaceUrl}`;
+                            }
+                            const token = localStorage.getItem('accessToken');
+                            if (!token) {
+                                window.open(marketplaceUrl, '_blank');
+                                return;
+                            }
+                            try {
+                                const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000/api/v1';
+                                const res = await fetch(`${apiUrl}/auth/marketplace-token`, {
+                                    method: 'POST',
+                                    headers: { Authorization: `Bearer ${token}` },
+                                });
+                                if (res.ok) {
+                                    const json = await res.json();
+                                    const code = json?.data?.code ?? json?.code;
+                                    if (code) {
+                                        window.open(`${marketplaceUrl}/auth/exchange?code=${code}`, '_blank');
+                                        return;
+                                    }
+                                }
+                            } catch {}
+                            window.open(marketplaceUrl, '_blank');
+                        }}
+                    >
+                        Open Marketplace <ExternalLink className="w-3.5 h-3.5 ml-2" />
+                    </Button>
                 </div>
             </div>
 
@@ -917,14 +949,38 @@ export function MarketplaceTab({ business, user, onBusinessTabSwitch }: Marketpl
                                     <p className="text-slate-300 font-medium leading-relaxed mb-8">
                                         Access full seller features including detailed analytics, marketing tools, and advanced storefront customization in the dedicated Marketplace app.
                                     </p>
-                                    <a
-                                        href={`${import.meta.env.VITE_MARKETPLACE_URL || 'https://kncci-marketplace.vercel.app'}/seller`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
+                                    <button
+                                        onClick={async () => {
+                                            let marketplaceUrl = import.meta.env.VITE_MARKETPLACE_URL || 'https://marketplace.the-cube.co.ke';
+                                            if (!marketplaceUrl.startsWith('http://') && !marketplaceUrl.startsWith('https://')) {
+                                                marketplaceUrl = `https://${marketplaceUrl}`;
+                                            }
+                                            const token = localStorage.getItem('accessToken');
+                                            if (!token) {
+                                                window.open(marketplaceUrl, '_blank');
+                                                return;
+                                            }
+                                            try {
+                                                const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000/api/v1';
+                                                const res = await fetch(`${apiUrl}/auth/marketplace-token`, {
+                                                    method: 'POST',
+                                                    headers: { Authorization: `Bearer ${token}` },
+                                                });
+                                                if (res.ok) {
+                                                    const json = await res.json();
+                                                    const code = json?.data?.code ?? json?.code;
+                                                    if (code) {
+                                                        window.open(`${marketplaceUrl}/auth/exchange?code=${code}`, '_blank');
+                                                        return;
+                                                    }
+                                                }
+                                            } catch {}
+                                            window.open(marketplaceUrl, '_blank');
+                                        }}
                                         className="inline-flex items-center justify-center rounded-2xl h-14 px-10 font-black uppercase tracking-widest text-xs bg-white text-slate-900 hover:bg-slate-100 transition-all shadow-2xl shadow-white/10"
                                     >
                                         Open Full Dashboard <ExternalLink className="w-4 h-4 ml-2" />
-                                    </a>
+                                    </button>
                                 </div>
                             </Card>
                         </div>

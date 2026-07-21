@@ -565,7 +565,7 @@ export default function ProfilePage() {
     };
 
     const openMarketplace = async () => {
-        let marketplaceUrl = import.meta.env.VITE_MARKETPLACE_URL || 'https://kncci-marketplace.vercel.app';
+        let marketplaceUrl = import.meta.env.VITE_MARKETPLACE_URL || 'https://marketplace.the-cube.co.ke';
         if (!marketplaceUrl.startsWith('http://') && !marketplaceUrl.startsWith('https://')) {
             marketplaceUrl = `https://${marketplaceUrl}`;
         }
@@ -2586,7 +2586,7 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
     };
 
     const openMarketplace = async () => {
-        let marketplaceUrl = import.meta.env.VITE_MARKETPLACE_URL || 'https://kncci-marketplace.vercel.app';
+        let marketplaceUrl = import.meta.env.VITE_MARKETPLACE_URL || 'https://marketplace.the-cube.co.ke';
         if (!marketplaceUrl.startsWith('http://') && !marketplaceUrl.startsWith('https://')) {
             marketplaceUrl = `https://${marketplaceUrl}`;
         }
@@ -2890,7 +2890,7 @@ function MarketplaceTab({ business, user, onBusinessTabSwitch }: MarketplaceTabP
 
     // ─── Directory Mode: Business Listing View ─────────────────────
     if (DIRECTORY_MODE) {
-        const marketplaceUrl = import.meta.env.VITE_MARKETPLACE_URL || 'https://kncci-marketplace.vercel.app';
+        const marketplaceUrl = import.meta.env.VITE_MARKETPLACE_URL || 'https://marketplace.the-cube.co.ke';
         const storeSlug = business?.cms_org_slug || business?.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '') || '';
         const storeUrl = `${marketplaceUrl}/stores/${storeSlug}`;
 

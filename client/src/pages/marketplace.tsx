@@ -35,7 +35,7 @@ interface Vendor {
     joinedAt: string;
 }
 
-const MARKETPLACE_URL = import.meta.env.VITE_MARKETPLACE_URL || "https://kncci-marketplace.vercel.app";
+const MARKETPLACE_URL = import.meta.env.VITE_MARKETPLACE_URL || "https://marketplace.the-cube.co.ke";
 
 export default function MarketplacePage() {
     const [vendors, setVendors] = useState<Vendor[]>([]);
